@@ -2,7 +2,7 @@
 
 **Dating with intention, right inside Telegram.**
 
-Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led dating. The repository contains the complete **Phase 1 foundation** and **Phase 2 onboarding experience**: Telegram authentication, PostgreSQL persistence, and the full five-section questionnaire.
+Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led dating. The repository contains the complete **Phase 1 foundation**, **Phase 2 onboarding experience**, **Phase 3 results and conversion flow**, and **Phase 4 bot-based video verification**: Telegram authentication, PostgreSQL persistence with migrations, the full five-section questionnaire, the post-onboarding match report, and Telegram-native video verification with a review queue.
 
 ## Implementation status
 
@@ -29,7 +29,35 @@ Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led d
 - ✅ Original local onboarding imagery; no external image hotlinks
 - ✅ API and shared-flow test coverage
 
-The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/DATEGRAM_PRODUCT_SPEC.md).
+### Phase 3 — Results & conversion
+
+- ✅ Ordered migration runner with a `schema_migrations` ledger; existing Phase 2 databases upgrade in place
+- ✅ Six conversion screens: analysis, match potential, optional email, required name, four-week plan, scratch discount
+- ✅ Deterministic scoring shared between API and browser preview, clamped to 65–97 and stable across reloads
+- ✅ Score reuse keyed on an answer fingerprint, so a changed answer rescors and a reload does not
+- ✅ Per-user `DATEGRAM-XXXXXX` promo codes with collision retry and a 7-day expiry
+- ✅ Resumable flow: reopening Telegram returns to the right step and never replays a revealed discount
+- ✅ Custom Pointer Events scratch card with a keyboard reveal alternative and reduced-motion support
+- ✅ Hash-mirrored step machine, so the device back button steps back instead of exiting the Mini App
+- ✅ Browser preview parity through a LocalStorage-backed results store
+- ✅ Backend and frontend test coverage (`node --test` + Vitest)
+
+### Phase 4 — Verification
+
+- ✅ Telegram-native round video-note capture; no camera API or capture UI in the webview
+- ✅ Bot sequence: pinned message with a return button, optional example video note, instructions
+- ✅ Video-note capture with the correct grammY filter and Context accessors, both regression-tested
+- ✅ One open submission per user, enforced by a partial unique index rather than handler logic
+- ✅ Five-state verification lifecycle with a `requested` state distinct from `pending_review`
+- ✅ Admin review API behind constant-time token auth, unmounted entirely when unconfigured
+- ✅ Reviewable videos via an authenticated `getFile` streaming endpoint
+- ✅ Transactional, idempotent approve/reject that never notifies a user twice
+- ✅ Rejection reasons from a fixed catalogue, so users never receive "Reason: undefined"
+- ✅ Accessible modal: focus trap, `Esc`, backdrop close, error recovery
+- ✅ Status polling that pauses when hidden and stops on terminal states
+- ✅ Reusable `VerifiedBadge` for the Phase 5 swipe cards and chat headers
+
+The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/DATEGRAM_PRODUCT_SPEC.md). Design records: [Phase 3](docs/PHASE_3_ARCHITECTURE.md), [Phase 4](docs/PHASE_4_ARCHITECTURE.md).
 
 ## Repository layout
 
@@ -37,11 +65,12 @@ The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/D
 .
 ├── backend/
 │   ├── src/
-│   │   ├── bot/                 # grammY Telegram bot
+│   │   ├── bot/                 # grammY Telegram bot, verification messages and handlers
 │   │   ├── config/              # validated runtime configuration
-│   │   ├── db/                  # PostgreSQL schema + repository
+│   │   ├── db/                  # PostgreSQL schema, migrations + repositories
 │   │   ├── middleware/          # Telegram initData authentication
 │   │   ├── routes/              # Express API routes
+│   │   ├── services/            # scoring, promo and results orchestration
 │   │   ├── app.js               # Express application factory
 │   │   └── server.js            # process lifecycle
 │   └── test/
@@ -50,11 +79,12 @@ The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/D
 │   └── src/
 │       ├── api/
 │       ├── components/
+│       ├── context/
 │       ├── hooks/
 │       ├── lib/
 │       ├── pages/
 │       └── styles/
-├── shared/                      # one onboarding definition for web + API
+├── shared/                      # onboarding definition + scoring, shared by web and API
 ├── compose.yaml                 # local PostgreSQL
 └── package.json                 # npm workspaces
 ```
@@ -121,6 +151,8 @@ npm run dev
 
 When opened in a normal browser during development, the frontend uses a clearly marked preview identity. It never sends demo credentials to protected API endpoints. In production, the app requires valid signed Telegram `initData`.
 
+Preview state lives in LocalStorage under versioned keys: `dategram:onboarding:v2:<telegramId>` for Phase 2 answers and `dategram:results:v1:<telegramId>` for Phase 3 results. The preview identity is always built with `onboardingCompleted: false`, so a reload replays the questionnaire and then the results flow; it does not model the "already finished, open the app" path. Use **Restart preview** in the onboarding menu to clear the answer key. Real Telegram sessions read both flags from PostgreSQL and resume correctly.
+
 ## BotFather setup
 
 1. Send `/newbot` to `@BotFather` and save the token.
@@ -152,6 +184,21 @@ Do not trust `initDataUnsafe` as server identity. It is used only for harmless l
 | `PUT` | `/api/onboarding/answers/:key` | Telegram `tma` | Validate and persist an answer |
 | `PUT` | `/api/onboarding/progress` | Telegram `tma` | Persist interstitial/back progress |
 | `POST` | `/api/onboarding/complete` | Telegram `tma` | Verify all answers and complete onboarding |
+| `GET` | `/api/onboarding/results` | Telegram `tma` | Resume the results and conversion state |
+| `POST` | `/api/onboarding/results/calculate-score` | Telegram `tma` | Calculate once, then return the stored match score |
+| `POST` | `/api/onboarding/results/email` | Telegram `tma` | Save or skip the optional email |
+| `POST` | `/api/onboarding/results/name` | Telegram `tma` | Save the required display name |
+| `POST` | `/api/onboarding/results/promo` | Telegram `tma` | Get or create the discount code |
+| `POST` | `/api/onboarding/results/complete` | Telegram `tma` | Finish the conversion flow and enter the app |
+| `POST` | `/api/verification/request` | Telegram `tma` | Send the verification instructions into the bot chat |
+| `GET` | `/api/verification/status` | Telegram `tma` | Poll verification state for the badge |
+| `GET` | `/api/admin/verification/pending` | `Bearer` admin token | List submissions awaiting review |
+| `GET` | `/api/admin/verification/:id/file` | `Bearer` admin token | Stream a submission's video note |
+| `PATCH` | `/api/admin/verification/:id/approve` | `Bearer` admin token | Approve and notify the user |
+| `PATCH` | `/api/admin/verification/:id/reject` | `Bearer` admin token | Reject with a catalogue reason |
+
+The admin routes are only mounted when `ADMIN_API_TOKEN` is set, so an unconfigured deployment
+returns `404` rather than exposing the review queue.
 
 Error responses use a stable shape:
 
@@ -170,7 +217,7 @@ Error responses use a stable shape:
 npm run dev       # API + Vite dev server
 npm run dev:api   # API only
 npm run dev:web   # frontend only
-npm test          # backend unit tests
+npm test          # backend (node --test) + frontend (vitest) unit tests
 npm run build     # production frontend build
 npm run check     # tests + production build
 npm start         # production API process
@@ -187,15 +234,32 @@ When `NODE_ENV=production`, startup intentionally fails unless these are present
 
 Terminate TLS at a trusted proxy, route `/api` to the Express service, serve the frontend build, and use webhook delivery instead of long polling when scaling the bot to multiple instances.
 
+## Phase 3 environment variables
+
+Optional, with the defaults shown:
+
+```env
+PROMO_DISCOUNT_PERCENT=50
+PROMO_TTL_DAYS=7
+SCORING_SECRET=
+```
+
+`SCORING_SECRET` salts the deterministic score and match-pool jitter. Changing it reshuffles
+those figures the next time a user's score is recalculated.
+
 ## Next phase
 
-Phase 3 is the post-onboarding result and conversion flow:
+Phase 5 is the Discover/swipe screen, which gives this conversion flow a real destination and a
+home for `VerifiedBadge` and the verification card (currently hosted on the post-onboarding
+shell, since no Profile tab exists yet).
 
-1. Animated answer analysis and candidate-search stages
-2. Match Potential result card and score visualization
-3. Optional email and required name capture
-4. Personalized four-week Match Plan chart
-5. Accessible scratch-card discount interaction
-6. Routing from completed onboarding into results and then Discover
+Deferred items, documented in [`docs/PHASE_3_IMPLEMENTATION_PLAN.md`](docs/PHASE_3_IMPLEMENTATION_PLAN.md)
+and [`docs/PHASE_4_IMPLEMENTATION_PLAN.md`](docs/PHASE_4_IMPLEMENTATION_PLAN.md):
+
+- R1b, the optional candidate-search simulation stage
+- Replacing the deterministic match-pool estimate with a real `COUNT(*)` over active profiles
+- A reviewer dashboard; review is currently done through the authenticated admin API
+- A retention policy for reviewed verification submissions
+- An admin Telegram-ID allowlist, as the production upgrade to the token gate
 
 See the product specification for exact copy, order, states, and visual behavior.

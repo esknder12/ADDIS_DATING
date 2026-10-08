@@ -3,8 +3,12 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { checkDatabase } from './db/index.js';
+import { sendVerificationInstructions } from './bot/handlers/verificationHandler.js';
+import { createAdminRouter } from './routes/admin.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { createOnboardingRouter } from './routes/onboarding.routes.js';
+import { createResultsRouter } from './routes/results.routes.js';
+import { createVerificationRouter } from './routes/verification.routes.js';
 
 function createCorsOptions(runtimeConfig) {
   return {
@@ -21,7 +25,16 @@ function createCorsOptions(runtimeConfig) {
   };
 }
 
-export function createApp({ runtimeConfig, userRepository, onboardingRepository }) {
+export function createApp({
+  runtimeConfig,
+  userRepository,
+  onboardingRepository,
+  resultsRepository,
+  resultsService,
+  verificationRepository,
+  notifier,
+  fetchImpl,
+}) {
   const app = express();
 
   app.disable('x-powered-by');
@@ -68,11 +81,75 @@ export function createApp({ runtimeConfig, userRepository, onboardingRepository 
     },
   });
 
+  const resultsLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 60,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+      error: { code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.' },
+    },
+  });
+
+  // Mounted before '/api/onboarding' so the more specific prefix wins.
+  app.use(
+    '/api/onboarding/results',
+    resultsLimiter,
+    createResultsRouter({ resultsRepository, resultsService, runtimeConfig }),
+  );
+
   app.use(
     '/api/onboarding',
     onboardingLimiter,
     createOnboardingRouter({ onboardingRepository, runtimeConfig }),
   );
+
+  const verificationLimiter = rateLimit({
+    windowMs: 60_000,
+    // Each request fans out to three outbound Telegram calls including a pin.
+    limit: 10,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+      error: { code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.' },
+    },
+  });
+
+  app.use(
+    '/api/verification',
+    verificationLimiter,
+    createVerificationRouter({
+      verificationRepository,
+      notifier,
+      runtimeConfig,
+      sendInstructions: (telegramId) => sendVerificationInstructions(notifier, {
+        chatId: telegramId,
+        telegramId,
+        exampleVideoFileId: runtimeConfig.verificationExampleVideoId,
+        webappUrl: runtimeConfig.webappUrl,
+      }),
+    }),
+  );
+
+  // Admin review approves face videos, so the router is only mounted when a token exists.
+  // Unconfigured admin access 404s rather than opening up.
+  if (runtimeConfig.adminApiToken) {
+    const adminLimiter = rateLimit({
+      windowMs: 60_000,
+      limit: 30,
+      standardHeaders: 'draft-7',
+      legacyHeaders: false,
+      message: {
+        error: { code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.' },
+      },
+    });
+
+    app.use(
+      '/api/admin',
+      adminLimiter,
+      createAdminRouter({ verificationRepository, notifier, runtimeConfig, fetchImpl }),
+    );
+  }
 
   app.use('/api', (_req, res) => {
     res.status(404).json({

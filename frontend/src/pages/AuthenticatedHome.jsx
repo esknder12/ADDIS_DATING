@@ -1,4 +1,5 @@
 import TopBar from '../components/TopBar.jsx';
+import VerificationCard from '../components/verification/VerificationCard.jsx';
 
 function CheckIcon() {
   return (
@@ -77,6 +78,8 @@ export default function AuthenticatedHome({ user }) {
           </div>
         </section>
 
+        <VerificationCard user={user} />
+
         <div className="trust-note">
           <ShieldIcon />
           <p><strong>Your privacy comes first.</strong> Telegram credentials never leave Telegram; Dategram only receives signed profile data.</p>
@@ -84,7 +87,7 @@ export default function AuthenticatedHome({ user }) {
       </main>
       <footer className="phase-footer">
         <span className="phase-dot" />
-        Authentication complete
+        Onboarding and verification ready
       </footer>
     </div>
   );
