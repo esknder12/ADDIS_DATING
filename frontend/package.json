@@ -12,6 +12,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@dategram/shared": "0.1.0",
     "@twa-dev/sdk": "^8.0.2",
     "axios": "^1.7.9",
     "react": "^18.3.1",

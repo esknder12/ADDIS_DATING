@@ -5,7 +5,8 @@
   "description": "Dategram Telegram Mini App",
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "shared"
   ],
   "scripts": {
     "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors magenta,cyan \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",

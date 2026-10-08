@@ -29,10 +29,14 @@ Express API
 - **grammY:** avoids the deprecated `request` dependency chain in legacy Telegram bot clients.
 - **Tailwind v4 + custom CSS:** provides the planned utility system while keeping the screenshot-matched shell explicit and lightweight.
 
-## Phase 2 extension points
+## Phase 2 extension points (implemented)
 
-- Add `onboarding_answers` and `onboarding_progress` migrations beneath `backend/src/db/`.
-- Add protected onboarding routes using the existing auth middleware.
-- Route authenticated users according to `onboardingCompleted` in `App.jsx`.
-- Place question definitions in a pure data module, not page-level conditionals.
-- Keep Telegram native UI integration inside `frontend/src/lib/telegram.js`.
+Phase 2 used these boundaries as intended:
+
+- `onboarding_answers` and `onboarding_progress` now extend the PostgreSQL schema.
+- Protected onboarding routes reuse the Phase 1 authentication middleware.
+- `App.jsx` routes incomplete users into the questionnaire.
+- Question definitions live in the shared workspace rather than page-level conditionals.
+- Telegram haptics remain isolated in `frontend/src/lib/telegram.js`.
+
+See [`PHASE_2_ARCHITECTURE.md`](PHASE_2_ARCHITECTURE.md) for the current flow and persistence design.

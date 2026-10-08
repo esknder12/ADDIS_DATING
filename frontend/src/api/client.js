@@ -23,4 +23,27 @@ export async function getCurrentUser() {
   return response.data;
 }
 
+export async function getOnboardingState() {
+  const response = await apiClient.get('/api/onboarding');
+  return response.data;
+}
+
+export async function saveOnboardingAnswer(questionKey, answer, progress) {
+  const response = await apiClient.put(
+    `/api/onboarding/answers/${encodeURIComponent(questionKey)}`,
+    { answer, ...progress },
+  );
+  return response.data;
+}
+
+export async function saveOnboardingProgress(progress) {
+  const response = await apiClient.put('/api/onboarding/progress', progress);
+  return response.data;
+}
+
+export async function completeOnboarding() {
+  const response = await apiClient.post('/api/onboarding/complete');
+  return response.data;
+}
+
 export default apiClient;

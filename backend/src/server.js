@@ -2,6 +2,7 @@ import { createApp } from './app.js';
 import { initBot, stopBot } from './bot/bot.js';
 import { assertProductionConfig, config } from './config/env.js';
 import { closeDatabase, initDatabase } from './db/index.js';
+import { createOnboardingRepository } from './db/onboardingRepository.js';
 import { createUserRepository } from './db/userRepository.js';
 
 let server;
@@ -13,7 +14,8 @@ async function start() {
 
   const pool = await initDatabase(config);
   const userRepository = createUserRepository(pool);
-  const app = createApp({ runtimeConfig: config, userRepository });
+  const onboardingRepository = createOnboardingRepository(pool);
+  const app = createApp({ runtimeConfig: config, userRepository, onboardingRepository });
 
   server = app.listen(config.port, '0.0.0.0', () => {
     console.log(`🚀 Dategram API listening on http://0.0.0.0:${config.port}`);

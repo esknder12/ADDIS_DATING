@@ -2,7 +2,7 @@
 
 > Source of truth for rebuilding the Dategram Telegram Mini App from the supplied 86-screen reference set.
 >
-> **Implementation status:** Phase 1 (bot, Mini App shell, Telegram authentication, and user persistence) is implemented. The remaining screens below define Phases 2–8.
+> **Implementation status:** Phases 1 and 2 are implemented: bot/auth foundation plus the complete five-section, resumable onboarding questionnaire. Sections 4 onward define the next implementation phases.
 
 ## Contents
 

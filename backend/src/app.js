@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { checkDatabase } from './db/index.js';
 import { createAuthRouter } from './routes/auth.routes.js';
+import { createOnboardingRouter } from './routes/onboarding.routes.js';
 
 function createCorsOptions(runtimeConfig) {
   return {
@@ -20,7 +21,7 @@ function createCorsOptions(runtimeConfig) {
   };
 }
 
-export function createApp({ runtimeConfig, userRepository }) {
+export function createApp({ runtimeConfig, userRepository, onboardingRepository }) {
   const app = express();
 
   app.disable('x-powered-by');
@@ -55,6 +56,22 @@ export function createApp({ runtimeConfig, userRepository }) {
     '/api/auth',
     authLimiter,
     createAuthRouter({ userRepository, runtimeConfig }),
+  );
+
+  const onboardingLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 180,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+      error: { code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.' },
+    },
+  });
+
+  app.use(
+    '/api/onboarding',
+    onboardingLimiter,
+    createOnboardingRouter({ onboardingRepository, runtimeConfig }),
   );
 
   app.use('/api', (_req, res) => {

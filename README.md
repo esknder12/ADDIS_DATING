@@ -2,22 +2,34 @@
 
 **Dating with intention, right inside Telegram.**
 
-Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led dating. This repository currently contains the complete **Phase 1 foundation**: Telegram bot entry, signed Mini App authentication, PostgreSQL user persistence, and the React application shell.
+Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led dating. The repository contains the complete **Phase 1 foundation** and **Phase 2 onboarding experience**: Telegram authentication, PostgreSQL persistence, and the full five-section questionnaire.
 
-## Phase 1 status
+## Implementation status
+
+### Phase 1 — Foundation
 
 - ✅ `/start` bot command with a **Go to Dategram** Web App button
 - ✅ Telegram Mini App initialization and full-height mobile shell
 - ✅ Server-side validation of Telegram `initData`
 - ✅ Constant-time signature comparison and stale-payload rejection
 - ✅ PostgreSQL user creation/update on authenticated launch
-- ✅ `/api/auth/telegram`, `/api/auth/me`, and `/health` endpoints
-- ✅ Dategram splash, error, and authenticated states
 - ✅ Browser-only demo mode for local UI development
 - ✅ API rate limiting, security headers, CORS allowlist, and graceful shutdown
-- ✅ Unit tests for Telegram authentication and repository mapping
 
-The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/DATEGRAM_PRODUCT_SPEC.md). Phase 2 is the config-driven onboarding flow.
+### Phase 2 — Onboarding
+
+- ✅ Shared, config-driven sequence with 43 screens and 31 questions
+- ✅ All five sections: About You, Your Type, Lifestyle, Relationship Goals, Almost There
+- ✅ Single-select, multi-select, image-grid, categorized, numeric, and city inputs
+- ✅ Twelve photo, trust, algorithm, chart, badge, and testimonial interstitials
+- ✅ Segmented section progress, back navigation, haptics, selected states, and loading/error states
+- ✅ 18+ validation, known-city validation, and mutually exclusive “none” answers
+- ✅ Resumable PostgreSQL progress and JSONB answers
+- ✅ LocalStorage-backed browser preview with restart support
+- ✅ Original local onboarding imagery; no external image hotlinks
+- ✅ API and shared-flow test coverage
+
+The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/DATEGRAM_PRODUCT_SPEC.md).
 
 ## Repository layout
 
@@ -38,8 +50,11 @@ The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/D
 │   └── src/
 │       ├── api/
 │       ├── components/
+│       ├── hooks/
 │       ├── lib/
-│       └── pages/
+│       ├── pages/
+│       └── styles/
+├── shared/                      # one onboarding definition for web + API
 ├── compose.yaml                 # local PostgreSQL
 └── package.json                 # npm workspaces
 ```
@@ -133,6 +148,10 @@ Do not trust `initDataUnsafe` as server identity. It is used only for harmless l
 | `GET` | `/health` | Public | Service/database health |
 | `POST` | `/api/auth/telegram` | Telegram `tma` | Validate launch and upsert user |
 | `GET` | `/api/auth/me` | Telegram `tma` | Fetch current active user |
+| `GET` | `/api/onboarding` | Telegram `tma` | Resume answers and current step |
+| `PUT` | `/api/onboarding/answers/:key` | Telegram `tma` | Validate and persist an answer |
+| `PUT` | `/api/onboarding/progress` | Telegram `tma` | Persist interstitial/back progress |
+| `POST` | `/api/onboarding/complete` | Telegram `tma` | Verify all answers and complete onboarding |
 
 Error responses use a stable shape:
 
@@ -170,12 +189,13 @@ Terminate TLS at a trusted proxy, route `/api` to the Express service, serve the
 
 ## Next phase
 
-Phase 2 should add:
+Phase 3 is the post-onboarding result and conversion flow:
 
-1. Config-driven onboarding screen definitions
-2. Reusable single-select, multi-select, image-grid, and interstitial components
-3. Persisted onboarding answers and resumable progress
-4. Age and location validation
-5. Completion routing into the post-onboarding result flow
+1. Animated answer analysis and candidate-search stages
+2. Match Potential result card and score visualization
+3. Optional email and required name capture
+4. Personalized four-week Match Plan chart
+5. Accessible scratch-card discount interaction
+6. Routing from completed onboarding into results and then Discover
 
-See the product specification for exact question order, copy, states, and visual behavior.
+See the product specification for exact copy, order, states, and visual behavior.

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { initTelegramApp } from './lib/telegram.js';
 import AuthenticatedHome from './pages/AuthenticatedHome.jsx';
+import OnboardingFlow from './pages/OnboardingFlow.jsx';
 import Splash from './pages/Splash.jsx';
 
 export default function App() {
@@ -18,6 +19,10 @@ export default function App() {
 
   if (!initialized || !user) {
     return <Splash onAuthenticated={handleAuthenticated} />;
+  }
+
+  if (!user.onboardingCompleted) {
+    return <OnboardingFlow user={user} />;
   }
 
   return <AuthenticatedHome user={user} />;
