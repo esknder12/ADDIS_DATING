@@ -12,6 +12,12 @@ function toPositiveInteger(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function toBoundedInteger(value, fallback, min, max) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) return fallback;
+  return parsed;
+}
+
 function toList(value) {
   return String(value ?? '')
     .split(',')
@@ -34,6 +40,14 @@ export const config = Object.freeze({
   databaseUrl: process.env.DATABASE_URL?.trim() || '',
   databaseSsl: toBoolean(process.env.DATABASE_SSL, false),
   corsOrigins: toList(process.env.CORS_ORIGINS),
+  promoDiscountPercent: toBoundedInteger(process.env.PROMO_DISCOUNT_PERCENT, 50, 1, 100),
+  promoTtlDays: toPositiveInteger(process.env.PROMO_TTL_DAYS, 7),
+  // Salt for deterministic scoring/match-pool jitter. Any stable value works; changing it
+  // reshuffles scores on the next recalculation.
+  scoringSecret: process.env.SCORING_SECRET?.trim() || 'dategram-scoring',
+  // Phase 4 verification
+  adminApiToken: process.env.ADMIN_API_TOKEN?.trim() || '',
+  verificationExampleVideoId: process.env.VERIFICATION_EXAMPLE_VIDEO_ID?.trim() || '',
 });
 
 export function assertProductionConfig(runtimeConfig = config) {

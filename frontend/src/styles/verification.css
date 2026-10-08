@@ -1,0 +1,234 @@
+/* Phase 4 — bot-based video verification.
+   Hand-written CSS to match every other screen; Tailwind is imported but unused in this repo. */
+
+.verified-badge {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: #2a8bf2;
+  color: #fff;
+}
+
+.verified-badge svg {
+  fill: currentcolor;
+}
+
+/* V1 — modal */
+.verification-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--safe-bottom);
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(3px);
+}
+
+.verification-modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  padding: 28px 24px calc(24px + var(--safe-bottom));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px 24px 0 0;
+  background: #141416;
+  animation: verification-sheet 240ms ease;
+}
+
+@keyframes verification-sheet {
+  from { transform: translateY(14px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (min-width: 640px) {
+  .verification-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .verification-modal {
+    max-width: 380px;
+    border-radius: 24px;
+  }
+}
+
+.verification-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+}
+
+.verification-modal__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.verification-avatar {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 16px;
+}
+
+.verification-avatar img,
+.verification-avatar__initials {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  object-fit: cover;
+  font-size: 30px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.verification-avatar__badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  padding: 2px;
+  border-radius: 50%;
+  background: #141416;
+}
+
+.verification-modal h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.verification-copy {
+  margin: 10px 0 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.verification-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.verification-note {
+  margin: 0 0 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.verification-error {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #ff8095;
+}
+
+.verification-cta {
+  width: 100%;
+  min-height: 54px;
+  border: 0;
+  border-radius: 999px;
+  background: #35d07f;
+  color: #04150b;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.verification-cta:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.verification-cta:disabled {
+  opacity: 0.55;
+}
+
+.verification-cta--inline {
+  margin-top: 16px;
+}
+
+/* Host card */
+.verification-card {
+  margin-top: 18px;
+  padding: 18px 20px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(42, 139, 242, 0.14), transparent 55%),
+    rgba(255, 255, 255, 0.04);
+}
+
+.verification-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.verification-card__header .eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.verification-card__title {
+  margin: 10px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.verification-card__body {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.verification-card__hint {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.verification-card :is(button, [tabindex]):focus-visible,
+.verification-close:focus-visible {
+  outline: 2px solid #2a8bf2;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verification-modal {
+    animation: none;
+  }
+
+  .verification-cta:active:not(:disabled) {
+    transform: none;
+  }
+}

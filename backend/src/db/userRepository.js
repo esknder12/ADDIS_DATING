@@ -11,11 +11,24 @@ function mapUser(row) {
     languageCode: row.language_code,
     name: row.name,
     age: row.age,
+    gender: row.gender,
+    email: row.email || null,
     city: row.city,
     country: row.country,
     onboardingCompleted: row.onboarding_completed,
     isVerified: row.is_verified,
     isVip: row.is_vip,
+    resultsCompleted: Boolean(row.results_completed),
+    resultsViewedAt: row.results_viewed_at || null,
+    profileScore: row.profile_score ?? null,
+    scoreTier: row.score_tier || null,
+    datingStyle: row.dating_style || null,
+    matchPoolCount: row.match_pool_count ?? null,
+    responseRateMultiplier: row.response_rate_multiplier === null || row.response_rate_multiplier === undefined
+      ? null
+      : Number(row.response_rate_multiplier),
+    promoCode: row.promo_code || null,
+    promoDiscountPercent: row.promo_discount_percent ?? null,
     createdAt: row.created_at,
   };
 }
