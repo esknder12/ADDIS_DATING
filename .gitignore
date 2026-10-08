@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+coverage/
+
+# Runtime data and logs
+*.log
+*.pid
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+
+# Local database / scratch files
+*.sqlite
+*.sqlite3
+.tmp/
