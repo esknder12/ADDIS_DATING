@@ -19,23 +19,29 @@ export async function initDatabase(runtimeConfig = config) {
     return null;
   }
 
-  pool = new Pool({
-    connectionString: runtimeConfig.databaseUrl,
-    ssl: runtimeConfig.databaseSsl ? { rejectUnauthorized: false } : false,
-    max: 10,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
-  });
+  try {
+    pool = new Pool({
+      connectionString: runtimeConfig.databaseUrl,
+      ssl: runtimeConfig.databaseSsl ? { rejectUnauthorized: false } : false,
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+    });
 
-  pool.on('error', (error) => {
-    console.error('Unexpected PostgreSQL pool error:', error);
-  });
+    pool.on('error', (error) => {
+      console.error('Unexpected PostgreSQL pool error:', error);
+    });
 
-  const schema = await fs.readFile(path.join(dirname, 'schema.sql'), 'utf8');
-  await pool.query(schema);
-  console.log('✅ PostgreSQL schema initialized');
+    const schema = await fs.readFile(path.join(dirname, 'schema.sql'), 'utf8');
+    await pool.query(schema);
+    console.log('✅ PostgreSQL schema initialized');
 
-  return pool;
+    return pool;
+  } catch (error) {
+    console.warn('⚠️  PostgreSQL connection failed — persistence-backed routes are unavailable:', error.message);
+    pool = null;
+    return null;
+  }
 }
 
 export async function checkDatabase() {
