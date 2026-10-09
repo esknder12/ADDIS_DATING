@@ -1,22 +1,41 @@
 import { useEffect, useState } from 'react';
 import { authenticateUser } from '../api/client.js';
 import BrandMark from '../components/BrandMark.jsx';
+import { loadAppState, ONBOARDING_STORAGE_PREFIX } from '../lib/demoStore.js';
 import { getTelegramUser, isTelegramMiniApp, notify } from '../lib/telegram.js';
 
 const minimumSplashTime = 900;
 
+function demoOnboardingCompleted(telegramId) {
+  try {
+    const raw = window.localStorage.getItem(`${ONBOARDING_STORAGE_PREFIX}:${telegramId}`);
+    return Boolean(raw && JSON.parse(raw)?.completed);
+  } catch {
+    return false;
+  }
+}
+
 function demoUser() {
   const telegramUser = getTelegramUser();
+  const telegramId = String(telegramUser?.id || 1791462784);
+  const appState = loadAppState(telegramId);
   return {
     id: 'preview-user',
-    telegramId: String(telegramUser?.id || 1791462784),
+    telegramId,
     firstName: telegramUser?.first_name || 'Esknder',
     lastName: telegramUser?.last_name || 'Zinabie',
     username: telegramUser?.username || 'dategram_preview',
     photoUrl: telegramUser?.photo_url || null,
-    onboardingCompleted: false,
-    isVerified: false,
-    isVip: false,
+    onboardingCompleted: appState.conversionCompleted || demoOnboardingCompleted(telegramId),
+    conversionCompleted: appState.conversionCompleted,
+    isVerified: appState.verificationStatus === 'verified',
+    isVip: appState.isVip,
+    verificationStatus: appState.verificationStatus,
+    name: appState.name,
+    email: appState.email,
+    results: appState.results,
+    promoCode: appState.promoCode,
+    discountPercent: appState.discountPercent,
     isDemo: true,
   };
 }

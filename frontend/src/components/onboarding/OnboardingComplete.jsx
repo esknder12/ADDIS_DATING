@@ -1,7 +1,7 @@
 import { totalQuestionCount } from '@dategram/shared/onboarding';
 import BrandMark from '../BrandMark.jsx';
 
-export default function OnboardingComplete({ firstName }) {
+export default function OnboardingComplete({ firstName, onNext }) {
   return (
     <main className="onboarding-complete">
       <div className="completion-orbit" aria-hidden="true">
@@ -20,8 +20,11 @@ export default function OnboardingComplete({ firstName }) {
       </div>
       <div className="completion-next">
         <span>✦</span>
-        <div><strong>Match analysis is next</strong><p>Your personalized results flow begins in Phase 3.</p></div>
+        <div><strong>Match analysis is next</strong><p>See your match potential, your plan, and a welcome surprise.</p></div>
       </div>
+      <button type="button" className="onboarding-primary" onClick={onNext}>
+        START YOUR ANALYSIS
+      </button>
     </main>
   );
 }

@@ -28,7 +28,7 @@ function ErrorState({ message, onRetry }) {
   );
 }
 
-export default function OnboardingFlow({ user }) {
+export default function OnboardingFlow({ user, onFinished }) {
   const onboarding = useOnboarding(user);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function OnboardingFlow({ user }) {
           demo={user.isDemo}
           onRestart={onboarding.restartPreview}
         />
-        <OnboardingComplete firstName={user.firstName} />
+        <OnboardingComplete firstName={user.firstName} onNext={onFinished} />
       </div>
     );
   }

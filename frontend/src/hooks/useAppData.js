@@ -4,7 +4,6 @@ import {
   applyDiscount as apiApplyDiscount,
   getDiscoverProfiles,
   getLikes,
-  getMatches,
   getMessages,
   postMessage,
   postSwipe,
