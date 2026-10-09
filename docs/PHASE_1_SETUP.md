@@ -46,6 +46,25 @@ Check: `node --version` prints `v20` or higher.
 You do **not** need to create tables. The API runs `backend/src/db/schema.sql` on every start
 (`CREATE TABLE IF NOT EXISTS …`), so an empty database is exactly right.
 
+**Shortcut with the Neon CLI (optional, avoids copy-paste mistakes).** The project ID is shown in
+the Neon dashboard URL / project settings. Run this inside the `ADDIS_DATING` folder on your PC
+(it needs a browser for the login, so it cannot run in a remote sandbox):
+
+```bash
+npm i -g neon@latest
+neon login                                                            # opens your browser
+neon link --project-id <your-project-id> --branch production -y --no-env-pull
+neon env pull --file backend/.env --env DATABASE_URL                  # writes ONLY DATABASE_URL into backend/.env
+```
+
+`neon env pull` updates just the Neon variable and preserves every other line in `backend/.env`
+(your `BOT_TOKEN` stays). Then set `DATABASE_SSL=true` and continue with Step 3.
+
+The Neon dashboard also offers an "agent setup" snippet (`neon skills`, `neon mcp`, `neon config init`,
+`neon deploy`). Those steps install Neon helpers into coding agents on your computer and set up
+config-as-code for Neon Auth / Functions / Data API — Dategram uses none of those, so they are not
+required for Phase 1.
+
 Tip: Neon's free database "sleeps" after a few minutes without traffic and wakes up on the next
 query. The first request after a pause may take 1–2 seconds — that is normal.
 
