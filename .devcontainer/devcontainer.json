@@ -1,0 +1,11 @@
+{
+  "name": "Dategram",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "forwardPorts": [3000, 4000],
+  "portsAttributes": {
+    "3000": { "label": "Dategram Mini App (make Public, use as WEBAPP_URL)", "onAutoForward": "notify" },
+    "4000": { "label": "Dategram API", "onAutoForward": "silent" }
+  },
+  "postCreateCommand": "npm install",
+  "postAttachCommand": "echo 'Dategram: create backend/.env (see docs/PHASE_1_SETUP.md), then run: npm run dev'"
+}

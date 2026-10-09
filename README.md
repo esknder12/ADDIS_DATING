@@ -138,6 +138,9 @@ The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/D
 
 ## Quick start
 
+> First time? Follow the click-by-click walkthrough in [`docs/PHASE_1_SETUP.md`](docs/PHASE_1_SETUP.md)
+> (Neon database, HTTPS tunnel, BotFather), and run `npm run doctor` to check your configuration.
+
 ### 1. Install dependencies
 
 ```bash
@@ -276,6 +279,7 @@ Error responses use a stable shape:
 npm run dev       # API + Vite dev server
 npm run dev:api   # API only
 npm run dev:web   # frontend only
+npm run doctor    # check backend/.env: bot token, WEBAPP_URL, database, running API
 npm test          # backend unit tests
 npm run build     # production frontend build
 npm run check     # tests + production build
