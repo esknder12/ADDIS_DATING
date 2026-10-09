@@ -43,4 +43,45 @@ export function closeMiniApp() {
   safely(() => WebApp.close());
 }
 
+export function showTelegramMainButton(text, onClick) {
+  safely(() => {
+    WebApp.MainButton.setText(text);
+    WebApp.MainButton.onClick(onClick);
+    WebApp.MainButton.show();
+    WebApp.MainButton.enable();
+  });
+  return () => safely(() => {
+    WebApp.MainButton.offClick(onClick);
+    WebApp.MainButton.hideProgress();
+    WebApp.MainButton.hide();
+  });
+}
+
+export function setTelegramMainButtonEnabled(enabled) {
+  safely(() => (enabled ? WebApp.MainButton.enable() : WebApp.MainButton.disable()));
+}
+
+export function setTelegramMainButtonLoading(loading) {
+  safely(() => {
+    if (loading) {
+      WebApp.MainButton.showProgress(false);
+      WebApp.MainButton.disable();
+    } else {
+      WebApp.MainButton.hideProgress();
+      WebApp.MainButton.enable();
+    }
+  });
+}
+
+export function showTelegramBackButton(onClick) {
+  safely(() => {
+    WebApp.BackButton.onClick(onClick);
+    WebApp.BackButton.show();
+  });
+  return () => safely(() => {
+    WebApp.BackButton.offClick(onClick);
+    WebApp.BackButton.hide();
+  });
+}
+
 export default WebApp;

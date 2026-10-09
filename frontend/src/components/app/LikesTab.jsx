@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { impact } from '../../lib/telegram.js';
 import EmptyState from './EmptyState.jsx';
 import { VerifiedBadge } from './icons.jsx';
+import BoostBanner from './BoostBanner.jsx';
 
 function formatTime(iso) {
   if (!iso) return '';
@@ -13,8 +14,19 @@ function formatTime(iso) {
     : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-export default function LikesTab({ likedYou, matches, isVip, onOpenProfile, onOpenChat, onShowPaywall }) {
+export default function LikesTab({
+  likedYou,
+  matches,
+  isVip,
+  boost,
+  boostBusy,
+  onActivateBoost,
+  onOpenProfile,
+  onOpenChat,
+  onShowPaywall,
+}) {
   const [segment, setSegment] = useState('liked');
+  const lockedCount = likedYou.filter((member, index) => member.isLocked ?? (!isVip && index >= 1)).length;
 
   return (
     <div className="tab-stage">
@@ -45,36 +57,45 @@ export default function LikesTab({ likedYou, matches, isVip, onOpenProfile, onOp
       {segment === 'liked' && (likedYou.length === 0 ? (
         <EmptyState
           icon={<ClockPersonIcon />}
-          heading="Inbox reactions"
-          copy="When someone will send a reaction on your profile we will notify you"
+          heading="No likes yet"
+          copy="When someone likes your profile, they’ll appear here."
         />
       ) : (
         <>
-          {!isVip && (
-            <button type="button" className="unlock-banner" onClick={onShowPaywall}>
+          {lockedCount > 0 && (
+            <button type="button" className="unlock-banner" onClick={() => onShowPaywall('likes')}>
               <span aria-hidden="true">🔒</span>
-              <span><strong>{likedYou.length} {likedYou.length === 1 ? 'person likes' : 'people like'} you</strong><small>Go VIP to see who and message them first</small></span>
+              <span><strong>{lockedCount} {lockedCount === 1 ? 'like is' : 'likes are'} waiting</strong><small>Go VIP to see who else likes you</small></span>
             </button>
           )}
           <ul className="likes-grid">
-            {likedYou.map((member) => (
-              <li key={member.id}>
-                <button
-                  type="button"
-                  className={`like-card${isVip ? '' : ' like-card--blurred'}`}
-                  onClick={() => (isVip ? onOpenProfile(member) : onShowPaywall(member))}
-                  aria-label={isVip ? `Open ${member.name}'s profile` : 'Hidden admirer — unlock with VIP'}
-                >
-                  <img src={member.photo} alt="" loading="lazy" aria-hidden={!isVip} />
-                  {isVip && (
-                    <div className="like-card__info">
-                      <strong>{member.name} {member.age} {member.verified && <VerifiedBadge />}</strong>
-                    </div>
-                  )}
-                  {!isVip && <span className="like-card__lock" aria-hidden="true">🔒</span>}
-                </button>
-              </li>
-            ))}
+            {likedYou.map((member, index) => {
+              const isLocked = member.isLocked ?? (!isVip && index >= 1);
+              const photo = member.photo || member.blurredPhotoUrl;
+              return (
+                <li key={member.swipeId || member.id}>
+                  <button
+                    type="button"
+                    className={`like-card${isLocked ? ' like-card--blurred' : ''}`}
+                    onClick={() => (isLocked ? onShowPaywall('likes') : onOpenProfile(member))}
+                    aria-label={isLocked ? 'Hidden admirer — unlock with VIP' : `Open ${member.name}'s profile`}
+                  >
+                    {photo && <img src={photo} alt="" loading="lazy" aria-hidden={isLocked} />}
+                    {!isLocked && (
+                      <div className="like-card__info">
+                        <strong>{member.name} {member.age} {member.verified && <VerifiedBadge />}</strong>
+                      </div>
+                    )}
+                    {isLocked && (
+                      <span className="like-card__lock" aria-hidden="true">
+                        <span>🔒</span>
+                        <small>Someone likes you<br /><strong>Find out who</strong></small>
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </>
       ))}
@@ -82,8 +103,8 @@ export default function LikesTab({ likedYou, matches, isVip, onOpenProfile, onOp
       {segment === 'matches' && (matches.length === 0 ? (
         <EmptyState
           icon={<ClockPersonIcon />}
-          heading="Inbox reactions"
-          copy="When someone will send a reaction on your profile we will notify you"
+          heading="No matches yet"
+          copy="When you both like each other, you can start chatting here."
         />
       ) : (
         <ul className="match-list">
@@ -105,6 +126,8 @@ export default function LikesTab({ likedYou, matches, isVip, onOpenProfile, onOp
           ))}
         </ul>
       ))}
+
+      <BoostBanner boost={boost} busy={boostBusy} onActivate={onActivateBoost} />
     </div>
   );
 }

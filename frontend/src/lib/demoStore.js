@@ -7,6 +7,19 @@ function appKey(telegramId) {
   return `${APP_STORAGE_PREFIX}:${telegramId}`;
 }
 
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function demoCompatibilityScore(seed) {
+  let value = 0;
+  for (const char of String(seed)) value = (value * 31 + char.charCodeAt(0)) >>> 0;
+  return 76 + (value % 21);
+}
+
 function blankState() {
   return {
     conversionCompleted: false,
@@ -19,6 +32,8 @@ function blankState() {
     verificationStatus: 'none',
     swipes: [], // [{ profileId, action, at }]
     matches: [], // [{ id, profileId, at, messages: [{ id, sender, body, at }], gifted: [] }]
+    aiPickSessions: {}, // keyed by local calendar date
+    boost: null,
     giftRefs: [],
     lastReplyIndex: {},
   };
@@ -54,7 +69,7 @@ export function loadOnboardingAnswers(telegramId) {
 
 /** Public-safe member shape, same as the API returns. */
 function toPublic(member) {
-  const { likesYouBack, replies, ...rest } = member;
+  const { likesYou, likesYouBack, replies, ...rest } = member;
   return rest;
 }
 
@@ -92,6 +107,16 @@ export function createDemoStore(telegramId) {
       return state;
     },
 
+    updateProfile(patch) {
+      const state = read();
+      const allowed = ['name', 'bio', 'city', 'country', 'additionalInfo', 'settings', 'profileScore', 'profileScoreReady'];
+      for (const field of allowed) {
+        if (Object.hasOwn(patch, field)) state[field] = patch[field];
+      }
+      write(state);
+      return state;
+    },
+
     applyDiscount({ promoCode, percent }) {
       const state = read();
       state.promoCode = promoCode;
@@ -100,12 +125,85 @@ export function createDemoStore(telegramId) {
       return state;
     },
 
-    listDiscover() {
+    listDiscover({ limit = memberCatalog.length, offset = 0 } = {}) {
       const state = read();
       const swiped = new Set(state.swipes.map((swipe) => swipe.profileId));
-      return seededOrder(memberCatalog, `${telegramId}:discover`)
+      const available = seededOrder(memberCatalog, `${telegramId}:discover`)
         .filter((member) => !swiped.has(member.id))
         .map(toPublic);
+      const safeOffset = Math.max(0, Number.isSafeInteger(offset) ? offset : 0);
+      const safeLimit = Math.max(1, Number.isSafeInteger(limit) ? limit : memberCatalog.length);
+      return {
+        profiles: available.slice(safeOffset, safeOffset + safeLimit),
+        hasMore: available.length > safeOffset + safeLimit,
+      };
+    },
+
+    listAiPicks() {
+      const state = read();
+      const today = localDateKey();
+      state.aiPickSessions ||= {};
+      let session = state.aiPickSessions[today];
+      let changed = false;
+
+      const createItems = (limit, existingItems = []) => {
+        const existingIds = new Set(existingItems.map((item) => item.profileId));
+        const swipedIds = new Set(state.swipes.map((swipe) => swipe.profileId));
+        const ordered = seededOrder(memberCatalog, `${telegramId}:${today}:ai-picks:${existingItems.length}`)
+          .filter((member) => !existingIds.has(member.id) && !swipedIds.has(member.id));
+        const preferred = ordered.filter((member) => member.verified && member.city === 'Addis Ababa');
+        const preferredIds = new Set(preferred.map((member) => member.id));
+        const candidates = [
+          ...preferred,
+          ...ordered.filter((member) => !preferredIds.has(member.id)),
+        ].slice(0, Math.max(0, limit - existingItems.length));
+        return [
+          ...existingItems,
+          ...candidates.map((member, index) => ({
+            profileId: member.id,
+            compatibilityScore: demoCompatibilityScore(`${telegramId}:${today}:${member.id}`),
+            orderIndex: existingItems.length + index,
+          })),
+        ];
+      };
+
+      if (!session) {
+        const picksLimit = state.isVip ? 15 : 5;
+        session = { picksLimit, items: createItems(picksLimit), createdAt: new Date().toISOString() };
+        state.aiPickSessions[today] = session;
+        changed = true;
+      } else if (state.isVip && session.picksLimit < 15) {
+        session.items = createItems(15, session.items);
+        session.picksLimit = 15;
+        changed = true;
+      }
+
+      const swipedIds = new Set(state.swipes.map((swipe) => swipe.profileId));
+      const picks = session.items
+        .filter((item) => !swipedIds.has(item.profileId))
+        .map((item) => {
+          const member = getMember(item.profileId);
+          return member ? {
+            ...toPublic(member),
+            compatibilityScore: item.compatibilityScore,
+            orderIndex: item.orderIndex,
+          } : null;
+        })
+        .filter(Boolean);
+      const picksShown = session.items.filter((item) => swipedIds.has(item.profileId)).length;
+      if (session.picksShown !== picksShown) {
+        session.picksShown = picksShown;
+        changed = true;
+      }
+      if (changed) write(state);
+
+      return {
+        picks,
+        picksRemaining: picks.length,
+        dailyLimit: session.picksLimit,
+        picksShown,
+        isVip: Boolean(state.isVip),
+      };
     },
 
     saveSwipe(profileId, action) {
@@ -140,24 +238,40 @@ export function createDemoStore(telegramId) {
     rewindLastSwipe() {
       const state = read();
       const last = state.swipes[state.swipes.length - 1];
-      if (!last) return { restored: null };
+      if (!last) return { restored: null, restoredProfile: null };
       state.swipes = state.swipes.slice(0, -1);
       if (last.action !== 'pass') {
         state.matches = state.matches.filter((match) => match.profileId !== last.profileId);
       }
       write(state);
-      return { restored: last.profileId };
+      const member = getMember(last.profileId);
+      return {
+        restored: last.profileId,
+        restoredProfile: member ? toPublic(member) : null,
+      };
     },
 
     listLikes() {
       const state = read();
       const swiped = new Set(state.swipes.map((swipe) => swipe.profileId));
       const matchedIds = new Set(state.matches.map((match) => match.profileId));
+      const isVip = Boolean(state.isVip);
+      const likedProfiles = memberCatalog
+        .filter((member) => member.likesYou && !swiped.has(member.id) && !matchedIds.has(member.id));
       return {
-        likedYou: memberCatalog
-          .filter((member) => member.likesYou && !swiped.has(member.id) && !matchedIds.has(member.id))
-          .map(toPublic),
+        likedYou: likedProfiles.map((member, index) => {
+          if (isVip || index === 0) return { ...toPublic(member), isLocked: false };
+          const swipeId = `demo-like-${index + 1}`;
+          return {
+            id: `locked-${swipeId}`,
+            swipeId,
+            isLocked: true,
+            teaserText: 'Someone has fallen in love with you',
+            blurredPhotoUrl: '/images/locked-admirer.svg',
+          };
+        }),
         matches: [...state.matches].sort((a, b) => b.at.localeCompare(a.at)).map(publicMatch),
+        isVip,
       };
     },
 
@@ -216,6 +330,29 @@ export function createDemoStore(telegramId) {
       if (match) match.gifted.push({ giftId, stars, at: new Date().toISOString() });
       write(state);
       return { sent: true };
+    },
+
+    getBoostStatus() {
+      const state = read();
+      const expiresAt = state.boost?.expiresAt || null;
+      const isActive = Boolean(expiresAt && new Date(expiresAt).getTime() > Date.now());
+      return {
+        isActive,
+        boost: isActive ? state.boost : null,
+      };
+    },
+
+    activateBoost() {
+      const state = read();
+      const current = state.boost;
+      if (current?.expiresAt && new Date(current.expiresAt).getTime() > Date.now()) {
+        return { isActive: true, alreadyActive: true, boost: current };
+      }
+      const startedAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      state.boost = { id: 'demo-boost', startedAt, expiresAt };
+      write(state);
+      return { isActive: true, alreadyActive: false, boost: state.boost };
     },
 
     activatePremium({ planId, promoCode, percent }) {

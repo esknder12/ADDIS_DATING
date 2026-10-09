@@ -39,9 +39,12 @@ export default function DiscoverTab({
   const act = useCallback(async (action) => {
     if (!top || busy) return;
     setBusy(true);
+    impact(action === 'pass' ? 'light' : 'medium');
     try {
       const outcome = await onSwipe(top.id, action);
       if (outcome?.matched && outcome.profile) onMatch(outcome.profile);
+    } catch (error) {
+      console.error('Swipe failed:', error);
     } finally {
       setBusy(false);
     }
@@ -88,7 +91,10 @@ export default function DiscoverTab({
         <SwipeCard
           key={top.id}
           member={top}
-          onSwipe={(direction) => act(direction === 'right' ? 'like' : 'pass')}
+          interactive={!busy}
+          onSwipe={(direction) => act(
+            direction === 'right' ? 'like' : direction === 'up' ? 'super_like' : 'pass',
+          )}
           onExpand={onOpenProfile}
         />
       </div>

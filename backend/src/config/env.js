@@ -25,6 +25,7 @@ export const config = Object.freeze({
   nodeEnv,
   isProduction: nodeEnv === 'production',
   port: toPositiveInteger(process.env.PORT, 4000),
+  adminApiKey: process.env.ADMIN_API_KEY?.trim() || '',
   botToken: process.env.BOT_TOKEN?.trim() || '',
   webappUrl: process.env.WEBAPP_URL?.trim() || '',
   telegramAuthMaxAgeSeconds: toPositiveInteger(
@@ -33,6 +34,9 @@ export const config = Object.freeze({
   ),
   databaseUrl: process.env.DATABASE_URL?.trim() || '',
   databaseSsl: toBoolean(process.env.DATABASE_SSL, false),
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME?.trim() || '',
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY?.trim() || '',
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET?.trim() || '',
   corsOrigins: toList(process.env.CORS_ORIGINS),
 });
 

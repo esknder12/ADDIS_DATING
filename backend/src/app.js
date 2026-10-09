@@ -3,9 +3,18 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { checkDatabase } from './db/index.js';
+import { createAdminRouter } from './routes/admin.routes.js';
+import { createAiPicksRouter } from './routes/aiPicks.routes.js';
 import { createAppRouter } from './routes/app.routes.js';
+import { createBoostRouter } from './routes/boost.routes.js';
+import { createChatsRouter } from './routes/chats.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
+import { createDiscoveryRouter } from './routes/discovery.routes.js';
+import { createLikesRouter } from './routes/likes.routes.js';
+import { createMatchesRouter } from './routes/matches.routes.js';
 import { createOnboardingRouter } from './routes/onboarding.routes.js';
+import { createProfileRouter } from './routes/profile.routes.js';
+import { createSwipeRouter } from './routes/swipe.routes.js';
 
 function createCorsOptions(runtimeConfig) {
   return {
@@ -17,7 +26,7 @@ function createCorsOptions(runtimeConfig) {
       return callback(new Error('Origin is not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Key'],
     maxAge: 86_400,
   };
 }
@@ -27,9 +36,13 @@ export function createApp({
   userRepository,
   onboardingRepository,
   appRepository = { isAvailable: false },
+  bot = null,
+  notificationService = null,
 }) {
   const app = express();
 
+  app.set('bot', bot);
+  app.set('notificationService', notificationService);
   app.disable('x-powered-by');
   if (runtimeConfig.isProduction) app.set('trust proxy', 1);
 
@@ -90,11 +103,33 @@ export function createApp({
     },
   });
 
+  // The /api/app routes remain available as backwards-compatible aliases.
+  app.use('/api/discovery', appLimiter, createDiscoveryRouter({ appRepository, runtimeConfig }));
+  app.use('/api/swipe', appLimiter, createSwipeRouter({ appRepository, runtimeConfig }));
+  app.use('/api/ai-picks', appLimiter, createAiPicksRouter({ appRepository, runtimeConfig }));
+  app.use('/api/likes', appLimiter, createLikesRouter({ appRepository, runtimeConfig }));
+  app.use('/api/matches', appLimiter, createMatchesRouter({ appRepository, runtimeConfig }));
+  app.use('/api/boost', appLimiter, createBoostRouter({ appRepository, runtimeConfig }));
+  const adminLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 20,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+      error: { code: 'RATE_LIMITED', message: 'Too many admin requests. Please slow down.' },
+    },
+  });
+  app.use('/api/admin', adminLimiter, createAdminRouter({ appRepository, runtimeConfig }));
   app.use(
     '/api/app',
     appLimiter,
     createAppRouter({ appRepository, onboardingRepository, runtimeConfig }),
   );
+  app.use('/api/chats', appLimiter, createChatsRouter({ appRepository, runtimeConfig }));
+  app.use('/api/profile', appLimiter, createProfileRouter({ appRepository, runtimeConfig }));
+  // Additive aliases for clients that consume all application endpoints below /api/app.
+  app.use('/api/app/chats', appLimiter, createChatsRouter({ appRepository, runtimeConfig }));
+  app.use('/api/app/profile', appLimiter, createProfileRouter({ appRepository, runtimeConfig }));
 
   app.use('/api', (_req, res) => {
     res.status(404).json({
