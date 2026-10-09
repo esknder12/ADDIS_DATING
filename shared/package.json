@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./onboarding": "./src/onboarding.js"
+    "./onboarding": "./src/onboarding.js",
+    "./results": "./src/results.js",
+    "./catalog": "./src/catalog.js"
   }
 }

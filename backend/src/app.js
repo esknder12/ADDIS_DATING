@@ -3,6 +3,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { checkDatabase } from './db/index.js';
+import { createAppRouter } from './routes/app.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { createOnboardingRouter } from './routes/onboarding.routes.js';
 
@@ -15,13 +16,18 @@ function createCorsOptions(runtimeConfig) {
       if (runtimeConfig.corsOrigins.includes(origin)) return callback(null, true);
       return callback(new Error('Origin is not allowed by CORS'));
     },
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     maxAge: 86_400,
   };
 }
 
-export function createApp({ runtimeConfig, userRepository, onboardingRepository }) {
+export function createApp({
+  runtimeConfig,
+  userRepository,
+  onboardingRepository,
+  appRepository = { isAvailable: false },
+}) {
   const app = express();
 
   app.disable('x-powered-by');
@@ -72,6 +78,22 @@ export function createApp({ runtimeConfig, userRepository, onboardingRepository 
     '/api/onboarding',
     onboardingLimiter,
     createOnboardingRouter({ onboardingRepository, runtimeConfig }),
+  );
+
+  const appLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 240,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+      error: { code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.' },
+    },
+  });
+
+  app.use(
+    '/api/app',
+    appLimiter,
+    createAppRouter({ appRepository, onboardingRepository, runtimeConfig }),
   );
 
   app.use('/api', (_req, res) => {

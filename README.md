@@ -2,7 +2,7 @@
 
 **Dating with intention, right inside Telegram.**
 
-Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led dating. The repository contains the complete **Phase 1 foundation** and **Phase 2 onboarding experience**: Telegram authentication, PostgreSQL persistence, and the full five-section questionnaire.
+Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led dating. The repository contains the complete **Phase 1 foundation**, **Phase 2 onboarding experience**, **Phase 3 results/conversion flow**, and **Phase 4 main app**: Telegram authentication, PostgreSQL persistence, the full five-section questionnaire, animated results with server-recomputed match scoring, and the five-tab dating app (Discover, AI Picks, Likes, Chat, Profile).
 
 ## Implementation status
 
@@ -29,6 +29,28 @@ Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led d
 - ✅ Original local onboarding imagery; no external image hotlinks
 - ✅ API and shared-flow test coverage
 
+### Phase 3 — Results and conversion
+
+- ✅ Animated "Analyzing your answers" checklist and candidate-search ring with rotating reviews
+- ✅ Match Potential result card (type, dating style, match pool, response rate) with the score **recomputed server-side** from onboarding answers
+- ✅ Optional email and required name capture with shared validators
+- ✅ Personalized four-week Match Plan chart (SVG, illustrative disclaimer included)
+- ✅ Accessible scratch-card discount (canvas + tap alternative, auto-reveal threshold) applying promo `dategram_oct26` (50%)
+- ✅ Routing from completed onboarding into results, then into the main app
+
+### Phase 4 — Main app
+
+- ✅ Persistent five-tab bottom navigation: Discover, AI Picks, Likes, Chat, Profile
+- ✅ Discover swipe deck: pointer gestures with button parity, rewind (swipe + match undo), super like, boosted/filter controls, expand-to-profile
+- ✅ AI Picks curation sequence with cached daily selections
+- ✅ Likes & Matches: segmented control, blurred admirers until VIP, exact empty states
+- ✅ One-to-one chat gated by the mutual-match safety invariant on both client and API
+- ✅ Own profile: VIP card, verification row, settings groups, AI Profile Score placeholder, Looking-for summary built from answers
+- ✅ Other-user profile: gift shop (rose/ring/diamond ⭐ with idempotent transactions), report action, swipe actions
+- ✅ Bot-based verification: in-app modal, `/verify` instructions, native `video_note` submission moving verification to pending
+- ✅ VIP activation with promo-code validation; production fulfillment path documented for Telegram Stars invoices
+- ✅ Browser demo mode mirrors every API route against localStorage; owned local demo catalog, no external image hotlinks
+
 The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/DATEGRAM_PRODUCT_SPEC.md).
 
 ## Repository layout
@@ -47,14 +69,15 @@ The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/D
 │   └── test/
 ├── frontend/
 │   ├── public/
+│   │   └── images/            # owned onboarding + demo profile imagery
 │   └── src/
 │       ├── api/
-│       ├── components/
+│       ├── components/        # onboarding/, results/, app/ feature components
 │       ├── hooks/
 │       ├── lib/
-│       ├── pages/
+│       ├── pages/             # OnboardingFlow, ResultsFlow, MainApp
 │       └── styles/
-├── shared/                      # one onboarding definition for web + API
+├── shared/                    # onboarding, results, catalog — one definition for web + API
 ├── compose.yaml                 # local PostgreSQL
 └── package.json                 # npm workspaces
 ```
@@ -152,6 +175,18 @@ Do not trust `initDataUnsafe` as server identity. It is used only for harmless l
 | `PUT` | `/api/onboarding/answers/:key` | Telegram `tma` | Validate and persist an answer |
 | `PUT` | `/api/onboarding/progress` | Telegram `tma` | Persist interstitial/back progress |
 | `POST` | `/api/onboarding/complete` | Telegram `tma` | Verify all answers and complete onboarding |
+| `GET` | `/api/app/results` | Telegram `tma` | Recompute match result from stored answers |
+| `POST` | `/api/app/conversion` | Telegram `tma` | Validate + persist name/email lead and close conversion |
+| `POST` | `/api/app/discount` | Telegram `tma` | Validate and apply the scratch-card promo code |
+| `GET` | `/api/app/discover` | Telegram `tma` | Un-swiped discovery profiles for the user |
+| `POST` | `/api/app/swipes` | Telegram `tma` | Record pass/like/super_like; create match on mutual like |
+| `DELETE` | `/api/app/swipes/last` | Telegram `tma` | Rewind the latest swipe (undoes its match) |
+| `GET` | `/api/app/likes` | Telegram `tma` | Admirers + matches |
+| `GET` | `/api/app/matches` | Telegram `tma` | Matches with last message |
+| `GET`/`POST` | `/api/app/matches/:id/messages` | Telegram `tma` | Chat history / send (match-gated, rule 11) |
+| `POST` | `/api/app/gifts` | Telegram `tma` | Idempotent Telegram Stars gift transactions |
+| `POST` | `/api/app/premium/activate` | Telegram `tma` | VIP activation with promo validation |
+| `POST` | `/api/app/verification/request` | Telegram `tma` | Move video-note verification to pending |
 
 Error responses use a stable shape:
 
@@ -189,13 +224,12 @@ Terminate TLS at a trusted proxy, route `/api` to the Express service, serve the
 
 ## Next phase
 
-Phase 3 is the post-onboarding result and conversion flow:
+Phase 5 hardens the main app for real traffic:
 
-1. Animated answer analysis and candidate-search stages
-2. Match Potential result card and score visualization
-3. Optional email and required name capture
-4. Personalized four-week Match Plan chart
-5. Accessible scratch-card discount interaction
-6. Routing from completed onboarding into results and then Discover
+1. Replace the demo catalog with real verified user discovery (the catalog API contract stays identical)
+2. Telegram Stars invoice confirmation before VIP/gift fulfillment (endpoints already validate and record idempotently)
+3. Verification moderation pipeline flipping `pending` to `is_verified`
+4. Server-rendered partner replies (real-time messaging transport)
+5. Mobile-viewport E2E coverage for the swipe deck, results flow, and paywall
 
 See the product specification for exact copy, order, states, and visual behavior.
