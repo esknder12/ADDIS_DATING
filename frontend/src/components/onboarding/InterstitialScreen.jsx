@@ -1,5 +1,4 @@
 import { impact } from '../../lib/telegram.js';
-import MatchGrowthChart from '../onboarding-results/MatchGrowthChart.jsx';
 
 function PhotoVisual({ step, verified = false }) {
   return (
@@ -105,7 +104,26 @@ function GrowthChart() {
   return (
     <div className="growth-card">
       <div className="growth-callout"><span>▣</span><strong>40 women in Addis Ababa are free on weekends</strong></div>
-      <MatchGrowthChart />
+      <div className="growth-chart">
+        <div className="growth-chart__labels"><span>12</span><span>8</span><span>4</span><span>0</span></div>
+        <svg viewBox="0 0 330 170" role="img" aria-label="Matches increase from 2 in week one to 12 in week four">
+          <defs>
+            <linearGradient id="growth-line" x1="0" y1="0" x2="1" y2="0">
+              <stop stopColor="#ff7c96" />
+              <stop offset="1" stopColor="#ff2d55" />
+            </linearGradient>
+            <linearGradient id="growth-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop stopColor="#ff2d55" stopOpacity=".34" />
+              <stop offset="1" stopColor="#ff2d55" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <g className="growth-grid"><path d="M15 20H320M15 62H320M15 104H320M15 146H320" /></g>
+          <path className="growth-area" d="M22 137C70 134 92 116 121 108S178 91 207 71s64-49 108-53v128H22Z" />
+          <path className="growth-line" d="M22 137C70 134 92 116 121 108S178 91 207 71s64-49 108-53" />
+          <circle cx="22" cy="137" r="5" /><circle cx="315" cy="18" r="5" />
+        </svg>
+        <div className="growth-weeks"><span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span></div>
+      </div>
     </div>
   );
 }

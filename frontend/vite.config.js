@@ -6,15 +6,26 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react()],
-    test: {
-      environment: 'jsdom',
-      globals: true,
-      include: ['src/**/*.test.{js,jsx}'],
-    },
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'health-endpoint',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url === '/health') {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ status: 'ok', service: 'dategram', timestamp: new Date().toISOString() }));
+              return;
+            }
+            next();
+          });
+        },
+      },
+    ],
     server: {
       host: '0.0.0.0',
-      port: 5173,
+      port: 3000,
       strictPort: true,
       allowedHosts: true,
       proxy: {
@@ -22,15 +33,11 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:4000',
           changeOrigin: true,
         },
-        '/health': {
-          target: env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:4000',
-          changeOrigin: true,
-        },
       },
     },
     preview: {
       host: '0.0.0.0',
-      port: 5173,
+      port: 3000,
       strictPort: true,
       allowedHosts: true,
     },

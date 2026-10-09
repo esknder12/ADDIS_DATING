@@ -1,0 +1,7 @@
+{
+  "name": "Dategram",
+  "description": "Dategram — dating with intention, right inside Telegram.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

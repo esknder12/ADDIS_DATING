@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./onboarding": "./src/onboarding.js",
-    "./scoring": "./src/scoring.js"
+    "./onboarding": "./src/onboarding.js"
   }
 }

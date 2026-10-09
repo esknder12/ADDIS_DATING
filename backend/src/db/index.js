@@ -3,7 +3,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { config } from '../config/env.js';
-import { runMigrations } from './migrate.js';
 
 const { Pool } = pg;
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,14 +34,6 @@ export async function initDatabase(runtimeConfig = config) {
   const schema = await fs.readFile(path.join(dirname, 'schema.sql'), 'utf8');
   await pool.query(schema);
   console.log('✅ PostgreSQL schema initialized');
-
-  const migrations = await runMigrations(pool);
-  const appliedCount = migrations.filter((migration) => migration.applied).length;
-  console.log(
-    appliedCount > 0
-      ? `✅ Applied ${appliedCount} migration(s): ${migrations.filter((m) => m.applied).map((m) => m.name).join(', ')}`
-      : `✅ Migrations up to date (${migrations.length} recorded)`,
-  );
 
   return pool;
 }
