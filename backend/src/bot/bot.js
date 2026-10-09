@@ -25,6 +25,16 @@ export function initBot(runtimeConfig, { appRepository } = {}) {
 
   const bot = new Bot(runtimeConfig.botToken);
 
+  bot.api.setChatMenuButton({
+    menu_button: {
+      type: 'web_app',
+      text: 'Open Dategram',
+      web_app: { url: runtimeConfig.webappUrl },
+    },
+  }).catch((error) => {
+    console.warn('Could not set the persistent Dategram chat button:', error.message);
+  });
+
   const dategramKeyboard = () => new InlineKeyboard().webApp('Go to Dategram', runtimeConfig.webappUrl);
 
   bot.command('start', async (context) => {

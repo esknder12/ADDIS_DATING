@@ -54,7 +54,10 @@ export default function ProfileDetailSheet({
             <div className="detail-hero__scrim" aria-hidden="true" />
             <div className="detail-hero__info">
               <h2>{member.name} <span aria-hidden="true">{member.emoji}</span> {member.age} {member.verified && <VerifiedBadge size={20} />}</h2>
-              <p>{member.city}, {member.country} · {member.distanceKm} km away</p>
+              <p>
+                {[member.city, member.country].filter(Boolean).join(', ')}
+                {member.distanceKm != null && ` · ${member.distanceKm} km away`}
+              </p>
             </div>
           </div>
 

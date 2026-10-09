@@ -7,6 +7,8 @@ import {
 } from '@dategram/shared/results';
 import { Router } from 'express';
 import { createTelegramAuthMiddleware } from '../middleware/telegramAuth.js';
+import { dispatchChatMessage } from '../socket/chatEvents.js';
+import { notifyAfterSwipe } from './swipeNotifications.js';
 
 const swipeActions = new Set(['pass', 'like', 'super_like']);
 
@@ -125,8 +127,19 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
   router.get('/discover', async (req, res, next) => {
     try {
       if (!repositoriesAvailable()) return unavailableResponse(res);
-      const profiles = await appRepository.listDiscover(req.telegramUser.id);
-      return res.json({ success: true, profiles });
+      const rawLimit = Number.parseInt(req.query.limit, 10);
+      const rawOffset = Number.parseInt(req.query.offset, 10);
+      const result = await appRepository.listDiscover(req.telegramUser.id, {
+        limit: Number.isFinite(rawLimit) ? rawLimit : 10,
+        offset: Number.isFinite(rawOffset) ? rawOffset : 0,
+      });
+      if (result === null) return userNotFound(res);
+      const profiles = Array.isArray(result) ? result : result.profiles;
+      return res.json({
+        success: true,
+        profiles: profiles || [],
+        hasMore: Array.isArray(result) ? false : Boolean(result.hasMore),
+      });
     } catch (error) {
       return next(error);
     }
@@ -144,9 +157,16 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
       const outcome = await appRepository.saveSwipe(req.telegramUser.id, profileId, action);
       if (!outcome) return userNotFound(res);
       if (!outcome.profile) {
-        return invalid(res, 'Unknown profile.', 'UNKNOWN_PROFILE');
+        return invalid(res, 'Unknown or unavailable profile.', 'UNKNOWN_PROFILE');
       }
-      return res.json({ success: true, matched: outcome.matched, profile: outcome.profile });
+      await notifyAfterSwipe(req, outcome);
+      return res.json({
+        success: true,
+        matched: outcome.matched,
+        isMatch: outcome.matched,
+        match: outcome.match || null,
+        profile: outcome.profile,
+      });
     } catch (error) {
       return next(error);
     }
@@ -162,7 +182,11 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
           error: { code: 'NOTHING_TO_REWIND', message: 'There is no swipe to undo yet.' },
         });
       }
-      return res.json({ success: true, restored: outcome.restored });
+      return res.json({
+        success: true,
+        restored: outcome.restored,
+        restoredProfile: outcome.restoredProfile || null,
+      });
     } catch (error) {
       return next(error);
     }
@@ -213,7 +237,14 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
         return invalid(res, 'Messages must be 1–2000 characters.');
       }
 
-      const message = await appRepository.addMessage(req.telegramUser.id, req.params.matchId, body);
+      let created = null;
+      let message;
+      if (typeof appRepository.createMessageForTelegramId === 'function') {
+        created = await appRepository.createMessageForTelegramId(req.telegramUser.id, req.params.matchId, body);
+        message = created?.message || null;
+      } else {
+        message = await appRepository.addMessage(req.telegramUser.id, req.params.matchId, body);
+      }
       if (!message) {
         return res.status(403).json({
           error: {
@@ -222,7 +253,15 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
           },
         });
       }
-      return res.status(201).json({ success: true, message });
+      const published = created
+        ? await dispatchChatMessage({
+          io: req.app.get('io'),
+          appRepository,
+          bot: req.app.get('bot'),
+          notificationService: req.app.get('notificationService'),
+        }, created)
+        : null;
+      return res.status(201).json({ success: true, message: published || message });
     } catch (error) {
       return next(error);
     }

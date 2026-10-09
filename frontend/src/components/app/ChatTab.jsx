@@ -29,7 +29,10 @@ export default function ChatTab({ matches, onOpenChat }) {
       ) : (
         <ul className="match-list">
           {matches.map((match) => {
-            const unread = match.lastMessage?.sender === 'profile';
+            const unreadCount = Number(match.unreadCount ?? (match.lastMessage?.sender === 'profile' ? 1 : 0));
+            const preview = match.lastMessage
+              ? `${match.lastMessage.sender === 'user' ? 'You: ' : ''}${match.lastMessage.body}`
+              : 'Say hi to your new match 👋';
             return (
               <li key={match.id}>
                 <button
@@ -40,9 +43,13 @@ export default function ChatTab({ matches, onOpenChat }) {
                   <img className="match-row__avatar" src={match.profile.photo} alt="" />
                   <span className="match-row__body">
                     <strong>{match.profile.name} {match.profile.verified && <VerifiedBadge />}</strong>
-                    <small>{match.lastMessage ? match.lastMessage.body : 'Say hi to your new match 👋'}</small>
+                    <small>{preview}</small>
                   </span>
-                  {unread && <span className="unread-dot" aria-label="Unread messages" />}
+                  {unreadCount > 0 && (
+                    <span className="chat-unread-badge" aria-label={`${unreadCount} unread messages`}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </button>
               </li>
             );

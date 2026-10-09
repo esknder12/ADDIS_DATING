@@ -5,6 +5,7 @@ import MainApp from './pages/MainApp.jsx';
 import OnboardingFlow from './pages/OnboardingFlow.jsx';
 import ResultsFlow from './pages/ResultsFlow.jsx';
 import Splash from './pages/Splash.jsx';
+import { SocketProvider } from './context/SocketContext.jsx';
 
 function initialStage(user) {
   if (!user.onboardingCompleted) return 'onboarding';
@@ -13,8 +14,8 @@ function initialStage(user) {
 }
 
 function Session({ user }) {
-  const appData = useAppData(user);
   const [stage, setStage] = useState(() => initialStage(user));
+  const appData = useAppData(user, { active: stage === 'app' });
 
   if (stage === 'onboarding') {
     return <OnboardingFlow user={user} onFinished={() => setStage('results')} />;
@@ -33,7 +34,11 @@ function Session({ user }) {
     );
   }
 
-  return <MainApp user={user} appData={appData} />;
+  return (
+    <SocketProvider enabled={stage === 'app' && !user.isDemo}>
+      <MainApp user={user} appData={appData} />
+    </SocketProvider>
+  );
 }
 
 export default function App() {

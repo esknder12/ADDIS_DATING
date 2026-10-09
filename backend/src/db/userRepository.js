@@ -23,7 +23,10 @@ function mapUser(row) {
     verificationStatus: row.verification_status || 'none',
     onboardingCompleted: row.onboarding_completed,
     isVerified: row.is_verified,
-    isVip: row.is_vip,
+    isVip: Boolean(row.is_vip)
+      && (!row.vip_expires_at || new Date(row.vip_expires_at).getTime() > Date.now()),
+    vipExpiresAt: row.vip_expires_at || null,
+    vipGrantedReason: row.vip_granted_reason || null,
     createdAt: row.created_at,
   };
 }

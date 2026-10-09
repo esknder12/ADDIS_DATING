@@ -24,6 +24,7 @@ const runtimeConfig = {
   isProduction: false,
   corsOrigins: [],
   botToken,
+  adminApiKey: 'phase-test-admin-key',
   telegramAuthMaxAgeSeconds: 86_400,
 };
 
@@ -58,18 +59,57 @@ const appRepository = {
     calls.push(['applyDiscount', ...args]);
     return { saved: true };
   },
-  async listDiscover() {
-    return [];
+  async listDiscover(telegramId, options) {
+    calls.push(['listDiscover', telegramId, options]);
+    return { profiles: [{ id: '23', name: 'Test Profile' }], hasMore: true };
+  },
+  async listAiPicks(telegramId) {
+    calls.push(['listAiPicks', telegramId]);
+    return {
+      picks: [{ id: '24', name: 'Curated Date', compatibilityScore: 88 }],
+      picksRemaining: 1,
+      dailyLimit: 5,
+      isVip: false,
+    };
+  },
+  async activateBoost(telegramId) {
+    calls.push(['activateBoost', telegramId]);
+    return { isActive: true, alreadyActive: false, boost: { id: '9', expiresAt: '2026-10-09T10:00:00Z' } };
+  },
+  async getBoostStatus(telegramId) {
+    calls.push(['getBoostStatus', telegramId]);
+    return { isActive: false, boost: null };
+  },
+  async grantVip(userId, months, reason) {
+    calls.push(['grantVip', userId, months, reason]);
+    return { id: String(userId), telegramId: '135792468', expiresAt: '2027-04-09T00:00:00Z', reason };
   },
   async saveSwipe(telegramId, profileId, action) {
     calls.push(['saveSwipe', telegramId, profileId, action]);
-    return { matched: profileId === 'rodas' && action !== 'pass', profile: { id: profileId } };
+    const matched = ['rodas', '123'].includes(profileId) && action !== 'pass';
+    return {
+      matched,
+      profile: { id: profileId, name: 'Test Profile', photo: '/images/profiles/p01.jpg' },
+      match: matched ? {
+        id: '8',
+        matchedUser: { id: profileId, name: 'Test Profile', photo: '/images/profiles/p01.jpg' },
+      } : null,
+    };
   },
   async rewindLastSwipe() {
     return { restored: null };
   },
   async listLikes() {
-    return { likedYou: [], matches: [] };
+    return {
+      likedYou: [
+        { id: '34', swipeId: '51', isLocked: false, name: 'One Free Like', age: 26, photo: '/photo.jpg', verified: true },
+        { id: 'locked-52', swipeId: '52', isLocked: true, teaserText: 'Someone likes you', blurredPhotoUrl: '/blurred.jpg' },
+      ],
+      matches: [],
+      isVip: false,
+      totalLikes: 2,
+      lockedCount: 1,
+    };
   },
   async listMatches() {
     return [{ id: '7', profile: { id: 'rodas', name: 'Rodas' }, lastMessage: null }];
@@ -177,6 +217,42 @@ describe('app routes (phase 3 conversion)', () => {
 });
 
 describe('app routes (phase 4 discovery, matching, chat)', () => {
+  it('serves the authenticated, paginated Phase 5 discovery endpoint', async () => {
+    const response = await request('/api/discovery?limit=10&offset=4');
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.success, true);
+    assert.equal(body.profiles[0].id, '23');
+    assert.equal(body.hasMore, true);
+    const call = calls.filter((entry) => entry[0] === 'listDiscover').at(-1);
+    assert.equal(call[1], 135792468);
+    assert.deepEqual(call[2], { limit: 10, offset: 4 });
+  });
+
+  it('accepts superlike and returns the Phase 5 match payload', async () => {
+    const response = await request('/api/swipe', {
+      method: 'POST',
+      body: JSON.stringify({ swipedUserId: 123, action: 'superlike' }),
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.isMatch, true);
+    assert.equal(body.match.id, '8');
+    assert.equal(body.match.matchedUser.photo_url, '/images/profiles/p01.jpg');
+    assert.deepEqual(calls.find((entry) => entry[0] === 'saveSwipe').slice(1), [
+      135792468,
+      '123',
+      'super_like',
+    ]);
+  });
+
+  it('returns a not-found response when Phase 5 rewind has no swipe', async () => {
+    const response = await request('/api/swipe/rewind', { method: 'POST' });
+    assert.equal(response.status, 404);
+    const body = await response.json();
+    assert.equal(body.error.code, 'NO_SWIPE_TO_REWIND');
+  });
+
   it('records a swipe and reports the match outcome', async () => {
     const response = await request('/api/app/swipes', {
       method: 'POST',
@@ -263,8 +339,88 @@ describe('app routes (phase 4 discovery, matching, chat)', () => {
     assert.equal(body.error.code, 'NOTHING_TO_REWIND');
   });
 
-  it('still requires Telegram authentication', async () => {
-    const response = await fetch(`${baseUrl}/api/app/discover`);
-    assert.equal(response.status, 401);
+  it('returns a stable, authenticated AI Picks session payload', async () => {
+    const response = await request('/api/ai-picks');
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.picks[0].compatibilityScore, 88);
+    assert.equal(body.dailyLimit, 5);
+    assert.equal(body.picksRemaining, 1);
+  });
+
+  it('locks all but the free preview in the Likes API response', async () => {
+    const response = await request('/api/likes/received');
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.totalCount, 2);
+    assert.equal(body.lockedCount, 1);
+    assert.equal(body.likes[0].isLocked, false);
+    assert.equal(body.likes[0].userId, '34');
+    assert.equal(body.likes[1].isLocked, true);
+    assert.equal(body.likes[1].blurredPhotoUrl, '/blurred.jpg');
+    assert.equal('userId' in body.likes[1], false);
+    assert.equal('photoUrl' in body.likes[1], false);
+
+    const legacy = await request('/api/app/likes');
+    assert.equal(legacy.status, 200);
+    const legacyBody = await legacy.json();
+    assert.equal(legacyBody.likedYou[1].isLocked, true);
+    assert.equal('photo' in legacyBody.likedYou[1], false);
+    assert.equal('name' in legacyBody.likedYou[1], false);
+  });
+
+  it('serves shared match and match-authorized messages through Phase 7 aliases', async () => {
+    const matches = await request('/api/matches');
+    assert.equal(matches.status, 200);
+    assert.equal((await matches.json()).matches[0].id, '7');
+
+    const message = await request('/api/matches/7/messages', {
+      method: 'POST',
+      body: JSON.stringify({ content: 'Selam from the new route!' }),
+    });
+    assert.equal(message.status, 201);
+    assert.equal((await message.json()).message.body, 'Selam from the new route!');
+  });
+
+  it('activates a 30-minute profile boost and reports its status', async () => {
+    const activated = await request('/api/boost/activate', { method: 'POST' });
+    assert.equal(activated.status, 200);
+    assert.equal((await activated.json()).isActive, true);
+    const status = await request('/api/boost/status');
+    assert.equal(status.status, 200);
+    assert.equal((await status.json()).isActive, false);
+  });
+
+  it('protects admin VIP grants with the configured admin key', async () => {
+    const denied = await request('/api/admin/vip/grant', {
+      method: 'POST',
+      body: JSON.stringify({ userId: 34, months: 6, reason: 'promo_gift' }),
+    });
+    assert.equal(denied.status, 401);
+
+    const granted = await request('/api/admin/vip/grant', {
+      method: 'POST',
+      headers: { 'x-admin-key': 'phase-test-admin-key' },
+      body: JSON.stringify({ userId: 34, months: 6, reason: 'promo_gift' }),
+    });
+    assert.equal(granted.status, 200);
+    assert.equal((await granted.json()).grant.reason, 'promo_gift');
+  });
+
+  it('still requires Telegram authentication on both legacy and Phase 5 routes', async () => {
+    const legacy = await fetch(`${baseUrl}/api/app/discover`);
+    const discovery = await fetch(`${baseUrl}/api/discovery`);
+    const swipe = await fetch(`${baseUrl}/api/swipe/rewind`, { method: 'POST' });
+    const aiPicks = await fetch(`${baseUrl}/api/ai-picks`);
+    const likes = await fetch(`${baseUrl}/api/likes/received`);
+    const matches = await fetch(`${baseUrl}/api/matches`);
+    const boost = await fetch(`${baseUrl}/api/boost/status`);
+    assert.equal(legacy.status, 401);
+    assert.equal(discovery.status, 401);
+    assert.equal(swipe.status, 401);
+    assert.equal(aiPicks.status, 401);
+    assert.equal(likes.status, 401);
+    assert.equal(matches.status, 401);
+    assert.equal(boost.status, 401);
   });
 });

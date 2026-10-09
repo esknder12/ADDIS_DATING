@@ -28,6 +28,17 @@ describe('userRepository', () => {
     assert.equal(user.onboardingCompleted, false);
   });
 
+  it('expires VIP access according to the database timestamp', () => {
+    const expiredVip = mapUser({
+      id: 43,
+      telegram_id: 123456790,
+      is_vip: true,
+      vip_expires_at: new Date(Date.now() - 1_000),
+    });
+    assert.equal(expiredVip.isVip, false);
+    assert.ok(expiredVip.vipExpiresAt);
+  });
+
   it('exposes a predictable unavailable repository without a pool', async () => {
     const repository = createUserRepository(null);
     assert.equal(repository.isAvailable, false);
