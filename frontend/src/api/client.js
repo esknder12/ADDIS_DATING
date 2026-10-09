@@ -46,4 +46,76 @@ export async function completeOnboarding() {
   return response.data;
 }
 
+/* Phase 3 — conversion results */
+
+export async function getMatchResults() {
+  const response = await apiClient.get('/api/app/results');
+  return response.data;
+}
+
+export async function saveConversion({ name, email }) {
+  const response = await apiClient.post('/api/app/conversion', { name, email });
+  return response.data;
+}
+
+export async function applyDiscount(promoCode) {
+  const response = await apiClient.post('/api/app/discount', { promoCode });
+  return response.data;
+}
+
+/* Phase 4 — discovery, likes, matches, chat, gifts, premium, verification */
+
+export async function getDiscoverProfiles() {
+  const response = await apiClient.get('/api/app/discover');
+  return response.data;
+}
+
+export async function postSwipe(profileId, action) {
+  const response = await apiClient.post('/api/app/swipes', { profileId, action });
+  return response.data;
+}
+
+export async function rewindLastSwipe() {
+  const response = await apiClient.delete('/api/app/swipes/last');
+  return response.data;
+}
+
+export async function getLikes() {
+  const response = await apiClient.get('/api/app/likes');
+  return response.data;
+}
+
+export async function getMatches() {
+  const response = await apiClient.get('/api/app/matches');
+  return response.data;
+}
+
+export async function getMessages(matchId) {
+  const response = await apiClient.get(`/api/app/matches/${encodeURIComponent(matchId)}/messages`);
+  return response.data;
+}
+
+export async function postMessage(matchId, body) {
+  const response = await apiClient.post(
+    `/api/app/matches/${encodeURIComponent(matchId)}/messages`,
+    { body },
+  );
+  return response.data;
+}
+
+export async function sendGift({ profileId, giftId, clientRef }) {
+  const response = await apiClient.post('/api/app/gifts', { profileId, giftId, clientRef });
+  return response.data;
+}
+
+export async function activatePremium({ planId, promoCode }) {
+  const response = await apiClient.post('/api/app/premium/activate', { planId, promoCode });
+  return response.data;
+}
+
+export async function requestVerification() {
+  const response = await apiClient.post('/api/app/verification/request');
+  return response.data;
+}
+
 export default apiClient;
