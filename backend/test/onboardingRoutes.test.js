@@ -101,7 +101,7 @@ describe('onboarding routes', () => {
       method: 'PUT',
       body: JSON.stringify({
         answer: 16,
-        currentStepIndex: 37,
+        currentStepIndex: 36,
         currentStepKey: 'location',
       }),
     });

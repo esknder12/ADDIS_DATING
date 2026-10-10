@@ -482,22 +482,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'match-your-rhythm',
-    kind: 'interstitial',
-    section: 'lifestyle',
-    variant: 'photo',
-    title: 'Meet women who match your rhythm.',
-    body: "Whether you're a night-out person or a Sunday-at-home person, we'll show you women whose lifestyle actually fits yours.",
-    image: image.lifestyle,
-    imageAlt: 'A calm weekend at home',
-    variants: {
-      female: {
-        title: 'Meet men who match your rhythm.',
-        body: "Whether you're a night-out person or a Sunday-at-home person, we'll show you men whose lifestyle actually fits yours.",
-      },
-    },
-  },
-  {
     key: 'ideal_first_date',
     kind: 'question',
     section: 'lifestyle',
@@ -506,6 +490,22 @@ const rawFlow = [
     title: "What's your ideal first date?",
     autoAdvance: true,
     heroImage: image.social,
+    banner: {
+      title: 'Meet women who match your rhythm.',
+      body: "Whether you're a night-out person or a Sunday-at-home person, we'll show you women whose lifestyle actually fits yours.",
+      image: image.lifestyle,
+      imageAlt: 'A calm weekend at home',
+    },
+    variants: {
+      female: {
+        banner: {
+          title: 'Meet men who match your rhythm.',
+          body: "Whether you're a night-out person or a Sunday-at-home person, we'll show you men whose lifestyle actually fits yours.",
+          image: image.lifestyle,
+          imageAlt: 'A calm weekend at home',
+        },
+      },
+    },
     options: [
       { id: 'coffee_walk', label: 'Coffee and a walk' },
       { id: 'dinner_drinks', label: 'Dinner and drinks' },
