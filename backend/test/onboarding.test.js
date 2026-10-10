@@ -105,11 +105,11 @@ describe('onboarding configuration', () => {
 });
 
 describe('gender-conditional (IF) onboarding', () => {
-  it('asks gender as "I am a man" / "I am a woman"', () => {
+  it('asks gender as "Male" / "Female"', () => {
     const gender = onboardingStepByKey.get('gender');
     assert.deepEqual(
       gender.options.map((option) => option.label),
-      ['I am a man', 'I am a woman'],
+      ['Male', 'Female'],
     );
     assert.equal(validateOnboardingAnswer('gender', 'male').valid, true);
     assert.equal(validateOnboardingAnswer('gender', 'female').valid, true);

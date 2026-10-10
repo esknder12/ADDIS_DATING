@@ -10,8 +10,8 @@ export const onboardingSections = [
  * Gender-conditional ("IF") onboarding.
  *
  * The first question (`gender`) branches the rest of the journey:
- * - IF the user picks "I am a man"   -> he sees women/she/her copy.
- * - IF the user picks "I am a woman" -> she sees men/he/him copy.
+ * - IF the user picks "Male"   -> he sees women/she/her copy.
+ * - IF the user picks "Female" -> she sees men/he/him copy.
  *
  * Two mechanisms implement the branch:
  * 1. `variants: { male: {...}, female: {...} }` overrides copy (title, subtitle,
@@ -68,8 +68,8 @@ const rawFlow = [
     title: "What's your gender?",
     autoAdvance: true,
     options: [
-      { id: 'male', label: 'I am a man', icon: '♂' },
-      { id: 'female', label: 'I am a woman', icon: '♀' },
+      { id: 'male', label: 'Male', icon: '♂' },
+      { id: 'female', label: 'Female', icon: '♀' },
     ],
   },
   {
