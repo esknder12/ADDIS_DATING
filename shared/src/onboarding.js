@@ -117,21 +117,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'different-dating',
-    kind: 'interstitial',
-    section: 'about-you',
-    variant: 'photo',
-    title: 'Dating that actually works differently.',
-    body: "Our AI matching learns your type and shows you women you'll actually click with, instead of endless random swipes. People here are motivated to meet, not just to scroll. That's why we're growing fast.",
-    image: image.lifestyle,
-    imageAlt: 'A woman relaxing at home',
-    variants: {
-      female: {
-        body: "Our AI matching learns your type and shows you men you'll actually click with, instead of endless random swipes. People here are motivated to meet, not just to scroll. That's why we're growing fast.",
-      },
-    },
-  },
-  {
     key: 'looking_for',
     kind: 'question',
     section: 'about-you',
@@ -139,6 +124,22 @@ const rawFlow = [
     layout: 'pills',
     title: 'What are you looking for right now?',
     subtitle: 'Choose all that apply',
+    banner: {
+      title: 'Dating that actually works differently.',
+      body: "Our AI matching learns your type and shows you women you'll actually click with, instead of endless random swipes. People here are motivated to meet, not just to scroll. That's why we're growing fast.",
+      image: image.lifestyle,
+      imageAlt: 'A woman relaxing at home',
+    },
+    variants: {
+      female: {
+        banner: {
+          title: 'Dating that actually works differently.',
+          body: "Our AI matching learns your type and shows you men you'll actually click with, instead of endless random swipes. People here are motivated to meet, not just to scroll. That's why we're growing fast.",
+          image: image.lifestyle,
+          imageAlt: 'A woman relaxing at home',
+        },
+      },
+    },
     options: [
       { id: 'serious_relationship', label: 'Serious relationship', icon: '⚭' },
       { id: 'dating_and_seeing', label: 'Dating & seeing where it goes', icon: '💬' },
