@@ -1,7 +1,7 @@
 import {
-  getRequiredKeysForGender,
   isOnboardingComplete,
   onboardingFlow,
+  requiredQuestionKeys,
   validateOnboardingAnswer,
 } from '@dategram/shared/onboarding';
 
@@ -87,8 +87,6 @@ export function createOnboardingRepository(pool) {
         await client.query('UPDATE users SET gender = $1 WHERE id = $2', [value, userId]);
       } else if (questionKey === 'age') {
         await client.query('UPDATE users SET age = $1 WHERE id = $2', [value, userId]);
-      } else if (questionKey === 'bio') {
-        await client.query('UPDATE users SET bio = $1 WHERE id = $2', [value, userId]);
       } else if (questionKey === 'location') {
         await client.query(
           'UPDATE users SET city = $1, country = $2 WHERE id = $3',
@@ -158,7 +156,7 @@ export function createOnboardingRepository(pool) {
       const answers = answersFromRows(answerResult.rows);
 
       if (!isOnboardingComplete(answers)) {
-        const missingKeys = getRequiredKeysForGender(answers.gender).filter(
+        const missingKeys = requiredQuestionKeys.filter(
           (key) => !validateOnboardingAnswer(key, answers[key]).valid,
         );
         await client.query('ROLLBACK');

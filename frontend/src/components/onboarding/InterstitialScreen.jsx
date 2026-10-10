@@ -10,8 +10,19 @@ function PhotoVisual({ step, verified = false }) {
   );
 }
 
-// Shared with question banners (see MatchPreviewCard.jsx).
-import MatchPreview from './MatchPreviewCard.jsx';
+function MatchPreview() {
+  return (
+    <div className="sample-match-card">
+      <img src="/images/onboarding-social.jpg" alt="Sample match profile" />
+      <span className="sample-match-card__shade" />
+      <div className="sample-match-card__copy">
+        <strong>Roxy, 26 <b>✓</b></strong>
+        <span>Looking for a meaningful connection</span>
+      </div>
+      <div className="sample-match-card__compatibility">94% match</div>
+    </div>
+  );
+}
 
 function AvatarCluster() {
   const avatars = [
@@ -89,11 +100,10 @@ function Testimonials({ step }) {
   );
 }
 
-function GrowthChart({ gender }) {
-  const lookingForNoun = gender === 'female' ? 'men' : 'women';
+function GrowthChart() {
   return (
     <div className="growth-card">
-      <div className="growth-callout"><span>▣</span><strong>40 {lookingForNoun} in Addis Ababa are free on weekends</strong></div>
+      <div className="growth-callout"><span>▣</span><strong>40 women in Addis Ababa are free on weekends</strong></div>
       <div className="growth-chart">
         <div className="growth-chart__labels"><span>12</span><span>8</span><span>4</span><span>0</span></div>
         <svg viewBox="0 0 330 170" role="img" aria-label="Matches increase from 2 in week one to 12 in week four">
@@ -132,22 +142,22 @@ function TrustBadges({ step }) {
   );
 }
 
-function Visual({ gender, step }) {
+function Visual({ step }) {
   switch (step.variant) {
     case 'photo': return <PhotoVisual step={step} />;
     case 'verified-photo': return <PhotoVisual step={step} verified />;
-    case 'match-preview': return <MatchPreview gender={gender} />;
+    case 'match-preview': return <MatchPreview />;
     case 'avatar-cluster': return <AvatarCluster />;
     case 'success-check': return <SuccessCheck />;
     case 'algorithm': return <AlgorithmVisual />;
     case 'testimonials': return <Testimonials step={step} />;
-    case 'growth-chart': return <GrowthChart gender={gender} />;
+    case 'growth-chart': return <GrowthChart />;
     case 'badges': return <TrustBadges step={step} />;
     default: return null;
   }
 }
 
-export default function InterstitialScreen({ gender, step, onContinue, saving, error }) {
+export default function InterstitialScreen({ step, onContinue, saving, error }) {
   async function continueFlow() {
     if (saving) return;
     impact('medium');
@@ -159,13 +169,13 @@ export default function InterstitialScreen({ gender, step, onContinue, saving, e
   return (
     <section className={`interstitial-screen interstitial-screen--${step.variant}`}>
       <div className="interstitial-scroll">
-        {visualFirst && <Visual gender={gender} step={step} />}
+        {visualFirst && <Visual step={step} />}
         <div className="interstitial-copy">
           {step.eyebrow && <span className="interstitial-eyebrow">{step.eyebrow}</span>}
           <h1>{step.title}</h1>
           {step.body && <p>{step.body}</p>}
         </div>
-        {!visualFirst && <Visual gender={gender} step={step} />}
+        {!visualFirst && <Visual step={step} />}
         {error && <p className="onboarding-error" role="alert">{error}</p>}
       </div>
       <div className="question-footer">
