@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { computeMatchResult, resultsFlow } from '@dategram/shared/results';
+import { computeMatchResult, getResultsFlowForGender } from '@dategram/shared/results';
 import { getOnboardingState } from '../api/client.js';
 import { AnswerAnalysisScreen, CandidateSearchScreen } from '../components/results/AnalysisScreens.jsx';
 import {
@@ -31,7 +31,8 @@ export default function ResultsFlow({ user, appData, onFinished }) {
   const [error, setError] = useState('');
   const advancedRef = useRef(false);
 
-  const step = resultsFlow[stepIndex];
+  const flow = useMemo(() => getResultsFlowForGender(answers?.gender), [answers]);
+  const step = flow[stepIndex] || flow[0];
   useEffect(() => { advancedRef.current = false; }, [stepIndex]);
 
   useEffect(() => {
@@ -58,13 +59,13 @@ export default function ResultsFlow({ user, appData, onFinished }) {
     advancedRef.current = true;
     setError('');
     setStepIndex((index) => {
-      if (index >= resultsFlow.length - 1) {
+      if (index >= flow.length - 1) {
         window.setTimeout(onFinished, 0);
         return index;
       }
       return index + 1;
     });
-  }, [onFinished]);
+  }, [flow.length, onFinished]);
 
   const finish = useCallback(() => {
     if (advancedRef.current) return;

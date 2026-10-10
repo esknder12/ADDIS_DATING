@@ -144,7 +144,8 @@ function StandardOptions({ step, value, setValue, submitSingle }) {
   );
 }
 
-function LocationInput({ value, onChange }) {
+function LocationInput({ gender, value, onChange }) {
+  const lookingForNoun = gender === 'female' ? 'men' : 'women';
   const [query, setQuery] = useState(value ? `${value.name}, ${value.country}` : '');
   const suggestions = useMemo(() => filterLocations(query), [query]);
 
@@ -200,7 +201,7 @@ function LocationInput({ value, onChange }) {
         <div className="location-confirmation">
           <span className="location-confirmation__icon">⌖</span>
           <div>
-            <strong>11 women active in {value.name} this week</strong>
+            <strong>11 {lookingForNoun} active in {value.name} this week</strong>
             <p>Most of them replied to a message in the last 24 hours.</p>
           </div>
         </div>
@@ -209,9 +210,10 @@ function LocationInput({ value, onChange }) {
   );
 }
 
-function NumberInput({ step, value, onChange }) {
+function NumberInput({ gender, step, value, onChange }) {
   const numericValue = Number(value);
   const valid = Number.isInteger(numericValue) && numericValue >= step.min && numericValue <= step.max;
+  const isFemale = gender === 'female';
 
   return (
     <div className="age-field">
@@ -234,8 +236,16 @@ function NumberInput({ step, value, onChange }) {
         <div className="age-insight">
           <span>✓</span>
           <div>
-            <strong>Great news: women 25–34 are the most active group here</strong>
-            <p>Men your age get 2.3× more replies than the average.</p>
+            <strong>
+              {isFemale
+                ? 'Great news: men 25–34 are the most active group here'
+                : 'Great news: women 25–34 are the most active group here'}
+            </strong>
+            <p>
+              {isFemale
+                ? 'Women your age get 2.3× more replies than the average.'
+                : 'Men your age get 2.3× more replies than the average.'}
+            </p>
           </div>
         </div>
       )}
@@ -243,7 +253,7 @@ function NumberInput({ step, value, onChange }) {
   );
 }
 
-export default function QuestionScreen({ step, savedAnswer, onSubmit, saving, error }) {
+export default function QuestionScreen({ step, gender, savedAnswer, onSubmit, saving, error }) {
   const [value, setValue] = useState(() => initialValue(step, savedAnswer));
   const [selectionPending, setSelectionPending] = useState(false);
   const timerRef = useRef(null);
@@ -290,9 +300,9 @@ export default function QuestionScreen({ step, savedAnswer, onSubmit, saving, er
         )}
 
         {step.input === 'number' ? (
-          <NumberInput step={step} value={value} onChange={setValue} />
+          <NumberInput gender={gender} step={step} value={value} onChange={setValue} />
         ) : step.input === 'location' ? (
-          <LocationInput value={value} onChange={setValue} />
+          <LocationInput gender={gender} value={value} onChange={setValue} />
         ) : (
           <StandardOptions
             step={step}

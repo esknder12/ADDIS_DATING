@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  isStepVisibleForGender,
+  normalizeGender,
   onboardingFlow,
+  resolveOnboardingStep,
   validateOnboardingAnswer,
 } from '@dategram/shared/onboarding';
 import {
@@ -23,18 +26,42 @@ function errorMessage(error) {
     || 'We could not save your answer. Please try again.';
 }
 
+function genderOf(answers) {
+  return normalizeGender(answers?.gender);
+}
+
+/**
+ * Snap a raw step index to the nearest step that belongs to this gender's
+ * journey (steps with `showFor` set are skipped). Raw indices stay stable so
+ * the API key/index validation keeps working unchanged.
+ */
+function snapToVisibleIndex(requestedIndex, answers, direction = 1) {
+  const gender = genderOf(answers);
+  let index = Math.min(Math.max(requestedIndex, 0), onboardingFlow.length - 1);
+  while (
+    index >= 0
+    && index < onboardingFlow.length
+    && !isStepVisibleForGender(onboardingFlow[index], gender)
+  ) {
+    index += direction;
+  }
+  return Math.min(Math.max(index, 0), onboardingFlow.length - 1);
+}
+
 function clampProgress(data) {
   const indexFromKey = onboardingFlow.findIndex((step) => step.key === data?.currentStepKey);
   const requestedIndex = Number.isInteger(data?.currentStepIndex)
     ? data.currentStepIndex
     : indexFromKey;
-  const currentStepIndex = Math.min(
+  const answers = data?.answers && typeof data.answers === 'object' ? data.answers : {};
+  const rawIndex = Math.min(
     Math.max(requestedIndex >= 0 ? requestedIndex : 0, 0),
     onboardingFlow.length - 1,
   );
+  const currentStepIndex = snapToVisibleIndex(rawIndex, answers, 1);
 
   return {
-    answers: data?.answers && typeof data.answers === 'object' ? data.answers : {},
+    answers,
     currentStepIndex,
     currentStepKey: onboardingFlow[currentStepIndex].key,
     completed: Boolean(data?.completed),
@@ -98,7 +125,8 @@ export function useOnboarding(user) {
   const goToStep = useCallback(async (requestedIndex) => {
     if (saving) return false;
     const current = dataRef.current;
-    const nextIndex = Math.min(Math.max(requestedIndex, 0), onboardingFlow.length - 1);
+    const direction = requestedIndex >= current.currentStepIndex ? 1 : -1;
+    const nextIndex = snapToVisibleIndex(requestedIndex, current.answers, direction);
     const progress = {
       currentStepIndex: nextIndex,
       currentStepKey: onboardingFlow[nextIndex].key,
@@ -130,16 +158,18 @@ export function useOnboarding(user) {
       return false;
     }
 
-    const isLastStep = current.currentStepIndex === onboardingFlow.length - 1;
-    const nextIndex = isLastStep ? current.currentStepIndex : current.currentStepIndex + 1;
+    const nextAnswers = { ...current.answers, [step.key]: validation.value };
+    const nextVisibleIndex = snapToVisibleIndex(current.currentStepIndex + 1, nextAnswers, 1);
+    const isLastStep = nextVisibleIndex <= current.currentStepIndex
+      || current.currentStepIndex === onboardingFlow.length - 1;
     const progress = {
-      currentStepIndex: nextIndex,
-      currentStepKey: onboardingFlow[nextIndex].key,
+      currentStepIndex: nextVisibleIndex,
+      currentStepKey: onboardingFlow[nextVisibleIndex].key,
     };
     const nextData = {
       ...current,
       ...progress,
-      answers: { ...current.answers, [step.key]: validation.value },
+      answers: nextAnswers,
     };
 
     setSaving(true);
@@ -186,11 +216,14 @@ export function useOnboarding(user) {
     window.location.reload();
   }, []);
 
+  const gender = genderOf(data.answers);
+
   return {
     status,
     answers: data.answers,
+    gender,
     currentStepIndex: data.currentStepIndex,
-    currentStep: onboardingFlow[data.currentStepIndex],
+    currentStep: resolveOnboardingStep(onboardingFlow[data.currentStepIndex], gender),
     completed: data.completed,
     saving,
     error,

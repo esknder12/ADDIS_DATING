@@ -1,7 +1,7 @@
 import {
+  getRequiredKeysForGender,
   isOnboardingComplete,
   onboardingFlow,
-  requiredQuestionKeys,
   validateOnboardingAnswer,
 } from '@dategram/shared/onboarding';
 
@@ -156,7 +156,7 @@ export function createOnboardingRepository(pool) {
       const answers = answersFromRows(answerResult.rows);
 
       if (!isOnboardingComplete(answers)) {
-        const missingKeys = requiredQuestionKeys.filter(
+        const missingKeys = getRequiredKeysForGender(answers.gender).filter(
           (key) => !validateOnboardingAnswer(key, answers[key]).valid,
         );
         await client.query('ROLLBACK');

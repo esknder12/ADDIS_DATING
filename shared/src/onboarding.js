@@ -6,9 +6,55 @@ export const onboardingSections = [
   { id: 'almost-there', label: 'Almost There', accent: '#8ce6ae' },
 ];
 
+/**
+ * Gender-conditional ("IF") onboarding.
+ *
+ * The first question (`gender`) branches the rest of the journey:
+ * - IF the user picks "I am a man"   -> he sees women/she/her copy.
+ * - IF the user picks "I am a woman" -> she sees men/he/him copy.
+ *
+ * Two mechanisms implement the branch:
+ * 1. `variants: { male: {...}, female: {...} }` overrides copy (title, subtitle,
+ *    body, options, stats, testimonials) per gender. The base copy is the male
+ *    version; `resolveOnboardingStep(step, gender)` applies the override.
+ * 2. `showFor: ['male'] | ['female']` hides a step from the other gender
+ *    (e.g. `first_date_charm` vs `first_date_expectation`). Navigation skips
+ *    hidden steps while raw step indices stay stable for the API.
+ * Options can also carry `labelByGender` / `descriptionByGender` maps.
+ */
+export const GENDER_MALE = 'male';
+export const GENDER_FEMALE = 'female';
+export const GENDERS = Object.freeze([GENDER_MALE, GENDER_FEMALE]);
+
+export function normalizeGender(value) {
+  return value === GENDER_MALE || value === GENDER_FEMALE ? value : null;
+}
+
+/** Pronouns describing the people this user is looking for. */
+export function pronounsFor(gender) {
+  if (normalizeGender(gender) === GENDER_FEMALE) {
+    return Object.freeze({
+      subject: 'he',
+      object: 'him',
+      possessive: 'his',
+      nounSingular: 'man',
+      nounPlural: 'men',
+    });
+  }
+  return Object.freeze({
+    subject: 'she',
+    object: 'her',
+    possessive: 'hers',
+    nounSingular: 'woman',
+    nounPlural: 'women',
+  });
+}
+
 const image = {
   social: '/images/onboarding-social.jpg',
   lifestyle: '/images/onboarding-lifestyle.jpg',
+  professional: '/images/onboarding-professional.jpg',
+  dinner: '/images/onboarding-dinner.jpg',
 };
 
 const rawFlow = [
@@ -22,8 +68,8 @@ const rawFlow = [
     title: "What's your gender?",
     autoAdvance: true,
     options: [
-      { id: 'male', label: 'Male', icon: '♂' },
-      { id: 'female', label: 'Female', icon: '♀' },
+      { id: 'male', label: 'I am a man', icon: '♂' },
+      { id: 'female', label: 'I am a woman', icon: '♀' },
     ],
   },
   {
@@ -36,6 +82,9 @@ const rawFlow = [
     body: 'in their 20s–40s have already met someone here.',
     image: image.social,
     imageAlt: 'Two friends enjoying an evening in Addis Ababa',
+    variants: {
+      female: { title: 'Over 1.8M women' },
+    },
   },
   {
     key: 'used_dating_apps',
@@ -60,6 +109,11 @@ const rawFlow = [
     body: "Our AI matching learns your type and shows you women you'll actually click with, instead of endless random swipes. People here are motivated to meet, not just to scroll. That's why we're growing fast.",
     image: image.lifestyle,
     imageAlt: 'A woman relaxing at home',
+    variants: {
+      female: {
+        body: "Our AI matching learns your type and shows you men you'll actually click with, instead of endless random swipes. People here are motivated to meet, not just to scroll. That's why we're growing fast.",
+      },
+    },
   },
   {
     key: 'looking_for',
@@ -83,6 +137,9 @@ const rawFlow = [
     variant: 'match-preview',
     title: "We'll show you women who want the same thing.",
     body: "No guessing games. We match you on intention first, so you don't waste weeks on people who want something different.",
+    variants: {
+      female: { title: "We'll show you men who want the same thing." },
+    },
   },
   {
     key: 'what_matters',
@@ -98,6 +155,24 @@ const rawFlow = [
       { id: 'fun_spontaneity', label: 'Fun and spontaneity', icon: '✦' },
       { id: 'building_family', label: 'Building a family', icon: '⌂' },
       { id: 'supports_goals', label: 'A partner who supports my goals', icon: '⚑' },
+    ],
+  },
+  {
+    key: 'religion',
+    kind: 'question',
+    section: 'about-you',
+    input: 'single',
+    layout: 'pills',
+    title: 'What is your religion?',
+    autoAdvance: true,
+    options: [
+      { id: 'orthodox', label: 'Orthodox Christian', icon: '✝' },
+      { id: 'protestant', label: 'Protestant', icon: '✝' },
+      { id: 'catholic', label: 'Catholic', icon: '✝' },
+      { id: 'muslim', label: 'Muslim', icon: '☪' },
+      { id: 'traditional', label: 'Traditional', icon: '◍' },
+      { id: 'other', label: 'Other', icon: '✦' },
+      { id: 'prefer_not_say', label: 'Prefer not to say', icon: '×' },
     ],
   },
   {
@@ -152,6 +227,11 @@ const rawFlow = [
     variant: 'avatar-cluster',
     title: 'Just 10 minutes a day is enough.',
     body: "You don't need to swipe for hours. Our algorithm learns your type and brings the right women to you. You just pick who to talk to.",
+    variants: {
+      female: {
+        body: "You don't need to swipe for hours. Our algorithm learns your type and brings the right men to you. You just pick who to talk to.",
+      },
+    },
   },
 
   {
@@ -196,6 +276,11 @@ const rawFlow = [
     body: "Women here pass photo and video verification. You'll get a verified badge on every profile you're shown.",
     image: image.social,
     imageAlt: 'Verified members of the Dategram community',
+    variants: {
+      female: {
+        body: "Men here pass photo and video verification. You'll get a verified badge on every profile you're shown.",
+      },
+    },
   },
   {
     key: 'age_range_preference',
@@ -221,6 +306,9 @@ const rawFlow = [
     layout: 'pills',
     title: 'How far should she live from you?',
     autoAdvance: true,
+    variants: {
+      female: { title: 'How far should he live from you?' },
+    },
     options: [
       { id: 'same_neighborhood', label: 'Same neighborhood' },
       { id: 'same_city', label: 'Same city' },
@@ -240,7 +328,43 @@ const rawFlow = [
       { id: 'never_know', label: 'I never know what to write' },
       { id: 'rare_replies', label: 'I can, but replies are rare' },
       { id: 'confident', label: "I'm fine at it" },
-      { id: 'prefer_her_first', label: "I'd rather she wrote first" },
+      {
+        id: 'prefer_her_first',
+        label: "I'd rather she wrote first",
+        labelByGender: { female: "I'd rather he wrote first" },
+      },
+    ],
+  },
+  {
+    key: 'first_date_charm',
+    kind: 'question',
+    section: 'your-type',
+    input: 'single',
+    layout: 'pills',
+    showFor: ['male'],
+    title: 'How do you usually impress her on a first date?',
+    autoAdvance: true,
+    options: [
+      { id: 'plan_everything', label: 'I plan everything myself', icon: '✦' },
+      { id: 'thoughtful_gifts', label: 'Small thoughtful gifts', icon: '♡' },
+      { id: 'deep_conversation', label: 'Deep conversation', icon: '💬' },
+      { id: 'good_humor', label: 'Humor and confidence', icon: '☺' },
+    ],
+  },
+  {
+    key: 'first_date_expectation',
+    kind: 'question',
+    section: 'your-type',
+    input: 'single',
+    layout: 'pills',
+    showFor: ['female'],
+    title: 'What impresses you most on a first date?',
+    autoAdvance: true,
+    options: [
+      { id: 'he_plans', label: 'When he plans the date', icon: '✦' },
+      { id: 'thoughtful_gestures', label: 'Thoughtful little gestures', icon: '♡' },
+      { id: 'deep_conversation', label: 'Deep conversation', icon: '💬' },
+      { id: 'good_humor', label: 'Humor and confidence', icon: '☺' },
     ],
   },
   {
@@ -267,6 +391,28 @@ const rawFlow = [
     body: 'Every profile is photo-verified. No bots, no fakes.',
   },
 
+  {
+    key: 'occupation',
+    kind: 'question',
+    section: 'lifestyle',
+    input: 'single',
+    layout: 'pills',
+    title: 'What do you do for work?',
+    autoAdvance: true,
+    options: [
+      { id: 'student', label: 'Student', icon: '🎓' },
+      { id: 'private_employee', label: 'Private company employee', icon: '💼' },
+      { id: 'government', label: 'Government worker', icon: '🏛' },
+      { id: 'business_owner', label: 'Business owner', icon: '🏪' },
+      { id: 'freelancer', label: 'Freelancer', icon: '💻' },
+      { id: 'healthcare', label: 'Healthcare worker', icon: '⚕' },
+      { id: 'teacher', label: 'Teacher', icon: '📚' },
+      { id: 'engineer_tech', label: 'Engineer / Tech', icon: '⚙' },
+      { id: 'hospitality', label: 'Hospitality / Service', icon: '🍽' },
+      { id: 'between_jobs', label: 'Between jobs', icon: '⌁' },
+      { id: 'other', label: 'Other', icon: '✦' },
+    ],
+  },
   {
     key: 'work_schedule',
     kind: 'question',
@@ -321,6 +467,12 @@ const rawFlow = [
     body: "Whether you're a night-out person or a Sunday-at-home person, we'll show you women whose lifestyle actually fits yours.",
     image: image.lifestyle,
     imageAlt: 'A calm weekend at home',
+    variants: {
+      female: {
+        title: 'Meet men who match your rhythm.',
+        body: "Whether you're a night-out person or a Sunday-at-home person, we'll show you men whose lifestyle actually fits yours.",
+      },
+    },
   },
   {
     key: 'ideal_first_date',
@@ -364,6 +516,9 @@ const rawFlow = [
     title: 'How active should she be?',
     autoAdvance: true,
     heroImage: image.social,
+    variants: {
+      female: { title: 'How active should he be?' },
+    },
     options: [
       { id: 'very_sporty', label: 'Very sporty' },
       { id: 'weekend_active', label: 'Active on weekends' },
@@ -383,7 +538,11 @@ const rawFlow = [
     options: [
       { id: 'want_together', label: 'Want kids together' },
       { id: 'open_to_it', label: 'Open to it' },
-      { id: 'already_have_open', label: 'Already have, open to hers' },
+      {
+        id: 'already_have_open',
+        label: 'Already have, open to hers',
+        labelByGender: { female: 'Already have, open to his' },
+      },
       { id: 'prefer_none', label: 'Prefer no kids' },
     ],
   },
@@ -396,11 +555,29 @@ const rawFlow = [
     title: 'How ambitious should she be?',
     autoAdvance: true,
     heroImage: image.lifestyle,
+    variants: {
+      female: { title: 'How ambitious should he be?' },
+    },
     options: [
       { id: 'career_driven', label: 'Career-driven' },
       { id: 'balanced', label: 'Balanced' },
       { id: 'family_first', label: 'Family first' },
       { id: 'doesnt_matter', label: "Doesn't matter" },
+    ],
+  },
+  {
+    key: 'religion_preference',
+    kind: 'question',
+    section: 'relationship-goals',
+    input: 'single',
+    layout: 'pills',
+    title: 'Should your match share your religion?',
+    autoAdvance: true,
+    options: [
+      { id: 'same_religion', label: 'Yes, same religion', icon: '✝' },
+      { id: 'same_faith_family', label: 'Same faith family is fine', icon: '♡' },
+      { id: 'respect_mine', label: 'Different is fine if they respect mine', icon: '⚖' },
+      { id: 'doesnt_matter', label: "Doesn't matter", icon: '×' },
     ],
   },
   {
@@ -471,6 +648,9 @@ const rawFlow = [
     title: 'What do you want to share with her?',
     subtitle: 'Choose all that apply',
     exclusiveOption: 'none',
+    variants: {
+      female: { title: 'What do you want to share with him?' },
+    },
     options: [
       { id: 'travel', label: 'Travel', icon: '✈' },
       { id: 'food_cooking', label: 'Food & cooking', icon: '◇' },
@@ -507,6 +687,31 @@ const rawFlow = [
         result: 'Matched in 4 days',
       },
     ],
+    variants: {
+      female: {
+        stats: [
+          { value: '1.8M', label: 'women with us' },
+          { value: '83%', label: 'first date' },
+          { value: '4.8', label: 'app rating' },
+        ],
+        testimonials: [
+          {
+            name: 'Hanna',
+            age: 29,
+            location: 'Addis Ababa',
+            quote: 'Three years of dead chats on other apps. Here my second match answered in an hour and we met that weekend.',
+            result: 'First date in 6 days',
+          },
+          {
+            name: 'Meron',
+            age: 26,
+            location: 'Hawassa',
+            quote: 'Every profile felt like a real person. That alone changed the whole experience for me.',
+            result: 'Matched in 4 days',
+          },
+        ],
+      },
+    },
   },
 
   {
@@ -534,6 +739,12 @@ const rawFlow = [
     body: "With your Match Report, verified matches and daily picks, you'll have everything you need to meet the right woman.",
     image: image.lifestyle,
     imageAlt: 'A woman enjoying a quiet moment at home',
+    variants: {
+      female: {
+        title: "We'll help you find him.",
+        body: "With your Match Report, verified matches and daily picks, you'll have everything you need to meet the right man.",
+      },
+    },
   },
   {
     key: 'age',
@@ -563,6 +774,9 @@ const rawFlow = [
     layout: 'pills',
     title: 'When are you usually free to meet?',
     subtitle: "We'll match you with women who are free at the same time.",
+    variants: {
+      female: { subtitle: "We'll match you with men who are free at the same time." },
+    },
     options: [
       { id: 'weekday_evenings', label: 'Weekday evenings', icon: '☾' },
       { id: 'weekends', label: 'Weekends', icon: '✦' },
@@ -577,6 +791,11 @@ const rawFlow = [
     variant: 'growth-chart',
     title: "Here's how your matches grow",
     body: 'Most men with your profile go from 2 to 12 matches a week within a month of Premium.',
+    variants: {
+      female: {
+        body: 'Most women with your profile go from 2 to 12 matches a week within a month of Premium.',
+      },
+    },
   },
   {
     key: 'four_week_goal',
@@ -631,16 +850,125 @@ const rawFlow = [
     sideImage: image.professional,
     options: [
       { id: 'i_do', label: 'I do' },
-      { id: 'she_can', label: 'She can' },
+      {
+        id: 'she_can',
+        label: 'She can',
+        labelByGender: { female: 'He can' },
+      },
       { id: 'doesnt_matter', label: "Doesn't matter" },
     ],
   },
 ];
 
-function optionsFor(step) {
+function baseOptionsFor(step) {
   if (step.options) return step.options;
   if (step.groups) return step.groups.flatMap((group) => group.options);
   return [];
+}
+
+/** Every accepted option ID for a question, across all gender variants. */
+function optionsFor(step) {
+  const options = [...baseOptionsFor(step)];
+  for (const gender of GENDERS) {
+    const variant = step.variants?.[gender];
+    if (!variant) continue;
+    if (variant.options) options.push(...variant.options);
+    if (variant.groups) {
+      for (const group of variant.groups) options.push(...group.options);
+    }
+  }
+  return options;
+}
+
+function resolveOptionLabels(options, gender) {
+  if (!options) return options;
+  return options.map((option) => {
+    const label = option.labelByGender?.[gender];
+    const description = option.descriptionByGender?.[gender];
+    if (label === undefined && description === undefined) return option;
+    return {
+      ...option,
+      label: label ?? option.label,
+      description: description ?? option.description,
+    };
+  });
+}
+
+function resolveGroups(groups, gender) {
+  if (!groups) return groups;
+  return groups.map((group) => ({
+    ...group,
+    options: resolveOptionLabels(group.options, gender),
+  }));
+}
+
+/**
+ * Progress metadata recomputed per gender so section counters ("question 3 of
+ * 7") stay correct when a gender skips `showFor` steps. The raw flow keeps the
+ * union metadata for backwards compatibility.
+ */
+function computeProgressMeta(steps) {
+  const totals = {};
+  for (const step of steps) {
+    if (step.kind === 'question' && step.showProgress !== false) {
+      totals[step.section] = (totals[step.section] || 0) + 1;
+    }
+  }
+  const seen = {};
+  let questionIndex = 0;
+  const meta = new Map();
+  for (const step of steps) {
+    if (step.kind !== 'question') continue;
+    questionIndex += 1;
+    const showProgress = step.showProgress !== false;
+    if (showProgress) seen[step.section] = (seen[step.section] || 0) + 1;
+    meta.set(step.key, {
+      questionIndex,
+      sectionQuestionIndex: showProgress ? seen[step.section] : 0,
+      sectionQuestionCount: totals[step.section],
+    });
+  }
+  return meta;
+}
+
+const progressMetaByGender = {
+  [GENDER_MALE]: computeProgressMeta(
+    rawFlow.filter((step) => !step.showFor || step.showFor.includes(GENDER_MALE)),
+  ),
+  [GENDER_FEMALE]: computeProgressMeta(
+    rawFlow.filter((step) => !step.showFor || step.showFor.includes(GENDER_FEMALE)),
+  ),
+};
+
+/** IF-gate: is this step part of the given gender's journey? */
+export function isStepVisibleForGender(step, gender) {
+  const normalized = normalizeGender(gender);
+  if (!normalized) return true;
+  if (!step?.showFor) return true;
+  return step.showFor.includes(normalized);
+}
+
+/**
+ * Resolve a step for a gender: applies the `variants` copy override, resolves
+ * gendered option labels, and attaches gender-correct progress metadata.
+ * Unknown/null gender returns the step unchanged (base copy).
+ */
+export function resolveOnboardingStep(step, gender) {
+  const normalized = normalizeGender(gender);
+  if (!normalized || !step) return step;
+  const variant = step.variants?.[normalized] || {};
+  const resolved = { ...step, ...variant };
+
+  const options = variant.options || step.options;
+  if (options) resolved.options = resolveOptionLabels(options, normalized);
+  const groups = variant.groups || step.groups;
+  if (groups) resolved.groups = resolveGroups(groups, normalized);
+
+  if (resolved.kind === 'question') {
+    const meta = progressMetaByGender[normalized].get(step.key);
+    if (meta) Object.assign(resolved, meta);
+  }
+  return resolved;
 }
 
 const sectionQuestionTotals = rawFlow.reduce((totals, step) => {
@@ -677,6 +1005,27 @@ export const requiredQuestionKeys = questionSteps.map((step) => step.key);
 export const totalQuestionCount = questionSteps.length;
 export const onboardingStepByKey = new Map(onboardingFlow.map((step) => [step.key, step]));
 export const onboardingQuestionByKey = new Map(questionSteps.map((step) => [step.key, step]));
+
+/** The journey a gender actually walks: visible steps with resolved copy. */
+export function getVisibleSteps(gender) {
+  const normalized = normalizeGender(gender);
+  return onboardingFlow
+    .filter((step) => isStepVisibleForGender(step, normalized))
+    .map((step) => resolveOnboardingStep(step, normalized));
+}
+
+/** Required answers for a gender's journey (unknown gender -> every key). */
+export function getRequiredKeysForGender(gender) {
+  const normalized = normalizeGender(gender);
+  if (!normalized) return [...requiredQuestionKeys];
+  return questionSteps
+    .filter((step) => isStepVisibleForGender(step, normalized))
+    .map((step) => step.key);
+}
+
+export function getQuestionCountForGender(gender) {
+  return getRequiredKeysForGender(gender).length;
+}
 
 export const locationSuggestions = [
   { id: 'addis-ababa-et', name: 'Addis Ababa', country: 'Ethiopia', region: 'Addis Ababa' },
@@ -745,7 +1094,8 @@ export function validateOnboardingAnswer(questionKey, rawAnswer) {
 }
 
 export function isOnboardingComplete(answers) {
-  return requiredQuestionKeys.every((key) => validateOnboardingAnswer(key, answers?.[key]).valid);
+  const keys = getRequiredKeysForGender(answers?.gender);
+  return keys.every((key) => validateOnboardingAnswer(key, answers?.[key]).valid);
 }
 
 export function getSection(sectionId) {

@@ -1,14 +1,26 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  getQuestionCountForGender,
+  getRequiredKeysForGender,
+  getVisibleSteps,
   isOnboardingComplete,
+  isStepVisibleForGender,
   locationSuggestions,
+  normalizeGender,
   onboardingFlow,
+  onboardingStepByKey,
+  pronounsFor,
   questionSteps,
   requiredQuestionKeys,
+  resolveOnboardingStep,
   totalQuestionCount,
   validateOnboardingAnswer,
 } from '@dategram/shared/onboarding';
+import {
+  computeMatchResult,
+  getResultsFlowForGender,
+} from '@dategram/shared/results';
 
 function firstValidAnswer(question) {
   if (question.input === 'single') return question.options[0].id;
@@ -21,13 +33,38 @@ function firstValidAnswer(question) {
   throw new Error(`Unsupported question type: ${question.input}`);
 }
 
+function completeAnswersFor(gender) {
+  const answers = {};
+  for (const key of getRequiredKeysForGender(gender)) {
+    const question = questionSteps.find((step) => step.key === key);
+    answers[key] = firstValidAnswer(question);
+  }
+  answers.gender = gender;
+  return answers;
+}
+
 describe('onboarding configuration', () => {
-  it('contains the complete five-section Phase 2 flow with stable unique keys', () => {
-    assert.equal(totalQuestionCount, 31);
-    assert.equal(questionSteps.length, 31);
-    assert.equal(onboardingFlow.length, 43);
+  it('contains the complete five-section flow with stable unique keys', () => {
+    assert.equal(totalQuestionCount, 36);
+    assert.equal(questionSteps.length, 36);
+    assert.equal(onboardingFlow.length, 48);
     assert.equal(new Set(onboardingFlow.map((step) => step.key)).size, onboardingFlow.length);
     assert.equal(new Set(requiredQuestionKeys).size, totalQuestionCount);
+  });
+
+  it('gives every gender a 35-question journey', () => {
+    assert.equal(getQuestionCountForGender('male'), 35);
+    assert.equal(getQuestionCountForGender('female'), 35);
+    assert.equal(getRequiredKeysForGender('male').length, 35);
+    assert.equal(getRequiredKeysForGender('female').length, 35);
+    assert.equal(
+      getVisibleSteps('male').filter((step) => step.kind === 'question').length,
+      35,
+    );
+    assert.equal(
+      getVisibleSteps('female').filter((step) => step.kind === 'question').length,
+      35,
+    );
   });
 
   it('accepts one valid answer for every configured question', () => {
@@ -64,5 +101,166 @@ describe('onboarding configuration', () => {
       'serious_relationship',
     ]);
     assert.deepEqual(result, { valid: true, value: ['serious_relationship'] });
+  });
+});
+
+describe('gender-conditional (IF) onboarding', () => {
+  it('asks gender as "I am a man" / "I am a woman"', () => {
+    const gender = onboardingStepByKey.get('gender');
+    assert.deepEqual(
+      gender.options.map((option) => option.label),
+      ['I am a man', 'I am a woman'],
+    );
+    assert.equal(validateOnboardingAnswer('gender', 'male').valid, true);
+    assert.equal(validateOnboardingAnswer('gender', 'female').valid, true);
+  });
+
+  it('normalizes gender values and exposes match pronouns', () => {
+    assert.equal(normalizeGender('male'), 'male');
+    assert.equal(normalizeGender('female'), 'female');
+    assert.equal(normalizeGender('other'), null);
+    assert.equal(normalizeGender(undefined), null);
+    assert.deepEqual(pronounsFor('male'), {
+      subject: 'she',
+      object: 'her',
+      possessive: 'hers',
+      nounSingular: 'woman',
+      nounPlural: 'women',
+    });
+    assert.deepEqual(pronounsFor('female'), {
+      subject: 'he',
+      object: 'him',
+      possessive: 'his',
+      nounSingular: 'man',
+      nounPlural: 'men',
+    });
+  });
+
+  it('resolves he/him copy for women and she/her copy for men', () => {
+    const distance = onboardingStepByKey.get('distance_preference');
+    assert.equal(
+      resolveOnboardingStep(distance, 'male').title,
+      'How far should she live from you?',
+    );
+    assert.equal(
+      resolveOnboardingStep(distance, 'female').title,
+      'How far should he live from you?',
+    );
+
+    const shared = onboardingStepByKey.get('shared_activities');
+    assert.equal(
+      resolveOnboardingStep(shared, 'female').title,
+      'What do you want to share with him?',
+    );
+
+    const intention = onboardingStepByKey.get('intention-preview');
+    assert.match(resolveOnboardingStep(intention, 'male').title, /women/);
+    assert.match(resolveOnboardingStep(intention, 'female').title, /men/);
+
+    const firstMove = onboardingStepByKey.get('first_move_preference');
+    assert.deepEqual(
+      resolveOnboardingStep(firstMove, 'male').options.map((option) => option.label),
+      ['I do', 'She can', "Doesn't matter"],
+    );
+    assert.deepEqual(
+      resolveOnboardingStep(firstMove, 'female').options.map((option) => option.label),
+      ['I do', 'He can', "Doesn't matter"],
+    );
+  });
+
+  it('shows gender-specific social proof and success stories', () => {
+    const proof = onboardingStepByKey.get('social-proof');
+    assert.equal(resolveOnboardingStep(proof, 'male').title, 'Over 2.4M men');
+    assert.equal(resolveOnboardingStep(proof, 'female').title, 'Over 1.8M women');
+
+    const stories = onboardingStepByKey.get('success-stories');
+    assert.equal(resolveOnboardingStep(stories, 'male').stats[0].label, 'men with us');
+    assert.equal(resolveOnboardingStep(stories, 'female').stats[0].label, 'women with us');
+    assert.equal(
+      resolveOnboardingStep(stories, 'female').testimonials[0].name,
+      'Hanna',
+    );
+  });
+
+  it('shows each gender only its own first-date question (IF showFor)', () => {
+    const charm = onboardingStepByKey.get('first_date_charm');
+    const expectation = onboardingStepByKey.get('first_date_expectation');
+    assert.equal(isStepVisibleForGender(charm, 'male'), true);
+    assert.equal(isStepVisibleForGender(charm, 'female'), false);
+    assert.equal(isStepVisibleForGender(expectation, 'male'), false);
+    assert.equal(isStepVisibleForGender(expectation, 'female'), true);
+    assert.equal(isStepVisibleForGender(charm, null), true);
+    assert.ok(getRequiredKeysForGender('male').includes('first_date_charm'));
+    assert.ok(!getRequiredKeysForGender('male').includes('first_date_expectation'));
+    assert.ok(getRequiredKeysForGender('female').includes('first_date_expectation'));
+    assert.ok(!getRequiredKeysForGender('female').includes('first_date_charm'));
+  });
+
+  it('completes each gender journey without the other gender questions', () => {
+    assert.equal(isOnboardingComplete(completeAnswersFor('male')), true);
+    assert.equal(isOnboardingComplete(completeAnswersFor('female')), true);
+
+    const missingMaleOnly = completeAnswersFor('male');
+    delete missingMaleOnly.first_date_charm;
+    assert.equal(isOnboardingComplete(missingMaleOnly), false);
+
+    const missingFemaleOnly = completeAnswersFor('female');
+    delete missingFemaleOnly.first_date_expectation;
+    assert.equal(isOnboardingComplete(missingFemaleOnly), false);
+  });
+});
+
+describe('religion and work questions', () => {
+  it('validates the religion question options', () => {
+    for (const id of ['orthodox', 'protestant', 'catholic', 'muslim', 'traditional', 'other', 'prefer_not_say']) {
+      assert.equal(validateOnboardingAnswer('religion', id).valid, true, id);
+    }
+    assert.equal(validateOnboardingAnswer('religion', 'invented').valid, false);
+  });
+
+  it('validates the work (occupation) question options', () => {
+    for (const id of ['student', 'private_employee', 'government', 'business_owner', 'freelancer', 'healthcare', 'teacher', 'engineer_tech', 'hospitality', 'between_jobs', 'other']) {
+      assert.equal(validateOnboardingAnswer('occupation', id).valid, true, id);
+    }
+    assert.equal(validateOnboardingAnswer('occupation', 'invented').valid, false);
+  });
+
+  it('validates the match religion-preference question options', () => {
+    for (const id of ['same_religion', 'same_faith_family', 'respect_mine', 'doesnt_matter']) {
+      assert.equal(validateOnboardingAnswer('religion_preference', id).valid, true, id);
+    }
+    assert.equal(validateOnboardingAnswer('religion_preference', 'invented').valid, false);
+  });
+
+  it('requires religion and work answers for both genders', () => {
+    for (const gender of ['male', 'female']) {
+      const keys = getRequiredKeysForGender(gender);
+      assert.ok(keys.includes('religion'), `${gender} missing religion`);
+      assert.ok(keys.includes('occupation'), `${gender} missing occupation`);
+      assert.ok(keys.includes('religion_preference'), `${gender} missing religion_preference`);
+
+      const answers = completeAnswersFor(gender);
+      delete answers.religion;
+      assert.equal(isOnboardingComplete(answers), false, `${gender} without religion`);
+    }
+  });
+});
+
+describe('gender-conditional results', () => {
+  it('resolves search and email copy per gender', () => {
+    const maleFlow = getResultsFlowForGender('male');
+    const femaleFlow = getResultsFlowForGender('female');
+    assert.match(maleFlow[1].heading, /women/);
+    assert.match(femaleFlow[1].heading, /men/);
+    assert.match(maleFlow[3].heading, /meet her/);
+    assert.match(femaleFlow[3].heading, /meet him/);
+    assert.equal(femaleFlow[1].testimonials[0].author, 'Hanna, 28');
+  });
+
+  it('labels the match pool with the gender the user is looking for', () => {
+    const male = computeMatchResult({ gender: 'male', location: { name: 'Adama' } });
+    const female = computeMatchResult({ gender: 'female', location: { name: 'Adama' } });
+    assert.match(male.matchPoolLabel, /women in Adama/);
+    assert.match(female.matchPoolLabel, /men in Adama/);
   });
 });
