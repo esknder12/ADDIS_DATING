@@ -157,19 +157,11 @@ const cityPoolBase = {
 export function computeMatchResult(answers = {}) {
   let score = 68;
 
-  if (Array.isArray(answers.looking_for) && answers.looking_for.includes('serious_relationship')) score += 5;
   if (Array.isArray(answers.what_matters) && answers.what_matters.includes('emotional_connection')) score += 3;
   if (answers.conversation_confidence === 'confident') score += 4;
   else if (answers.conversation_confidence === 'never_know') score -= 2;
 
-  const readiness = optionLabel('date_readiness', answers.date_readiness, null);
-  const readinessStep = onboardingQuestionByKey.get('date_readiness');
-  const readinessEnergy = readinessStep?.options?.find((option) => option.id === answers.date_readiness)?.energy;
-  if (Number.isInteger(readinessEnergy)) score += readinessEnergy * 2 - 3;
-  void readiness;
-
   if (answers.four_week_goal === 'one_first_date') score += 4;
-  if (answers.last_relationship === 'less_than_year') score += 1;
 
   score = Math.min(97, Math.max(35, score));
 
@@ -177,7 +169,6 @@ export function computeMatchResult(answers = {}) {
 
   const preferredStyles = Array.isArray(answers.style_preference) ? answers.style_preference : [];
   const styleLabel = optionLabel('style_preference', preferredStyles[0], 'Natural');
-  const ageLabel = optionLabel('age_range_preference', answers.age_range_preference, '25–30');
 
   const datingStyle = datingStyleByEnergy[answers.social_energy] || 'Connector';
 
@@ -194,7 +185,7 @@ export function computeMatchResult(answers = {}) {
     score,
     band,
     positionPercent: score,
-    typeSummary: `${styleLabel}, ${ageLabel}`,
+    typeSummary: styleLabel,
     datingStyle,
     matchPool,
     matchPoolLabel: `${matchPool} ${poolNoun} in ${city}`,

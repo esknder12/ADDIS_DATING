@@ -1,5 +1,5 @@
 import {
-  getRequiredKeysForGender,
+  getRequiredKeysForAnswers,
   isOnboardingComplete,
   onboardingFlow,
   validateOnboardingAnswer,
@@ -158,7 +158,7 @@ export function createOnboardingRepository(pool) {
       const answers = answersFromRows(answerResult.rows);
 
       if (!isOnboardingComplete(answers)) {
-        const missingKeys = getRequiredKeysForGender(answers.gender).filter(
+        const missingKeys = getRequiredKeysForAnswers(answers).filter(
           (key) => !validateOnboardingAnswer(key, answers[key]).valid,
         );
         await client.query('ROLLBACK');

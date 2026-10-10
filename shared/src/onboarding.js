@@ -13,13 +13,17 @@ export const onboardingSections = [
  * - IF the user picks "Male"   -> he sees women/she/her copy.
  * - IF the user picks "Female" -> she sees men/he/him copy.
  *
- * Two mechanisms implement the branch:
+ * Mechanisms that implement the branching:
  * 1. `variants: { male: {...}, female: {...} }` overrides copy (title, subtitle,
  *    body, options, stats, testimonials) per gender. The base copy is the male
  *    version; `resolveOnboardingStep(step, gender)` applies the override.
  * 2. `showFor: ['male'] | ['female']` hides a step from the other gender
  *    (e.g. `first_date_charm` vs `first_date_expectation`). Navigation skips
  *    hidden steps while raw step indices stay stable for the API.
+ * 3. `showIf: { question, includes | equals }` hides a step unless an earlier
+ *    answer matches (e.g. show a follow-up only when `what_matters` includes a
+ *    given option). Navigation, progress counts, and completion all honour the
+ *    same gate via `isStepVisible`.
  * Options can also carry `labelByGender` / `descriptionByGender` maps.
  */
 export const GENDER_MALE = 'male';
@@ -85,69 +89,6 @@ const rawFlow = [
     note: 'Available only to adults 18 and over.',
   },
   {
-    key: 'used_dating_apps',
-    kind: 'question',
-    section: 'about-you',
-    input: 'single',
-    layout: 'split-photo',
-    title: 'Have you used dating apps before?',
-    autoAdvance: true,
-    sideImage: image.lifestyle,
-    banner: {
-      eyebrow: 'AS FEATURED IN',
-      title: 'Over 2.4M men',
-      body: 'in their 20s–40s have already met someone here.',
-      image: image.social,
-      imageAlt: 'Two friends enjoying an evening in Addis Ababa',
-    },
-    variants: {
-      female: {
-        banner: {
-          eyebrow: 'AS FEATURED IN',
-          title: 'Over 1.8M women',
-          body: 'in their 20s–40s have already met someone here.',
-          image: image.social,
-          imageAlt: 'Two friends enjoying an evening in Addis Ababa',
-        },
-      },
-    },
-    options: [
-      { id: 'yes', label: 'Yes' },
-      { id: 'no', label: 'No' },
-    ],
-  },
-  {
-    key: 'looking_for',
-    kind: 'question',
-    section: 'about-you',
-    input: 'multi',
-    layout: 'pills',
-    title: 'What are you looking for right now?',
-    subtitle: 'Choose all that apply',
-    banner: {
-      title: 'Dating that actually works differently.',
-      body: "Our AI matching learns your type and shows you women you'll actually click with, instead of endless random swipes. People here are motivated to meet, not just to scroll. That's why we're growing fast.",
-      image: image.lifestyle,
-      imageAlt: 'A woman relaxing at home',
-    },
-    variants: {
-      female: {
-        banner: {
-          title: 'Dating that actually works differently.',
-          body: "Our AI matching learns your type and shows you men you'll actually click with, instead of endless random swipes. People here are motivated to meet, not just to scroll. That's why we're growing fast.",
-          image: image.lifestyle,
-          imageAlt: 'A woman relaxing at home',
-        },
-      },
-    },
-    options: [
-      { id: 'serious_relationship', label: 'Serious relationship', icon: '⚭' },
-      { id: 'dating_and_seeing', label: 'Dating & seeing where it goes', icon: '💬' },
-      { id: 'online_communication', label: 'Online communication', icon: '▣' },
-      { id: 'not_sure', label: 'Not sure yet', icon: '⌁' },
-    ],
-  },
-  {
     key: 'what_matters',
     kind: 'question',
     section: 'about-you',
@@ -156,6 +97,7 @@ const rawFlow = [
     title: 'What else matters to you?',
     subtitle: 'Choose all that apply',
     banner: {
+      placement: 'bottom',
       title: "We'll show you women who want the same thing.",
       body: "No guessing games. We match you on intention first, so you don't waste weeks on people who want something different.",
       visual: 'match-preview',
@@ -163,6 +105,7 @@ const rawFlow = [
     variants: {
       female: {
         banner: {
+          placement: 'bottom',
           title: "We'll show you men who want the same thing.",
           body: "No guessing games. We match you on intention first, so you don't waste weeks on people who want something different.",
           visual: 'match-preview',
@@ -226,21 +169,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'last_relationship',
-    kind: 'question',
-    section: 'about-you',
-    input: 'single',
-    layout: 'pills',
-    title: 'When was your last relationship?',
-    autoAdvance: true,
-    options: [
-      { id: 'less_than_year', label: 'Less than a year ago' },
-      { id: 'one_to_two_years', label: '1–2 years ago' },
-      { id: 'more_than_three_years', label: 'More than 3 years ago' },
-      { id: 'never_serious', label: 'Never had a serious one' },
-    ],
-  },
-  {
     key: 'ten-minutes',
     kind: 'interstitial',
     section: 'about-you',
@@ -285,40 +213,6 @@ const rawFlow = [
       { id: 'figure', label: 'Figure', thumbnail: image.lifestyle, crop: 'lifestyle-wide' },
       { id: 'style', label: 'Style', thumbnail: image.social, crop: 'social-left' },
       { id: 'voice', label: 'Voice', thumbnail: image.lifestyle, crop: 'lifestyle-close' },
-    ],
-  },
-  {
-    key: 'age_range_preference',
-    kind: 'question',
-    section: 'your-type',
-    input: 'single',
-    layout: 'split-photo',
-    title: 'What age range are you into?',
-    autoAdvance: true,
-    sideImage: image.social,
-    banner: {
-      title: 'Every photo you see is real.',
-      body: "Women here pass photo and video verification. You'll get a verified badge on every profile you're shown.",
-      image: image.social,
-      imageAlt: 'Verified members of the Dategram community',
-      badge: 'verified',
-    },
-    variants: {
-      female: {
-        banner: {
-          title: 'Every photo you see is real.',
-          body: "Men here pass photo and video verification. You'll get a verified badge on every profile you're shown.",
-          image: image.social,
-          imageAlt: 'Verified members of the Dategram community',
-          badge: 'verified',
-        },
-      },
-    },
-    options: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_30', label: '25–30' },
-      { id: '30_38', label: '30–38' },
-      { id: '38_plus', label: '38+' },
     ],
   },
   {
@@ -391,21 +285,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'dating_app_frustrations',
-    kind: 'question',
-    section: 'your-type',
-    input: 'multi',
-    layout: 'image-grid',
-    title: "What's frustrated you most in dating apps?",
-    subtitle: 'Choose all that apply',
-    options: [
-      { id: 'fake_profiles', label: 'Fake profiles', visualIcon: '⊘', tone: 'danger' },
-      { id: 'ghosting', label: 'Getting ghosted', visualIcon: '✓✓', tone: 'violet' },
-      { id: 'small_talk', label: 'Endless small talk', visualIcon: '•••', tone: 'blue' },
-      { id: 'no_replies', label: 'Matches that never reply', visualIcon: '↯', tone: 'pink' },
-    ],
-  },
-  {
     key: 'we-got-you',
     kind: 'interstitial',
     section: 'your-type',
@@ -464,53 +343,6 @@ const rawFlow = [
       { id: 'sports_outdoors', label: 'Sports and outdoors', icon: '△' },
       { id: 'home_recharge', label: 'At home, recharging', icon: '⌂' },
       { id: 'work_study', label: 'Working or studying', icon: '▤' },
-    ],
-  },
-  {
-    key: 'social_energy',
-    kind: 'question',
-    section: 'lifestyle',
-    input: 'single',
-    layout: 'energy',
-    title: "How's your social energy?",
-    autoAdvance: true,
-    options: [
-      { id: 'life_of_party', label: "I'm the life of the party", energy: 4 },
-      { id: 'small_groups', label: 'I open up in small groups', energy: 3 },
-      { id: 'reserved', label: "I'm reserved until I trust someone", energy: 2 },
-      { id: 'depends', label: 'Depends on my mood', energy: 1 },
-    ],
-  },
-  {
-    key: 'ideal_first_date',
-    kind: 'question',
-    section: 'lifestyle',
-    input: 'single',
-    layout: 'hero-grid',
-    title: "What's your ideal first date?",
-    autoAdvance: true,
-    heroImage: image.social,
-    banner: {
-      title: 'Meet women who match your rhythm.',
-      body: "Whether you're a night-out person or a Sunday-at-home person, we'll show you women whose lifestyle actually fits yours.",
-      image: image.lifestyle,
-      imageAlt: 'A calm weekend at home',
-    },
-    variants: {
-      female: {
-        banner: {
-          title: 'Meet men who match your rhythm.',
-          body: "Whether you're a night-out person or a Sunday-at-home person, we'll show you men whose lifestyle actually fits yours.",
-          image: image.lifestyle,
-          imageAlt: 'A calm weekend at home',
-        },
-      },
-    },
-    options: [
-      { id: 'coffee_walk', label: 'Coffee and a walk' },
-      { id: 'dinner_drinks', label: 'Dinner and drinks' },
-      { id: 'active', label: 'Something active' },
-      { id: 'undecided', label: "Haven't decided yet" },
     ],
   },
   {
@@ -663,27 +495,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'shared_activities',
-    kind: 'question',
-    section: 'relationship-goals',
-    input: 'multi',
-    layout: 'pills',
-    title: 'What do you want to share with her?',
-    subtitle: 'Choose all that apply',
-    exclusiveOption: 'none',
-    variants: {
-      female: { title: 'What do you want to share with him?' },
-    },
-    options: [
-      { id: 'travel', label: 'Travel', icon: '✈' },
-      { id: 'food_cooking', label: 'Food & cooking', icon: '◇' },
-      { id: 'movies_series', label: 'Movies & series', icon: '▷' },
-      { id: 'sports', label: 'Sports', icon: '○' },
-      { id: 'music_concerts', label: 'Music & concerts', icon: '♪' },
-      { id: 'none', label: 'None of the above', icon: '×' },
-    ],
-  },
-  {
     key: 'success-stories',
     kind: 'interstitial',
     section: 'relationship-goals',
@@ -754,22 +565,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'help-find-her',
-    kind: 'interstitial',
-    section: 'almost-there',
-    variant: 'photo',
-    title: "We'll help you find her.",
-    body: "With your Match Report, verified matches and daily picks, you'll have everything you need to meet the right woman.",
-    image: image.lifestyle,
-    imageAlt: 'A woman enjoying a quiet moment at home',
-    variants: {
-      female: {
-        title: "We'll help you find him.",
-        body: "With your Match Report, verified matches and daily picks, you'll have everything you need to meet the right man.",
-      },
-    },
-  },
-  {
     key: 'location',
     kind: 'question',
     section: 'almost-there',
@@ -796,19 +591,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'match-growth',
-    kind: 'interstitial',
-    section: 'almost-there',
-    variant: 'growth-chart',
-    title: "Here's how your matches grow",
-    body: 'Most men with your profile go from 2 to 12 matches a week within a month of Premium.',
-    variants: {
-      female: {
-        body: 'Most women with your profile go from 2 to 12 matches a week within a month of Premium.',
-      },
-    },
-  },
-  {
     key: 'four_week_goal',
     kind: 'question',
     section: 'almost-there',
@@ -821,52 +603,6 @@ const rawFlow = [
       { id: 'real_conversations', label: 'A few real conversations going', icon: '▢' },
       { id: 'someone_again', label: 'Meeting someone I want to see again', icon: '⚭' },
       { id: 'back_out_there', label: 'Just getting back out there', icon: '⌁' },
-    ],
-  },
-  {
-    key: 'date_readiness',
-    kind: 'question',
-    section: 'almost-there',
-    input: 'single',
-    layout: 'energy',
-    title: 'How ready are you to actually go on that date?',
-    autoAdvance: true,
-    options: [
-      { id: 'ready_right_match', label: 'Ready, just need the right match', energy: 4 },
-      { id: 'ready_rusty', label: 'Ready, but a bit rusty', energy: 3 },
-      { id: 'nervous_willing', label: 'Nervous, but willing to try', energy: 2 },
-      { id: 'not_sure', label: 'Not sure yet', energy: 1 },
-    ],
-  },
-  {
-    key: 'trusted-choice',
-    kind: 'interstitial',
-    section: 'almost-there',
-    variant: 'badges',
-    title: 'What makes us a trusted choice',
-    badges: [
-      { icon: '✦', title: 'Telegram Mini App of the Year', meta: 'Telegram · 2025' },
-      { icon: '▰', title: 'Top-10 Dating Apps', meta: 'Google Play · 2026' },
-      { icon: '★', title: '4.8 rating, 340K reviews', meta: 'App Store · 2026' },
-    ],
-  },
-  {
-    key: 'first_move_preference',
-    kind: 'question',
-    section: 'almost-there',
-    input: 'single',
-    layout: 'split-photo',
-    title: 'Who should make the first move?',
-    autoAdvance: true,
-    sideImage: image.professional,
-    options: [
-      { id: 'i_do', label: 'I do' },
-      {
-        id: 'she_can',
-        label: 'She can',
-        labelByGender: { female: 'He can' },
-      },
-      { id: 'doesnt_matter', label: "Doesn't matter" },
     ],
   },
   {
@@ -998,11 +734,42 @@ export function isStepVisibleForGender(step, gender) {
 }
 
 /**
+ * IF-gate: does the `showIf` condition match the answers so far?
+ * Conditions reference an earlier question (`{ question, includes | equals }`).
+ * `includes` matches multi-select membership (or scalar equality); `equals`
+ * matches a scalar (or a multi-select member). Steps without `showIf` always
+ * pass.
+ */
+export function isStepVisibleForAnswers(step, answers) {
+  const condition = step?.showIf;
+  if (!condition) return true;
+  const value = answers?.[condition.question];
+  if (condition.includes !== undefined) {
+    return Array.isArray(value)
+      ? value.includes(condition.includes)
+      : value === condition.includes;
+  }
+  if (condition.equals !== undefined) {
+    return Array.isArray(value)
+      ? value.includes(condition.equals)
+      : value === condition.equals;
+  }
+  return true;
+}
+
+/** Combined IF-gate: gender (`showFor`) and earlier answers (`showIf`). */
+export function isStepVisible(step, gender, answers) {
+  return isStepVisibleForGender(step, gender) && isStepVisibleForAnswers(step, answers);
+}
+
+/**
  * Resolve a step for a gender: applies the `variants` copy override, resolves
  * gendered option labels, and attaches gender-correct progress metadata.
+ * Pass `answers` so progress counts also exclude answer-hidden (`showIf`) steps
+ * (the lifestyle counter shrinks when `home_atmosphere` is skipped).
  * Unknown/null gender returns the step unchanged (base copy).
  */
-export function resolveOnboardingStep(step, gender) {
+export function resolveOnboardingStep(step, gender, answers = undefined) {
   const normalized = normalizeGender(gender);
   if (!normalized || !step) return step;
   const variant = step.variants?.[normalized] || {};
@@ -1014,7 +781,11 @@ export function resolveOnboardingStep(step, gender) {
   if (groups) resolved.groups = resolveGroups(groups, normalized);
 
   if (resolved.kind === 'question') {
-    const meta = progressMetaByGender[normalized].get(step.key);
+    const meta = answers === undefined
+      ? progressMetaByGender[normalized].get(step.key)
+      : computeProgressMeta(
+        rawFlow.filter((candidate) => isStepVisible(candidate, normalized, answers)),
+      ).get(step.key);
     if (meta) Object.assign(resolved, meta);
   }
   return resolved;
@@ -1069,6 +840,18 @@ export function getRequiredKeysForGender(gender) {
   if (!normalized) return [...requiredQuestionKeys];
   return questionSteps
     .filter((step) => isStepVisibleForGender(step, normalized))
+    .map((step) => step.key);
+}
+
+/**
+ * Required answers for the journey these answers unlock: the gender filter
+ * plus every `showIf` gate (e.g. `home_atmosphere` is required only when
+ * `looking_for` includes "Serious relationship").
+ */
+export function getRequiredKeysForAnswers(answers) {
+  const gender = normalizeGender(answers?.gender);
+  return questionSteps
+    .filter((step) => isStepVisible(step, gender, answers))
     .map((step) => step.key);
 }
 
@@ -1180,7 +963,7 @@ export function validateOnboardingAnswer(questionKey, rawAnswer) {
 }
 
 export function isOnboardingComplete(answers) {
-  const keys = getRequiredKeysForGender(answers?.gender);
+  const keys = getRequiredKeysForAnswers(answers);
   return keys.every((key) => validateOnboardingAnswer(key, answers?.[key]).valid);
 }
 

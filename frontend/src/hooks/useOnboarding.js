@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  isStepVisibleForGender,
+  isStepVisible,
   normalizeGender,
   onboardingFlow,
   resolveOnboardingStep,
@@ -31,9 +31,10 @@ function genderOf(answers) {
 }
 
 /**
- * Snap a raw step index to the nearest step that belongs to this gender's
- * journey (steps with `showFor` set are skipped). Raw indices stay stable so
- * the API key/index validation keeps working unchanged.
+ * Snap a raw step index to the nearest step that belongs to this journey:
+ * steps with `showFor` set are skipped for the other gender, and steps whose
+ * `showIf` condition the answers don't match are skipped too. Raw indices stay
+ * stable so the API key/index validation keeps working unchanged.
  */
 function snapToVisibleIndex(requestedIndex, answers, direction = 1) {
   const gender = genderOf(answers);
@@ -41,7 +42,7 @@ function snapToVisibleIndex(requestedIndex, answers, direction = 1) {
   while (
     index >= 0
     && index < onboardingFlow.length
-    && !isStepVisibleForGender(onboardingFlow[index], gender)
+    && !isStepVisible(onboardingFlow[index], gender, answers)
   ) {
     index += direction;
   }
@@ -228,7 +229,7 @@ export function useOnboarding(user) {
     answers: data.answers,
     gender,
     currentStepIndex: data.currentStepIndex,
-    currentStep: resolveOnboardingStep(onboardingFlow[data.currentStepIndex], gender),
+    currentStep: resolveOnboardingStep(onboardingFlow[data.currentStepIndex], gender, data.answers),
     completed: data.completed,
     saving,
     error,

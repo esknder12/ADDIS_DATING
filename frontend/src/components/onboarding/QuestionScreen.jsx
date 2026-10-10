@@ -5,6 +5,7 @@ import {
 } from '@dategram/shared/onboarding';
 import { impact } from '../../lib/telegram.js';
 import {
+  ColorOption,
   ImageOption,
   MultiOption,
   SingleOption,
@@ -69,6 +70,21 @@ function StandardOptions({ step, value, setValue, submitSingle }) {
         ? withoutExclusive.filter((id) => id !== optionId)
         : [...withoutExclusive, optionId];
     });
+  }
+
+  if (step.layout === 'color-grid') {
+    return (
+      <div className="color-option-grid">
+        {step.options.map((option) => (
+          <ColorOption
+            key={option.id}
+            option={option}
+            selected={value.includes(option.id)}
+            onToggle={toggle}
+          />
+        ))}
+      </div>
+    );
   }
 
   if (step.layout === 'image-grid') {
@@ -307,9 +323,23 @@ export default function QuestionScreen({ step, user, gender, savedAnswer, onSubm
     step.input === 'number' ? Number(value) : value,
   );
   const manual = step.input !== 'single';
+  const bannerAtBottom = step.banner?.placement === 'bottom';
+  const hasBanner = Boolean(step.banner?.image || step.banner?.visual);
+  const bannerVisual = hasBanner ? (
+    step.banner.visual === 'match-preview' ? (
+      <MatchPreviewCard gender={gender} />
+    ) : step.banner.badge === 'verified' ? (
+      <span className="question-banner__verified">
+        <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
+        <span className="verified-overlay"><b>✓</b> Verified</span>
+      </span>
+    ) : (
+      <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
+    )
+  ) : null;
 
   return (
-    <section className={`question-screen question-screen--${step.layout}`}>
+    <section className={`question-screen question-screen--${step.layout}${bannerAtBottom ? ' question-screen--banner-bottom' : ''}`}>
       <div className="question-scroll">
         <QuestionHeader step={step} />
 
@@ -345,8 +375,9 @@ export default function QuestionScreen({ step, user, gender, savedAnswer, onSubm
           />
         )}
 
-        {(step.banner?.image || step.banner?.visual) && (
-          <figure className="question-banner">
+        {hasBanner && (
+          <figure className={`question-banner${bannerAtBottom ? ' question-banner--bottom' : ''}`}>
+            {bannerAtBottom && bannerVisual}
             <figcaption>
               {step.banner.eyebrow && (
                 <span className="question-banner__eyebrow">{step.banner.eyebrow}</span>
@@ -354,16 +385,7 @@ export default function QuestionScreen({ step, user, gender, savedAnswer, onSubm
               {step.banner.title && <strong>{step.banner.title}</strong>}
               {step.banner.body && <span>{step.banner.body}</span>}
             </figcaption>
-            {step.banner.visual === 'match-preview' ? (
-              <MatchPreviewCard gender={gender} />
-            ) : step.banner.badge === 'verified' ? (
-              <span className="question-banner__verified">
-                <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
-                <span className="verified-overlay"><b>✓</b> Verified</span>
-              </span>
-            ) : (
-              <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
-            )}
+            {!bannerAtBottom && bannerVisual}
           </figure>
         )}
 

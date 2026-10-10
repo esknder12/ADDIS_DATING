@@ -72,6 +72,21 @@ export function ImageOption({ option, selected, onToggle }) {
   );
 }
 
+export function ColorOption({ option, selected, onToggle }) {
+  return (
+    <button
+      type="button"
+      className={`color-option ${selected ? 'is-selected' : ''}`}
+      style={{ background: option.color, color: option.onColor || '#fff' }}
+      onClick={() => onToggle(option.id)}
+      aria-pressed={selected}
+    >
+      <strong>{option.label}</strong>
+      <Checkmark />
+    </button>
+  );
+}
+
 export function ThumbnailOption({ option, selected, onToggle }) {
   return (
     <button
