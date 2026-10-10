@@ -30,6 +30,8 @@ function firstValidAnswer(question) {
   }
   if (question.input === 'number') return 26;
   if (question.input === 'location') return locationSuggestions[0];
+  if (question.input === 'photos') return [{ url: 'https://example.com/photo.jpg' }];
+  if (question.input === 'text') return 'I love long walks and the best breakfast spots.';
   throw new Error(`Unsupported question type: ${question.input}`);
 }
 
@@ -45,25 +47,25 @@ function completeAnswersFor(gender) {
 
 describe('onboarding configuration', () => {
   it('contains the complete five-section flow with stable unique keys', () => {
-    assert.equal(totalQuestionCount, 36);
-    assert.equal(questionSteps.length, 36);
-    assert.equal(onboardingFlow.length, 48);
+    assert.equal(totalQuestionCount, 39);
+    assert.equal(questionSteps.length, 39);
+    assert.equal(onboardingFlow.length, 51);
     assert.equal(new Set(onboardingFlow.map((step) => step.key)).size, onboardingFlow.length);
     assert.equal(new Set(requiredQuestionKeys).size, totalQuestionCount);
   });
 
-  it('gives every gender a 35-question journey', () => {
-    assert.equal(getQuestionCountForGender('male'), 35);
-    assert.equal(getQuestionCountForGender('female'), 35);
-    assert.equal(getRequiredKeysForGender('male').length, 35);
-    assert.equal(getRequiredKeysForGender('female').length, 35);
+  it('gives every gender a 38-question journey', () => {
+    assert.equal(getQuestionCountForGender('male'), 38);
+    assert.equal(getQuestionCountForGender('female'), 38);
+    assert.equal(getRequiredKeysForGender('male').length, 38);
+    assert.equal(getRequiredKeysForGender('female').length, 38);
     assert.equal(
       getVisibleSteps('male').filter((step) => step.kind === 'question').length,
-      35,
+      38,
     );
     assert.equal(
       getVisibleSteps('female').filter((step) => step.kind === 'question').length,
-      35,
+      38,
     );
   });
 
@@ -242,6 +244,65 @@ describe('religion and work questions', () => {
       const answers = completeAnswersFor(gender);
       delete answers.religion;
       assert.equal(isOnboardingComplete(answers), false, `${gender} without religion`);
+    }
+  });
+});
+
+describe('photo, bio, and quiz-feedback questions', () => {
+  it('requires one to three uploaded photos', () => {
+    assert.equal(validateOnboardingAnswer('photos', []).valid, false);
+    assert.equal(validateOnboardingAnswer('photos', 'https://example.com/a.jpg').valid, false);
+    assert.deepEqual(validateOnboardingAnswer('photos', ['https://example.com/a.jpg']), {
+      valid: true,
+      value: [{ url: 'https://example.com/a.jpg' }],
+    });
+    const three = validateOnboardingAnswer('photos', [
+      { id: 7, url: 'https://example.com/a.jpg' },
+      { url: 'https://example.com/b.jpg' },
+      { url: 'data:image/jpeg;base64,/9j/4AAQ' },
+    ]);
+    assert.equal(three.valid, true);
+    assert.equal(three.value.length, 3);
+    assert.equal(three.value[0].id, 7);
+    assert.equal(validateOnboardingAnswer('photos', [
+      'https://example.com/a.jpg',
+      'https://example.com/b.jpg',
+      'https://example.com/c.jpg',
+      'https://example.com/d.jpg',
+    ]).valid, false);
+    assert.equal(validateOnboardingAnswer('photos', ['not-a-url']).valid, false);
+    assert.equal(validateOnboardingAnswer('photos', [{ url: '' }]).valid, false);
+  });
+
+  it('requires a short bio within the length limit', () => {
+    assert.equal(validateOnboardingAnswer('bio', '').valid, false);
+    assert.equal(validateOnboardingAnswer('bio', '  ').valid, false);
+    assert.equal(validateOnboardingAnswer('bio', 'x').valid, false);
+    assert.deepEqual(
+      validateOnboardingAnswer('bio', '  I love coffee and jazz.  '),
+      { valid: true, value: 'I love coffee and jazz.' },
+    );
+    assert.equal(validateOnboardingAnswer('bio', 'x'.repeat(501)).valid, false);
+    assert.equal(validateOnboardingAnswer('bio', 'x'.repeat(500)).valid, true);
+  });
+
+  it('validates the quiz-length feedback options', () => {
+    for (const id of ['shorter', 'just_right', 'more_detailed']) {
+      assert.equal(validateOnboardingAnswer('quiz_feedback', id).valid, true, id);
+    }
+    assert.equal(validateOnboardingAnswer('quiz_feedback', 'invented').valid, false);
+  });
+
+  it('requires photos and bio for both genders', () => {
+    for (const gender of ['male', 'female']) {
+      const keys = getRequiredKeysForGender(gender);
+      assert.ok(keys.includes('photos'), `${gender} missing photos`);
+      assert.ok(keys.includes('bio'), `${gender} missing bio`);
+      assert.ok(keys.includes('quiz_feedback'), `${gender} missing quiz_feedback`);
+
+      const answers = completeAnswersFor(gender);
+      delete answers.photos;
+      assert.equal(isOnboardingComplete(answers), false, `${gender} without photos`);
     }
   });
 });

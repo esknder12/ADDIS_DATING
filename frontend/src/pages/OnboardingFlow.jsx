@@ -74,6 +74,7 @@ export default function OnboardingFlow({ user, onFinished }) {
         {step.kind === 'question' ? (
           <QuestionScreen
             step={step}
+            user={user}
             gender={onboarding.gender}
             savedAnswer={onboarding.answers[step.key]}
             onSubmit={onboarding.submitAnswer}

@@ -10,10 +10,13 @@ import {
   SingleOption,
   ThumbnailOption,
 } from './OptionControls.jsx';
+import PhotoUploadInput from './PhotoUploadInput.jsx';
 import QuestionHeader from './QuestionHeader.jsx';
 
 function initialValue(step, savedAnswer) {
   if (step.input === 'multi') return Array.isArray(savedAnswer) ? savedAnswer : [];
+  if (step.input === 'photos') return Array.isArray(savedAnswer) ? savedAnswer : [];
+  if (step.input === 'text') return typeof savedAnswer === 'string' ? savedAnswer : '';
   if (step.input === 'number') {
     return typeof savedAnswer === 'number' || typeof savedAnswer === 'string'
       ? savedAnswer
@@ -144,6 +147,26 @@ function StandardOptions({ step, value, setValue, submitSingle }) {
   );
 }
 
+function TextInput({ step, value, onChange }) {
+  const maxLength = step.maxLength ?? 500;
+  return (
+    <div className="bio-field">
+      <label>
+        <span className="sr-only">{step.title}</span>
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value.slice(0, maxLength))}
+          placeholder={step.placeholder || 'Write something about yourself...'}
+          rows={5}
+          maxLength={maxLength}
+          autoFocus
+        />
+      </label>
+      <span className="bio-count" aria-live="polite">{value.length}/{maxLength}</span>
+    </div>
+  );
+}
+
 function LocationInput({ gender, value, onChange }) {
   const lookingForNoun = gender === 'female' ? 'men' : 'women';
   const [query, setQuery] = useState(value ? `${value.name}, ${value.country}` : '');
@@ -253,7 +276,7 @@ function NumberInput({ gender, step, value, onChange }) {
   );
 }
 
-export default function QuestionScreen({ step, gender, savedAnswer, onSubmit, saving, error }) {
+export default function QuestionScreen({ step, user, gender, savedAnswer, onSubmit, saving, error }) {
   const [value, setValue] = useState(() => initialValue(step, savedAnswer));
   const [selectionPending, setSelectionPending] = useState(false);
   const timerRef = useRef(null);
@@ -303,6 +326,15 @@ export default function QuestionScreen({ step, gender, savedAnswer, onSubmit, sa
           <NumberInput gender={gender} step={step} value={value} onChange={setValue} />
         ) : step.input === 'location' ? (
           <LocationInput gender={gender} value={value} onChange={setValue} />
+        ) : step.input === 'photos' ? (
+          <PhotoUploadInput
+            step={step}
+            value={value}
+            onChange={setValue}
+            isDemo={user?.isDemo !== false}
+          />
+        ) : step.input === 'text' ? (
+          <TextInput step={step} value={value} onChange={setValue} />
         ) : (
           <StandardOptions
             step={step}

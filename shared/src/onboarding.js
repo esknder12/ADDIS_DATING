@@ -858,6 +858,44 @@ const rawFlow = [
       { id: 'doesnt_matter', label: "Doesn't matter" },
     ],
   },
+  {
+    key: 'photos',
+    kind: 'question',
+    section: 'almost-there',
+    input: 'photos',
+    layout: 'photos',
+    title: 'Add a photo',
+    subtitle: 'Choose a clear photo where your face is easy to see.',
+    minPhotos: 1,
+    maxPhotos: 3,
+  },
+  {
+    key: 'bio',
+    kind: 'question',
+    section: 'almost-there',
+    input: 'text',
+    layout: 'bio',
+    title: 'Tell us a little about yourself',
+    subtitle: 'A couple of sentences is enough to start a conversation.',
+    placeholder: 'For example: I love long walks and know the best breakfast spot...',
+    minLength: 2,
+    maxLength: 500,
+  },
+  {
+    key: 'quiz_feedback',
+    kind: 'question',
+    section: 'almost-there',
+    input: 'single',
+    layout: 'pills',
+    title: 'How was the quiz length?',
+    subtitle: 'One last question. Your answer will help us improve it.',
+    autoAdvance: true,
+    options: [
+      { id: 'shorter', label: "I'd like it shorter", icon: '⚡' },
+      { id: 'just_right', label: 'Just right', icon: '⚖' },
+      { id: 'more_detailed', label: 'It could be more detailed', icon: '🎯' },
+    ],
+  },
 ];
 
 function baseOptionsFor(step) {
@@ -1088,6 +1126,43 @@ export function validateOnboardingAnswer(questionKey, rawAnswer) {
     const knownLocation = locationSuggestions.find((location) => location.id === rawAnswer.id);
     if (!knownLocation) return validationFailure('Choose a supported city from the suggestions.');
     return { valid: true, value: knownLocation };
+  }
+
+  if (question.input === 'photos') {
+    const minPhotos = question.minPhotos ?? 1;
+    const maxPhotos = question.maxPhotos ?? 3;
+    if (!Array.isArray(rawAnswer)) return validationFailure('Add at least one photo to continue.');
+    const items = rawAnswer.filter(Boolean);
+    if (items.length < minPhotos) return validationFailure('Add at least one photo to continue.');
+    if (items.length > maxPhotos) {
+      return validationFailure(`You can add up to ${maxPhotos} photos here.`);
+    }
+    const value = [];
+    for (const item of items) {
+      const url = typeof item === 'string' ? item : item?.url;
+      const id = typeof item === 'object' && item !== null ? item.id : undefined;
+      if (typeof url !== 'string' || url.length < 8 || url.length > 1_000_000) {
+        return validationFailure('Each photo must be a valid uploaded image.');
+      }
+      if (!/^(https?:\/\/|data:image\/)/.test(url)) {
+        return validationFailure('Each photo must be a valid uploaded image.');
+      }
+      value.push(id === undefined ? { url } : { id, url });
+    }
+    return { valid: true, value };
+  }
+
+  if (question.input === 'text') {
+    const minLength = question.minLength ?? 2;
+    const maxLength = question.maxLength ?? 500;
+    const value = String(rawAnswer ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim();
+    if (value.length < minLength) {
+      return validationFailure('Tell us a little about yourself to continue.');
+    }
+    if (value.length > maxLength) {
+      return validationFailure(`Keep it under ${maxLength} characters.`);
+    }
+    return { valid: true, value };
   }
 
   return validationFailure('This answer type is not supported.');
