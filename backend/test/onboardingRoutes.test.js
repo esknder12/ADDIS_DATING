@@ -86,7 +86,7 @@ describe('onboarding routes', () => {
       body: JSON.stringify({
         answer: 'male',
         currentStepIndex: 1,
-        currentStepKey: 'social-proof',
+        currentStepKey: 'age',
       }),
     });
     assert.equal(response.status, 200);
@@ -101,7 +101,7 @@ describe('onboarding routes', () => {
       method: 'PUT',
       body: JSON.stringify({
         answer: 16,
-        currentStepIndex: 35,
+        currentStepIndex: 36,
         currentStepKey: 'location',
       }),
     });

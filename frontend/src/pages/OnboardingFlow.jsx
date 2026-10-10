@@ -50,7 +50,11 @@ export default function OnboardingFlow({ user, onFinished }) {
           demo={user.isDemo}
           onRestart={onboarding.restartPreview}
         />
-        <OnboardingComplete firstName={user.firstName} onNext={onFinished} />
+        <OnboardingComplete
+          firstName={user.firstName}
+          answerCount={Object.keys(onboarding.answers).length}
+          onNext={onFinished}
+        />
       </div>
     );
   }
@@ -70,6 +74,8 @@ export default function OnboardingFlow({ user, onFinished }) {
         {step.kind === 'question' ? (
           <QuestionScreen
             step={step}
+            user={user}
+            gender={onboarding.gender}
             savedAnswer={onboarding.answers[step.key]}
             onSubmit={onboarding.submitAnswer}
             saving={onboarding.saving}
@@ -78,6 +84,7 @@ export default function OnboardingFlow({ user, onFinished }) {
         ) : (
           <InterstitialScreen
             step={step}
+            gender={onboarding.gender}
             onContinue={onboarding.continueInterstitial}
             saving={onboarding.saving}
             error={onboarding.error}

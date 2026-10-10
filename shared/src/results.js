@@ -1,4 +1,4 @@
-import { onboardingQuestionByKey } from './onboarding.js';
+import { normalizeGender, onboardingQuestionByKey } from './onboarding.js';
 
 /**
  * Phase 3 — post-onboarding conversion flow (spec section 4).
@@ -33,6 +33,16 @@ export const resultsFlow = Object.freeze([
       { quote: 'Finally, real people.', author: 'Dawit, 31', stars: 5 },
       { quote: 'The first app where conversations actually go somewhere.', author: 'Nahom, 26', stars: 5 },
     ]),
+    variants: {
+      female: {
+        heading: 'Finding men who match your type...',
+        testimonials: [
+          { quote: 'Met my boyfriend in 9 days', author: 'Hanna, 28', stars: 5 },
+          { quote: 'Finally, real people.', author: 'Meron, 31', stars: 5 },
+          { quote: 'The first app where conversations actually go somewhere.', author: 'Tsion, 26', stars: 5 },
+        ],
+      },
+    },
   },
   {
     key: 'match-result',
@@ -48,6 +58,11 @@ export const resultsFlow = Object.freeze([
     placeholder: 'Your email',
     cta: 'CONTINUE',
     skipCta: 'SKIP THIS STEP',
+    variants: {
+      female: {
+        heading: 'Enter your email to get your personalized Match Report and meet him',
+      },
+    },
   },
   {
     key: 'name',
@@ -83,6 +98,23 @@ export const resultsFlow = Object.freeze([
 ]);
 
 export const resultsStepByKey = new Map(resultsFlow.map((step) => [step.key, step]));
+
+/**
+ * Gender-conditional ("IF") results copy, mirroring the onboarding branch:
+ * women see men/he/him copy, men see women/she/her copy.
+ */
+export function resolveResultsStep(step, gender) {
+  const normalized = normalizeGender(gender);
+  if (!normalized || !step) return step;
+  const variant = step.variants?.[normalized];
+  if (!variant) return step;
+  return { ...step, ...variant };
+}
+
+export function getResultsFlowForGender(gender) {
+  const normalized = normalizeGender(gender);
+  return resultsFlow.map((step) => resolveResultsStep(step, normalized));
+}
 
 export const PROMO_CODE = 'dategram_oct26';
 export const PROMO_PERCENT = 50;
@@ -125,19 +157,11 @@ const cityPoolBase = {
 export function computeMatchResult(answers = {}) {
   let score = 68;
 
-  if (Array.isArray(answers.looking_for) && answers.looking_for.includes('serious_relationship')) score += 5;
   if (Array.isArray(answers.what_matters) && answers.what_matters.includes('emotional_connection')) score += 3;
   if (answers.conversation_confidence === 'confident') score += 4;
   else if (answers.conversation_confidence === 'never_know') score -= 2;
 
-  const readiness = optionLabel('date_readiness', answers.date_readiness, null);
-  const readinessStep = onboardingQuestionByKey.get('date_readiness');
-  const readinessEnergy = readinessStep?.options?.find((option) => option.id === answers.date_readiness)?.energy;
-  if (Number.isInteger(readinessEnergy)) score += readinessEnergy * 2 - 3;
-  void readiness;
-
   if (answers.four_week_goal === 'one_first_date') score += 4;
-  if (answers.last_relationship === 'less_than_year') score += 1;
 
   score = Math.min(97, Math.max(35, score));
 
@@ -145,7 +169,6 @@ export function computeMatchResult(answers = {}) {
 
   const preferredStyles = Array.isArray(answers.style_preference) ? answers.style_preference : [];
   const styleLabel = optionLabel('style_preference', preferredStyles[0], 'Natural');
-  const ageLabel = optionLabel('age_range_preference', answers.age_range_preference, '25–30');
 
   const datingStyle = datingStyleByEnergy[answers.social_energy] || 'Connector';
 
@@ -156,15 +179,16 @@ export function computeMatchResult(answers = {}) {
 
   const responseMultiplier = responseMultiplierByConfidence[answers.conversation_confidence] ?? 1.6;
   const responseLabel = responseMultiplier >= 1.9 ? 'Above average' : 'Average';
+  const poolNoun = normalizeGender(answers.gender) === 'female' ? 'men' : 'women';
 
   return {
     score,
     band,
     positionPercent: score,
-    typeSummary: `${styleLabel}, ${ageLabel}`,
+    typeSummary: styleLabel,
     datingStyle,
     matchPool,
-    matchPoolLabel: `${matchPool} women in ${city}`,
+    matchPoolLabel: `${matchPool} ${poolNoun} in ${city}`,
     responseMultiplier,
     responseLabel,
     generatedAt: new Date().toISOString(),

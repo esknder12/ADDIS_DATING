@@ -62,9 +62,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
       .map((id) => onboardingQuestionByKey.get(key)?.options?.find((option) => option.id === id)?.label)
       .filter(Boolean);
     return {
-      lookingFor: labels(answers.looking_for, 'looking_for').join(', ') || '—',
       aboutYou: labels(answers.style_preference, 'style_preference').join(', ') || '—',
-      ageRange: labels(answers.age_range_preference, 'age_range_preference').join(', ') || '—',
       availability: labels(answers.meeting_availability, 'meeting_availability').join(', ') || '—',
     };
   }, [answers]);
@@ -420,9 +418,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
               <>
                 <h2>Looking for</h2>
                 <dl className="looking-list">
-                  <div><dt>Intentions</dt><dd>{lookingSummary.lookingFor}</dd></div>
                   <div><dt>Your type</dt><dd>{lookingSummary.aboutYou}</dd></div>
-                  <div><dt>Age range</dt><dd>{lookingSummary.ageRange}</dd></div>
                   <div><dt>Free to meet</dt><dd>{lookingSummary.availability}</dd></div>
                 </dl>
                 <small>Start onboarding again from the top bar to adjust these answers.</small>

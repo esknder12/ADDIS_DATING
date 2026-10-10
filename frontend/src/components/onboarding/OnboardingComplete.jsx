@@ -1,7 +1,7 @@
 import { totalQuestionCount } from '@dategram/shared/onboarding';
 import BrandMark from '../BrandMark.jsx';
 
-export default function OnboardingComplete({ firstName, onNext }) {
+export default function OnboardingComplete({ firstName, answerCount, onNext }) {
   return (
     <main className="onboarding-complete">
       <div className="completion-orbit" aria-hidden="true">
@@ -14,7 +14,7 @@ export default function OnboardingComplete({ firstName, onNext }) {
       <h1>{firstName ? `${firstName}, your answers are in.` : 'Your answers are in.'}</h1>
       <p className="completion-copy">We have everything needed to build your personalized dating profile and calculate your match potential.</p>
       <div className="completion-stats">
-        <div><strong>{totalQuestionCount}</strong><span>answers</span></div>
+        <div><strong>{Number.isInteger(answerCount) && answerCount > 0 ? answerCount : totalQuestionCount}</strong><span>answers</span></div>
         <div><strong>5</strong><span>sections</span></div>
         <div><strong>✓</strong><span>saved</span></div>
       </div>
