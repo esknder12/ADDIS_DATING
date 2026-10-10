@@ -10,6 +10,7 @@ import {
   SingleOption,
   ThumbnailOption,
 } from './OptionControls.jsx';
+import MatchPreviewCard from './MatchPreviewCard.jsx';
 import PhotoUploadInput from './PhotoUploadInput.jsx';
 import QuestionHeader from './QuestionHeader.jsx';
 
@@ -344,7 +345,7 @@ export default function QuestionScreen({ step, user, gender, savedAnswer, onSubm
           />
         )}
 
-        {step.banner?.image && (
+        {(step.banner?.image || step.banner?.visual) && (
           <figure className="question-banner">
             <figcaption>
               {step.banner.eyebrow && (
@@ -353,7 +354,11 @@ export default function QuestionScreen({ step, user, gender, savedAnswer, onSubm
               {step.banner.title && <strong>{step.banner.title}</strong>}
               {step.banner.body && <span>{step.banner.body}</span>}
             </figcaption>
-            <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
+            {step.banner.visual === 'match-preview' ? (
+              <MatchPreviewCard gender={gender} />
+            ) : (
+              <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
+            )}
           </figure>
         )}
 

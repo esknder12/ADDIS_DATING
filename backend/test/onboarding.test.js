@@ -49,7 +49,7 @@ describe('onboarding configuration', () => {
   it('contains the complete five-section flow with stable unique keys', () => {
     assert.equal(totalQuestionCount, 39);
     assert.equal(questionSteps.length, 39);
-    assert.equal(onboardingFlow.length, 49);
+    assert.equal(onboardingFlow.length, 48);
     assert.equal(new Set(onboardingFlow.map((step) => step.key)).size, onboardingFlow.length);
     assert.equal(new Set(requiredQuestionKeys).size, totalQuestionCount);
   });
@@ -155,9 +155,9 @@ describe('gender-conditional (IF) onboarding', () => {
       'What do you want to share with him?',
     );
 
-    const intention = onboardingStepByKey.get('intention-preview');
-    assert.match(resolveOnboardingStep(intention, 'male').title, /women/);
-    assert.match(resolveOnboardingStep(intention, 'female').title, /men/);
+    const intention = onboardingStepByKey.get('what_matters');
+    assert.match(resolveOnboardingStep(intention, 'male').banner.title, /women/);
+    assert.match(resolveOnboardingStep(intention, 'female').banner.title, /men/);
 
     const firstMove = onboardingStepByKey.get('first_move_preference');
     assert.deepEqual(

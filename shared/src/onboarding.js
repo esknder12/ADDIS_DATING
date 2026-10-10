@@ -148,17 +148,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'intention-preview',
-    kind: 'interstitial',
-    section: 'about-you',
-    variant: 'match-preview',
-    title: "We'll show you women who want the same thing.",
-    body: "No guessing games. We match you on intention first, so you don't waste weeks on people who want something different.",
-    variants: {
-      female: { title: "We'll show you men who want the same thing." },
-    },
-  },
-  {
     key: 'what_matters',
     kind: 'question',
     section: 'about-you',
@@ -166,6 +155,20 @@ const rawFlow = [
     layout: 'pills',
     title: 'What else matters to you?',
     subtitle: 'Choose all that apply',
+    banner: {
+      title: "We'll show you women who want the same thing.",
+      body: "No guessing games. We match you on intention first, so you don't waste weeks on people who want something different.",
+      visual: 'match-preview',
+    },
+    variants: {
+      female: {
+        banner: {
+          title: "We'll show you men who want the same thing.",
+          body: "No guessing games. We match you on intention first, so you don't waste weeks on people who want something different.",
+          visual: 'match-preview',
+        },
+      },
+    },
     options: [
       { id: 'travel_partner', label: 'Someone to travel with', icon: '✈' },
       { id: 'emotional_connection', label: 'Emotional connection', icon: '♡' },
