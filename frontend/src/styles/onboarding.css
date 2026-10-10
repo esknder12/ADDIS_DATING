@@ -1956,42 +1956,57 @@
   font-size: 13px;
 }
 
-/* Merged promo banner (interstitial content inside a question) */
+/* Merged promo banner: deliberately secondary to the question above it —
+   small muted text + a short landscape image crop. */
 .question-banner {
-  margin: 20px 0 4px;
+  margin: 16px 0 4px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .question-banner figcaption {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 4px;
+  margin-bottom: 10px;
 }
 
 .question-banner__eyebrow {
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
 
 .question-banner strong {
-  font-size: 26px;
-  line-height: 1.15;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .question-banner figcaption span:last-child {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 15px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13.5px;
+  line-height: 1.45;
 }
 
-.question-banner img {
+.question-banner > img,
+.question-banner__verified img {
   display: block;
   width: 100%;
-  border-radius: 18px;
+  height: 150px;
+  border-radius: 14px;
+  object-fit: cover;
+  object-position: center 30%;
 }
 
 .question-banner__verified {
   position: relative;
   display: block;
+}
+
+.question-banner .sample-match-card {
+  min-height: 170px;
+  margin-top: 0;
 }
