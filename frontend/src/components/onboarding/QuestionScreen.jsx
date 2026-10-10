@@ -356,6 +356,11 @@ export default function QuestionScreen({ step, user, gender, savedAnswer, onSubm
             </figcaption>
             {step.banner.visual === 'match-preview' ? (
               <MatchPreviewCard gender={gender} />
+            ) : step.banner.badge === 'verified' ? (
+              <span className="question-banner__verified">
+                <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
+                <span className="verified-overlay"><b>✓</b> Verified</span>
+              </span>
             ) : (
               <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
             )}

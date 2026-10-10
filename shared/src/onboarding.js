@@ -288,21 +288,6 @@ const rawFlow = [
     ],
   },
   {
-    key: 'real-photos',
-    kind: 'interstitial',
-    section: 'your-type',
-    variant: 'verified-photo',
-    title: 'Every photo you see is real.',
-    body: "Women here pass photo and video verification. You'll get a verified badge on every profile you're shown.",
-    image: image.social,
-    imageAlt: 'Verified members of the Dategram community',
-    variants: {
-      female: {
-        body: "Men here pass photo and video verification. You'll get a verified badge on every profile you're shown.",
-      },
-    },
-  },
-  {
     key: 'age_range_preference',
     kind: 'question',
     section: 'your-type',
@@ -311,6 +296,24 @@ const rawFlow = [
     title: 'What age range are you into?',
     autoAdvance: true,
     sideImage: image.social,
+    banner: {
+      title: 'Every photo you see is real.',
+      body: "Women here pass photo and video verification. You'll get a verified badge on every profile you're shown.",
+      image: image.social,
+      imageAlt: 'Verified members of the Dategram community',
+      badge: 'verified',
+    },
+    variants: {
+      female: {
+        banner: {
+          title: 'Every photo you see is real.',
+          body: "Men here pass photo and video verification. You'll get a verified badge on every profile you're shown.",
+          image: image.social,
+          imageAlt: 'Verified members of the Dategram community',
+          badge: 'verified',
+        },
+      },
+    },
     options: [
       { id: '18_24', label: '18–24' },
       { id: '25_30', label: '25–30' },

@@ -49,7 +49,7 @@ describe('onboarding configuration', () => {
   it('contains the complete five-section flow with stable unique keys', () => {
     assert.equal(totalQuestionCount, 39);
     assert.equal(questionSteps.length, 39);
-    assert.equal(onboardingFlow.length, 48);
+    assert.equal(onboardingFlow.length, 47);
     assert.equal(new Set(onboardingFlow.map((step) => step.key)).size, onboardingFlow.length);
     assert.equal(new Set(requiredQuestionKeys).size, totalQuestionCount);
   });

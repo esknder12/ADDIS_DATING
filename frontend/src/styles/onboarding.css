@@ -1990,3 +1990,8 @@
   width: 100%;
   border-radius: 18px;
 }
+
+.question-banner__verified {
+  position: relative;
+  display: block;
+}
