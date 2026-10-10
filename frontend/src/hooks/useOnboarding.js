@@ -50,9 +50,14 @@ function snapToVisibleIndex(requestedIndex, answers, direction = 1) {
 
 function clampProgress(data) {
   const indexFromKey = onboardingFlow.findIndex((step) => step.key === data?.currentStepKey);
-  const requestedIndex = Number.isInteger(data?.currentStepIndex)
+  let requestedIndex = Number.isInteger(data?.currentStepIndex)
     ? data.currentStepIndex
     : indexFromKey;
+  // Prefer the stored step key when the saved index no longer points at it
+  // (e.g. after a flow reorder), so resume lands on the right screen.
+  if (indexFromKey >= 0 && onboardingFlow[requestedIndex]?.key !== data?.currentStepKey) {
+    requestedIndex = indexFromKey;
+  }
   const answers = data?.answers && typeof data.answers === 'object' ? data.answers : {};
   const rawIndex = Math.min(
     Math.max(requestedIndex >= 0 ? requestedIndex : 0, 0),
