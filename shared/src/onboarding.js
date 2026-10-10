@@ -85,20 +85,6 @@ const rawFlow = [
     note: 'Available only to adults 18 and over.',
   },
   {
-    key: 'social-proof',
-    kind: 'interstitial',
-    section: 'about-you',
-    variant: 'photo',
-    eyebrow: 'AS FEATURED IN',
-    title: 'Over 2.4M men',
-    body: 'in their 20s–40s have already met someone here.',
-    image: image.social,
-    imageAlt: 'Two friends enjoying an evening in Addis Ababa',
-    variants: {
-      female: { title: 'Over 1.8M women' },
-    },
-  },
-  {
     key: 'used_dating_apps',
     kind: 'question',
     section: 'about-you',
@@ -107,6 +93,24 @@ const rawFlow = [
     title: 'Have you used dating apps before?',
     autoAdvance: true,
     sideImage: image.lifestyle,
+    banner: {
+      eyebrow: 'AS FEATURED IN',
+      title: 'Over 2.4M men',
+      body: 'in their 20s–40s have already met someone here.',
+      image: image.social,
+      imageAlt: 'Two friends enjoying an evening in Addis Ababa',
+    },
+    variants: {
+      female: {
+        banner: {
+          eyebrow: 'AS FEATURED IN',
+          title: 'Over 1.8M women',
+          body: 'in their 20s–40s have already met someone here.',
+          image: image.social,
+          imageAlt: 'Two friends enjoying an evening in Addis Ababa',
+        },
+      },
+    },
     options: [
       { id: 'yes', label: 'Yes' },
       { id: 'no', label: 'No' },

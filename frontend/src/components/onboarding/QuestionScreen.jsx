@@ -344,6 +344,19 @@ export default function QuestionScreen({ step, user, gender, savedAnswer, onSubm
           />
         )}
 
+        {step.banner?.image && (
+          <figure className="question-banner">
+            <figcaption>
+              {step.banner.eyebrow && (
+                <span className="question-banner__eyebrow">{step.banner.eyebrow}</span>
+              )}
+              {step.banner.title && <strong>{step.banner.title}</strong>}
+              {step.banner.body && <span>{step.banner.body}</span>}
+            </figcaption>
+            <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
+          </figure>
+        )}
+
         {error && <p className="onboarding-error" role="alert">{error}</p>}
       </div>
 

@@ -4,9 +4,9 @@
 
 `shared/src/onboarding.js` is the source of truth for both browser rendering and server validation. It contains:
 
-- 51 ordered steps
+- 50 ordered steps
 - 39 configured questions (38 required per gender journey: `showFor` gates gender-exclusive steps)
-- 12 interstitial screens
+- 11 interstitial screens (social proof is merged into the dating-apps question)
 - gender-conditional (`variants` / `labelByGender`) copy resolved via `resolveOnboardingStep`
 - religion, occupation (work), and religion-preference questions
 - photo upload (`photos`), free-text bio (`text`), and quiz-feedback questions

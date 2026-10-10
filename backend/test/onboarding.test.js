@@ -49,7 +49,7 @@ describe('onboarding configuration', () => {
   it('contains the complete five-section flow with stable unique keys', () => {
     assert.equal(totalQuestionCount, 39);
     assert.equal(questionSteps.length, 39);
-    assert.equal(onboardingFlow.length, 51);
+    assert.equal(onboardingFlow.length, 50);
     assert.equal(new Set(onboardingFlow.map((step) => step.key)).size, onboardingFlow.length);
     assert.equal(new Set(requiredQuestionKeys).size, totalQuestionCount);
   });
@@ -171,9 +171,9 @@ describe('gender-conditional (IF) onboarding', () => {
   });
 
   it('shows gender-specific social proof and success stories', () => {
-    const proof = onboardingStepByKey.get('social-proof');
-    assert.equal(resolveOnboardingStep(proof, 'male').title, 'Over 2.4M men');
-    assert.equal(resolveOnboardingStep(proof, 'female').title, 'Over 1.8M women');
+    const datingApps = onboardingStepByKey.get('used_dating_apps');
+    assert.equal(resolveOnboardingStep(datingApps, 'male').banner.title, 'Over 2.4M men');
+    assert.equal(resolveOnboardingStep(datingApps, 'female').banner.title, 'Over 1.8M women');
 
     const stories = onboardingStepByKey.get('success-stories');
     assert.equal(resolveOnboardingStep(stories, 'male').stats[0].label, 'men with us');
