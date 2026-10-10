@@ -155,7 +155,7 @@ const cityPoolBase = {
  * the persisted answers (implementation rule 4).
  */
 export function computeMatchResult(answers = {}) {
-  let score = 68;
+  let score = 74;
 
   if (Array.isArray(answers.what_matters) && answers.what_matters.includes('emotional_connection')) score += 3;
   if (answers.conversation_confidence === 'confident') score += 4;
@@ -177,7 +177,7 @@ export function computeMatchResult(answers = {}) {
   const answerFingerprint = JSON.stringify(answers).length % 7;
   const matchPool = poolBase + answerFingerprint;
 
-  const responseMultiplier = responseMultiplierByConfidence[answers.conversation_confidence] ?? 1.6;
+  const responseMultiplier = responseMultiplierByConfidence[answers.conversation_confidence] ?? 2.1;
   const responseLabel = responseMultiplier >= 1.9 ? 'Above average' : 'Average';
   const poolNoun = normalizeGender(answers.gender) === 'female' ? 'men' : 'women';
 

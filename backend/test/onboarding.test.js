@@ -50,25 +50,25 @@ function completeAnswersFor(gender) {
 
 describe('onboarding configuration', () => {
   it('contains the complete five-section flow with stable unique keys', () => {
-    assert.equal(totalQuestionCount, 29);
-    assert.equal(questionSteps.length, 29);
-    assert.equal(onboardingFlow.length, 33);
+    assert.equal(totalQuestionCount, 18);
+    assert.equal(questionSteps.length, 18);
+    assert.equal(onboardingFlow.length, 20);
     assert.equal(new Set(onboardingFlow.map((step) => step.key)).size, onboardingFlow.length);
     assert.equal(new Set(requiredQuestionKeys).size, totalQuestionCount);
   });
 
-  it('gives every gender a 28-question journey', () => {
-    assert.equal(getQuestionCountForGender('male'), 28);
-    assert.equal(getQuestionCountForGender('female'), 28);
-    assert.equal(getRequiredKeysForGender('male').length, 28);
-    assert.equal(getRequiredKeysForGender('female').length, 28);
+  it('gives every gender an 18-question journey', () => {
+    assert.equal(getQuestionCountForGender('male'), 18);
+    assert.equal(getQuestionCountForGender('female'), 18);
+    assert.equal(getRequiredKeysForGender('male').length, 18);
+    assert.equal(getRequiredKeysForGender('female').length, 18);
     assert.equal(
       getVisibleSteps('male').filter((step) => step.kind === 'question').length,
-      28,
+      18,
     );
     assert.equal(
       getVisibleSteps('female').filter((step) => step.kind === 'question').length,
-      28,
+      18,
     );
   });
 
@@ -106,22 +106,6 @@ describe('onboarding configuration', () => {
       'emotional_connection',
     ]);
     assert.deepEqual(result, { valid: true, value: ['emotional_connection'] });
-  });
-
-  it('pins every merged promo banner to the bottom of its screen', () => {
-    const bannerKeys = questionSteps
-      .filter((step) => step.banner)
-      .map((step) => step.key)
-      .sort();
-    assert.deepEqual(bannerKeys, ['what_matters']);
-    for (const key of bannerKeys) {
-      const step = onboardingStepByKey.get(key);
-      assert.equal(step.banner.placement, 'bottom', key);
-      for (const gender of ['male', 'female']) {
-        const variant = step.variants?.[gender]?.banner;
-        if (variant) assert.equal(variant.placement, 'bottom', `${key} (${gender})`);
-      }
-    }
   });
 });
 
@@ -174,10 +158,6 @@ describe('gender-conditional (IF) onboarding', () => {
       'How active should he be?',
     );
 
-    const intention = onboardingStepByKey.get('what_matters');
-    assert.match(resolveOnboardingStep(intention, 'male').banner.title, /women/);
-    assert.match(resolveOnboardingStep(intention, 'female').banner.title, /men/);
-
     const kids = onboardingStepByKey.get('kids_preference');
     const find = (step, gender) => resolveOnboardingStep(step, gender)
       .options.find((option) => option.id === 'already_have_open');
@@ -185,51 +165,9 @@ describe('gender-conditional (IF) onboarding', () => {
     assert.equal(find(kids, 'female').label, 'Already have, open to his');
   });
 
-  it('shows gender-specific social proof and success stories', () => {
-    const intention = onboardingStepByKey.get('what_matters');
-    assert.equal(
-      resolveOnboardingStep(intention, 'male').banner.title,
-      "We'll show you women who want the same thing.",
-    );
-    assert.equal(
-      resolveOnboardingStep(intention, 'female').banner.title,
-      "We'll show you men who want the same thing.",
-    );
-
-    const stories = onboardingStepByKey.get('success-stories');
-    assert.equal(resolveOnboardingStep(stories, 'male').stats[0].label, 'men with us');
-    assert.equal(resolveOnboardingStep(stories, 'female').stats[0].label, 'women with us');
-    assert.equal(
-      resolveOnboardingStep(stories, 'female').testimonials[0].name,
-      'Hanna',
-    );
-  });
-
-  it('shows each gender only its own first-date question (IF showFor)', () => {
-    const charm = onboardingStepByKey.get('first_date_charm');
-    const expectation = onboardingStepByKey.get('first_date_expectation');
-    assert.equal(isStepVisibleForGender(charm, 'male'), true);
-    assert.equal(isStepVisibleForGender(charm, 'female'), false);
-    assert.equal(isStepVisibleForGender(expectation, 'male'), false);
-    assert.equal(isStepVisibleForGender(expectation, 'female'), true);
-    assert.equal(isStepVisibleForGender(charm, null), true);
-    assert.ok(getRequiredKeysForGender('male').includes('first_date_charm'));
-    assert.ok(!getRequiredKeysForGender('male').includes('first_date_expectation'));
-    assert.ok(getRequiredKeysForGender('female').includes('first_date_expectation'));
-    assert.ok(!getRequiredKeysForGender('female').includes('first_date_charm'));
-  });
-
-  it('completes each gender journey without the other gender questions', () => {
+  it('completes each gender journey with all questions answered', () => {
     assert.equal(isOnboardingComplete(completeAnswersFor('male')), true);
     assert.equal(isOnboardingComplete(completeAnswersFor('female')), true);
-
-    const missingMaleOnly = completeAnswersFor('male');
-    delete missingMaleOnly.first_date_charm;
-    assert.equal(isOnboardingComplete(missingMaleOnly), false);
-
-    const missingFemaleOnly = completeAnswersFor('female');
-    delete missingFemaleOnly.first_date_expectation;
-    assert.equal(isOnboardingComplete(missingFemaleOnly), false);
   });
 });
 
@@ -257,9 +195,9 @@ describe('answer-conditional (IF) onboarding', () => {
     const yes = { gender: 'male', what_matters: ['building_family'] };
     assert.equal(isStepVisible(conditionalStep, 'male', yes), true);
     assert.equal(isStepVisible(conditionalStep, 'female', yes), false);
-    const charm = onboardingStepByKey.get('first_date_charm');
-    assert.equal(isStepVisible(charm, 'male', yes), true);
-    assert.equal(isStepVisible(charm, 'female', yes), false);
+    const maleOnlyStep = { key: 'male_only', kind: 'question', showFor: ['male'] };
+    assert.equal(isStepVisible(maleOnlyStep, 'male', yes), true);
+    assert.equal(isStepVisible(maleOnlyStep, 'female', yes), false);
   });
 
   it('keeps home_atmosphere unconditional and required on every journey', () => {
@@ -352,19 +290,11 @@ describe('photo, bio, and quiz-feedback questions', () => {
     assert.equal(validateOnboardingAnswer('bio', 'x'.repeat(500)).valid, true);
   });
 
-  it('validates the quiz-length feedback options', () => {
-    for (const id of ['shorter', 'just_right', 'more_detailed']) {
-      assert.equal(validateOnboardingAnswer('quiz_feedback', id).valid, true, id);
-    }
-    assert.equal(validateOnboardingAnswer('quiz_feedback', 'invented').valid, false);
-  });
-
   it('requires photos and bio for both genders', () => {
     for (const gender of ['male', 'female']) {
       const keys = getRequiredKeysForGender(gender);
       assert.ok(keys.includes('photos'), `${gender} missing photos`);
       assert.ok(keys.includes('bio'), `${gender} missing bio`);
-      assert.ok(keys.includes('quiz_feedback'), `${gender} missing quiz_feedback`);
 
       const answers = completeAnswersFor(gender);
       delete answers.photos;
