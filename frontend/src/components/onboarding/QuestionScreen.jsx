@@ -10,10 +10,14 @@ import {
   SingleOption,
   ThumbnailOption,
 } from './OptionControls.jsx';
+import MatchPreviewCard from './MatchPreviewCard.jsx';
+import PhotoUploadInput from './PhotoUploadInput.jsx';
 import QuestionHeader from './QuestionHeader.jsx';
 
 function initialValue(step, savedAnswer) {
   if (step.input === 'multi') return Array.isArray(savedAnswer) ? savedAnswer : [];
+  if (step.input === 'photos') return Array.isArray(savedAnswer) ? savedAnswer : [];
+  if (step.input === 'text') return typeof savedAnswer === 'string' ? savedAnswer : '';
   if (step.input === 'number') {
     return typeof savedAnswer === 'number' || typeof savedAnswer === 'string'
       ? savedAnswer
@@ -144,7 +148,28 @@ function StandardOptions({ step, value, setValue, submitSingle }) {
   );
 }
 
-function LocationInput({ value, onChange }) {
+function TextInput({ step, value, onChange }) {
+  const maxLength = step.maxLength ?? 500;
+  return (
+    <div className="bio-field">
+      <label>
+        <span className="sr-only">{step.title}</span>
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value.slice(0, maxLength))}
+          placeholder={step.placeholder || 'Write something about yourself...'}
+          rows={5}
+          maxLength={maxLength}
+          autoFocus
+        />
+      </label>
+      <span className="bio-count" aria-live="polite">{value.length}/{maxLength}</span>
+    </div>
+  );
+}
+
+function LocationInput({ gender, value, onChange }) {
+  const lookingForNoun = gender === 'female' ? 'men' : 'women';
   const [query, setQuery] = useState(value ? `${value.name}, ${value.country}` : '');
   const suggestions = useMemo(() => filterLocations(query), [query]);
 
@@ -200,7 +225,7 @@ function LocationInput({ value, onChange }) {
         <div className="location-confirmation">
           <span className="location-confirmation__icon">⌖</span>
           <div>
-            <strong>11 women active in {value.name} this week</strong>
+            <strong>11 {lookingForNoun} active in {value.name} this week</strong>
             <p>Most of them replied to a message in the last 24 hours.</p>
           </div>
         </div>
@@ -209,9 +234,10 @@ function LocationInput({ value, onChange }) {
   );
 }
 
-function NumberInput({ step, value, onChange }) {
+function NumberInput({ gender, step, value, onChange }) {
   const numericValue = Number(value);
   const valid = Number.isInteger(numericValue) && numericValue >= step.min && numericValue <= step.max;
+  const isFemale = gender === 'female';
 
   return (
     <div className="age-field">
@@ -234,8 +260,16 @@ function NumberInput({ step, value, onChange }) {
         <div className="age-insight">
           <span>✓</span>
           <div>
-            <strong>Great news: women 25–34 are the most active group here</strong>
-            <p>Men your age get 2.3× more replies than the average.</p>
+            <strong>
+              {isFemale
+                ? 'Great news: men 25–34 are the most active group here'
+                : 'Great news: women 25–34 are the most active group here'}
+            </strong>
+            <p>
+              {isFemale
+                ? 'Women your age get 2.3× more replies than the average.'
+                : 'Men your age get 2.3× more replies than the average.'}
+            </p>
           </div>
         </div>
       )}
@@ -243,7 +277,7 @@ function NumberInput({ step, value, onChange }) {
   );
 }
 
-export default function QuestionScreen({ step, savedAnswer, onSubmit, saving, error }) {
+export default function QuestionScreen({ step, user, gender, savedAnswer, onSubmit, saving, error }) {
   const [value, setValue] = useState(() => initialValue(step, savedAnswer));
   const [selectionPending, setSelectionPending] = useState(false);
   const timerRef = useRef(null);
@@ -290,9 +324,18 @@ export default function QuestionScreen({ step, savedAnswer, onSubmit, saving, er
         )}
 
         {step.input === 'number' ? (
-          <NumberInput step={step} value={value} onChange={setValue} />
+          <NumberInput gender={gender} step={step} value={value} onChange={setValue} />
         ) : step.input === 'location' ? (
-          <LocationInput value={value} onChange={setValue} />
+          <LocationInput gender={gender} value={value} onChange={setValue} />
+        ) : step.input === 'photos' ? (
+          <PhotoUploadInput
+            step={step}
+            value={value}
+            onChange={setValue}
+            isDemo={user?.isDemo !== false}
+          />
+        ) : step.input === 'text' ? (
+          <TextInput step={step} value={value} onChange={setValue} />
         ) : (
           <StandardOptions
             step={step}
@@ -300,6 +343,28 @@ export default function QuestionScreen({ step, savedAnswer, onSubmit, saving, er
             setValue={setValue}
             submitSingle={submitSingle}
           />
+        )}
+
+        {(step.banner?.image || step.banner?.visual) && (
+          <figure className="question-banner">
+            <figcaption>
+              {step.banner.eyebrow && (
+                <span className="question-banner__eyebrow">{step.banner.eyebrow}</span>
+              )}
+              {step.banner.title && <strong>{step.banner.title}</strong>}
+              {step.banner.body && <span>{step.banner.body}</span>}
+            </figcaption>
+            {step.banner.visual === 'match-preview' ? (
+              <MatchPreviewCard gender={gender} />
+            ) : step.banner.badge === 'verified' ? (
+              <span className="question-banner__verified">
+                <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
+                <span className="verified-overlay"><b>✓</b> Verified</span>
+              </span>
+            ) : (
+              <img src={step.banner.image} alt={step.banner.imageAlt || ''} />
+            )}
+          </figure>
         )}
 
         {error && <p className="onboarding-error" role="alert">{error}</p>}

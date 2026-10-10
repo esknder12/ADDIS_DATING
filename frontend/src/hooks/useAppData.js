@@ -23,7 +23,7 @@ import {
   saveConversion as apiSaveConversion,
   sendGift as apiSendGift,
 } from '../api/client.js';
-import { createDemoStore, loadAppState } from '../lib/demoStore.js';
+import { createDemoStore, loadAppState, loadOnboardingAnswers } from '../lib/demoStore.js';
 
 function errorMessage(error, fallback) {
   return error?.response?.data?.error?.message || error?.message || fallback;
@@ -37,6 +37,18 @@ export function useAppData(user, { active = true } = {}) {
   const [profile, setProfile] = useState(() => (isDemo
     ? (() => {
       const state = loadAppState(user.telegramId);
+      const onboardingAnswers = loadOnboardingAnswers(user.telegramId);
+      const onboardingPhotos = Array.isArray(onboardingAnswers.photos)
+        ? onboardingAnswers.photos
+        : [];
+      const seededPhotos = onboardingPhotos
+        .map((photo, index) => ({
+          id: `onboarding-${index}`,
+          url: typeof photo === 'string' ? photo : photo?.url,
+          orderIndex: index,
+          isPrimary: index === 0,
+        }))
+        .filter((photo) => Boolean(photo.url));
       return {
         name: state.name,
         email: state.email,
@@ -47,11 +59,11 @@ export function useAppData(user, { active = true } = {}) {
         verificationStatus: state.verificationStatus,
         conversionCompleted: state.conversionCompleted,
         age: state.age ?? null,
-        bio: state.bio || '',
+        bio: state.bio || (typeof onboardingAnswers.bio === 'string' ? onboardingAnswers.bio : '') || '',
         city: state.city || '',
         country: state.country || '',
-        photos: state.photos || [],
-        photoUrl: state.photoUrl || null,
+        photos: state.photos?.length ? state.photos : seededPhotos,
+        photoUrl: state.photoUrl || seededPhotos[0]?.url || null,
         profileScore: state.profileScore ?? null,
         profileScoreReady: Boolean(state.profileScoreReady),
         additionalInfo: state.additionalInfo || {},
