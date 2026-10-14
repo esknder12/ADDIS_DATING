@@ -50,26 +50,131 @@ function completeAnswersFor(gender) {
 
 describe('onboarding configuration', () => {
   it('contains the complete five-section flow with stable unique keys', () => {
-    assert.equal(totalQuestionCount, 18);
-    assert.equal(questionSteps.length, 18);
-    assert.equal(onboardingFlow.length, 20);
+    assert.equal(totalQuestionCount, 17);
+    assert.equal(questionSteps.length, 17);
+    assert.equal(onboardingFlow.length, 18);
+    assert.equal(onboardingStepByKey.has('ten-minutes'), false);
+    for (const removedStep of ['home_atmosphere', 'activity_level_preference', 'kids_preference']) {
+      assert.equal(onboardingStepByKey.has(removedStep), false, removedStep);
+    }
     assert.equal(new Set(onboardingFlow.map((step) => step.key)).size, onboardingFlow.length);
     assert.equal(new Set(requiredQuestionKeys).size, totalQuestionCount);
   });
 
-  it('gives every gender an 18-question journey', () => {
-    assert.equal(getQuestionCountForGender('male'), 18);
-    assert.equal(getQuestionCountForGender('female'), 18);
-    assert.equal(getRequiredKeysForGender('male').length, 18);
-    assert.equal(getRequiredKeysForGender('female').length, 18);
+  it('gives every gender a 17-question journey', () => {
+    assert.equal(getQuestionCountForGender('male'), 17);
+    assert.equal(getQuestionCountForGender('female'), 17);
+    assert.equal(getRequiredKeysForGender('male').length, 17);
+    assert.equal(getRequiredKeysForGender('female').length, 17);
     assert.equal(
       getVisibleSteps('male').filter((step) => step.kind === 'question').length,
-      18,
+      17,
     );
     assert.equal(
       getVisibleSteps('female').filter((step) => step.kind === 'question').length,
-      18,
+      17,
     );
+  });
+
+  it('places the religion question before other priorities', () => {
+    const religionIndex = onboardingFlow.findIndex((step) => step.key === 'religion');
+    const prioritiesIndex = onboardingFlow.findIndex((step) => step.key === 'what_matters');
+    assert.ok(religionIndex >= 0 && religionIndex < prioritiesIndex);
+  });
+
+  it('asks whether a match should share the user’s religion immediately after their religion', () => {
+    const religionIndex = onboardingFlow.findIndex((step) => step.key === 'religion');
+    const preferenceIndex = onboardingFlow.findIndex((step) => step.key === 'religion_preference');
+    assert.ok(religionIndex >= 0);
+    assert.equal(preferenceIndex, religionIndex + 1);
+    assert.equal(onboardingStepByKey.get('religion_preference').section, 'about-you');
+  });
+
+  it('asks for location immediately before distance preference', () => {
+    const locationIndex = onboardingFlow.findIndex((step) => step.key === 'location');
+    const distanceIndex = onboardingFlow.findIndex((step) => step.key === 'distance_preference');
+    assert.ok(locationIndex >= 0);
+    assert.equal(distanceIndex, locationIndex + 1);
+  });
+
+  it('includes the multi-select dating intention question', () => {
+    const question = onboardingStepByKey.get('looking_for');
+    assert.equal(question.title, 'What are you looking for right now?');
+    assert.equal(question.subtitle, 'Choose all that apply');
+    assert.equal(question.input, 'multi');
+    assert.deepEqual(
+      question.options.map(({ id, label }) => [id, label]),
+      [
+        ['serious_relationship', 'Serious relationship'],
+        ['dating_and_seeing', 'Dating & seeing where it goes'],
+        ['online_communication', 'Online communication'],
+        ['not_sure', 'Not sure yet'],
+      ],
+    );
+    assert.equal(validateOnboardingAnswer('looking_for', ['serious_relationship', 'not_sure']).valid, true);
+    assert.equal(validateOnboardingAnswer('looking_for', ['invented']).valid, false);
+  });
+
+  it('uses a dedicated photo for each female body-type option', () => {
+    const options = onboardingStepByKey.get('body_type_preference').options;
+    assert.deepEqual(
+      options.map(({ id, image }) => [id, image]),
+      [
+        ['slim', '/images/body-type-slim.png?v=2'],
+        ['athletic', '/images/body-type-athletic.png?v=2'],
+        ['curvy', '/images/body-type-curvy.png?v=2'],
+        ['average', '/images/body-type-average.png?v=2'],
+      ],
+    );
+  });
+
+  it('shows male body-type options to female users and accepts Stocky', () => {
+    const question = onboardingStepByKey.get('body_type_preference');
+    const maleOptions = resolveOnboardingStep(question, 'female').options;
+    assert.deepEqual(
+      maleOptions.map(({ id, image }) => [id, image]),
+      [
+        ['slim', '/images/body-type-men-slim.png?v=2'],
+        ['athletic', '/images/body-type-men-athletic.png?v=2'],
+        ['stocky', '/images/body-type-men-stocky.png?v=2'],
+        ['average', '/images/body-type-men-average.png?v=2'],
+      ],
+    );
+    assert.equal(validateOnboardingAnswer('body_type_preference', ['stocky']).valid, true);
+  });
+
+  it('adds a private, gender-specific self-build question after body-type preference', () => {
+    const preferenceIndex = onboardingFlow.findIndex((step) => step.key === 'body_type_preference');
+    const buildIndex = onboardingFlow.findIndex((step) => step.key === 'body_build');
+    const question = onboardingStepByKey.get('body_build');
+    assert.equal(buildIndex, preferenceIndex + 1);
+    assert.equal(question.title, 'How would you describe your build?');
+    assert.equal(question.input, 'single');
+    assert.equal(question.layout, 'image-grid');
+    assert.deepEqual(
+      question.options.slice(0, 4).map(({ id, image }) => [id, image]),
+      [
+        ['slim', '/images/body-type-men-slim.png?v=2'],
+        ['athletic', '/images/body-type-men-athletic.png?v=2'],
+        ['stocky', '/images/body-type-men-stocky.png?v=2'],
+        ['average', '/images/body-type-men-average.png?v=2'],
+      ],
+    );
+    assert.equal(question.options.at(-1).id, 'prefer_not_say');
+
+    const femaleOptions = resolveOnboardingStep(question, 'female').options;
+    assert.deepEqual(
+      femaleOptions.slice(0, 4).map(({ id, image }) => [id, image]),
+      [
+        ['slim', '/images/body-type-slim.png?v=2'],
+        ['athletic', '/images/body-type-athletic.png?v=2'],
+        ['curvy', '/images/body-type-curvy.png?v=2'],
+        ['average', '/images/body-type-average.png?v=2'],
+      ],
+    );
+    assert.equal(femaleOptions.at(-1).id, 'prefer_not_say');
+    assert.equal(validateOnboardingAnswer('body_build', 'prefer_not_say').valid, true);
+    assert.equal(validateOnboardingAnswer('body_build', ['slim']).valid, false);
   });
 
   it('accepts one valid answer for every configured question', () => {
@@ -152,17 +257,6 @@ describe('gender-conditional (IF) onboarding', () => {
       'How far should he live from you?',
     );
 
-    const activity = onboardingStepByKey.get('activity_level_preference');
-    assert.equal(
-      resolveOnboardingStep(activity, 'female').title,
-      'How active should he be?',
-    );
-
-    const kids = onboardingStepByKey.get('kids_preference');
-    const find = (step, gender) => resolveOnboardingStep(step, gender)
-      .options.find((option) => option.id === 'already_have_open');
-    assert.equal(find(kids, 'male').label, 'Already have, open to hers');
-    assert.equal(find(kids, 'female').label, 'Already have, open to his');
   });
 
   it('completes each gender journey with all questions answered', () => {
@@ -188,7 +282,7 @@ describe('answer-conditional (IF) onboarding', () => {
     assert.equal(isStepVisibleForAnswers(conditionalStep, no), false);
     assert.equal(isStepVisibleForAnswers(conditionalStep, { gender: 'male' }), false);
     // Steps without `showIf` are always visible.
-    assert.equal(isStepVisibleForAnswers(onboardingStepByKey.get('home_atmosphere'), no), true);
+    assert.equal(isStepVisibleForAnswers(onboardingStepByKey.get('religion'), no), true);
   });
 
   it('combines the gender and answer gates', () => {
@@ -200,18 +294,18 @@ describe('answer-conditional (IF) onboarding', () => {
     assert.equal(isStepVisible(maleOnlyStep, 'female', yes), false);
   });
 
-  it('keeps home_atmosphere unconditional and required on every journey', () => {
+  it('keeps regular questions unconditional and required on every journey', () => {
     const missing = completeAnswersFor('male');
-    delete missing.home_atmosphere;
-    assert.ok(getRequiredKeysForAnswers(missing).includes('home_atmosphere'));
+    delete missing.occupation;
+    assert.ok(getRequiredKeysForAnswers(missing).includes('occupation'));
     assert.equal(isOnboardingComplete(missing), false);
 
     // Progress metadata is identical with or without answers while no step is
     // answer-conditional.
-    const home = onboardingStepByKey.get('home_atmosphere');
+    const work = onboardingStepByKey.get('occupation');
     assert.equal(
-      resolveOnboardingStep(home, 'male').sectionQuestionCount,
-      resolveOnboardingStep(home, 'male', missing).sectionQuestionCount,
+      resolveOnboardingStep(work, 'male').sectionQuestionCount,
+      resolveOnboardingStep(work, 'male', missing).sectionQuestionCount,
     );
   });
 });
@@ -225,10 +319,12 @@ describe('religion and work questions', () => {
   });
 
   it('validates the work (occupation) question options', () => {
-    for (const id of ['student', 'private_employee', 'government', 'business_owner', 'freelancer', 'healthcare', 'teacher', 'engineer_tech', 'hospitality', 'between_jobs', 'other']) {
+    for (const id of ['student', 'private_employee', 'business_owner', 'freelancer', 'between_jobs']) {
       assert.equal(validateOnboardingAnswer('occupation', id).valid, true, id);
     }
-    assert.equal(validateOnboardingAnswer('occupation', 'invented').valid, false);
+    for (const id of ['government', 'healthcare', 'teacher', 'engineer_tech', 'hospitality', 'other', 'invented']) {
+      assert.equal(validateOnboardingAnswer('occupation', id).valid, false, id);
+    }
   });
 
   it('validates the match religion-preference question options', () => {
