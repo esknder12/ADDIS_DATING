@@ -88,14 +88,15 @@ function StandardOptions({ step, value, setValue, submitSingle }) {
   }
 
   if (step.layout === 'image-grid') {
+    const singleSelect = step.input === 'single';
     return (
       <div className="image-option-grid">
         {step.options.map((option) => (
           <ImageOption
             key={option.id}
             option={option}
-            selected={value.includes(option.id)}
-            onToggle={toggle}
+            selected={singleSelect ? value === option.id : value.includes(option.id)}
+            onToggle={singleSelect ? submitSingle : toggle}
           />
         ))}
       </div>

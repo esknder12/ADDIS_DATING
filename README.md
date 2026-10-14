@@ -18,7 +18,7 @@ Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led d
 
 ### Phase 2 — Onboarding
 
-- ✅ Shared, config-driven sequence with 33 screens and 28 questions per gender journey (gender-conditional copy, religion + work questions, photo upload, bio, quiz feedback)
+- ✅ Shared, config-driven sequence with 18 active steps and 17 questions per gender journey (gender-conditional copy, intention selection, self-build and religion + work questions, photo upload, bio, quiz feedback)
 - ✅ All five sections: About You, Your Type, Lifestyle, Relationship Goals, Almost There
 - ✅ Single-select, multi-select, image-grid, categorized, numeric, and city inputs
 - ✅ Twelve photo, trust, algorithm, chart, badge, and testimonial interstitials

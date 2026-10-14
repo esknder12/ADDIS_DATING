@@ -59,6 +59,14 @@ const image = {
   lifestyle: '/images/onboarding-lifestyle.jpg',
   professional: '/images/onboarding-professional.jpg',
   dinner: '/images/onboarding-dinner.jpg',
+  bodyTypeSlim: '/images/body-type-slim.png?v=2',
+  bodyTypeAthletic: '/images/body-type-athletic.png?v=2',
+  bodyTypeCurvy: '/images/body-type-curvy.png?v=2',
+  bodyTypeAverage: '/images/body-type-average.png?v=2',
+  bodyTypeMenSlim: '/images/body-type-men-slim.png?v=2',
+  bodyTypeMenAthletic: '/images/body-type-men-athletic.png?v=2',
+  bodyTypeMenStocky: '/images/body-type-men-stocky.png?v=2',
+  bodyTypeMenAverage: '/images/body-type-men-average.png?v=2',
 };
 
 const rawFlow = [
@@ -89,19 +97,18 @@ const rawFlow = [
     note: 'Available only to adults 18 and over.',
   },
   {
-    key: 'what_matters',
+    key: 'looking_for',
     kind: 'question',
     section: 'about-you',
     input: 'multi',
     layout: 'pills',
-    title: 'What else matters to you?',
+    title: 'What are you looking for right now?',
     subtitle: 'Choose all that apply',
     options: [
-      { id: 'travel_partner', label: 'Someone to travel with', icon: '✈' },
-      { id: 'emotional_connection', label: 'Emotional connection', icon: '♡' },
-      { id: 'fun_spontaneity', label: 'Fun and spontaneity', icon: '✦' },
-      { id: 'building_family', label: 'Building a family', icon: '⌂' },
-      { id: 'supports_goals', label: 'A partner who supports my goals', icon: '⚑' },
+      { id: 'serious_relationship', label: 'Serious relationship', icon: '⚭' },
+      { id: 'dating_and_seeing', label: 'Dating & seeing where it goes', icon: '💬' },
+      { id: 'online_communication', label: 'Online communication', icon: '📱' },
+      { id: 'not_sure', label: 'Not sure yet', icon: '🧭' },
     ],
   },
   {
@@ -123,6 +130,37 @@ const rawFlow = [
     ],
   },
   {
+    key: 'religion_preference',
+    kind: 'question',
+    section: 'about-you',
+    input: 'single',
+    layout: 'pills',
+    title: 'Should your match share your religion?',
+    autoAdvance: true,
+    options: [
+      { id: 'same_religion', label: 'Yes, same religion', icon: '✝' },
+      { id: 'same_faith_family', label: 'Same faith family is fine', icon: '♡' },
+      { id: 'respect_mine', label: 'Different is fine if they respect mine', icon: '⚖' },
+      { id: 'doesnt_matter', label: "Doesn't matter", icon: '×' },
+    ],
+  },
+  {
+    key: 'what_matters',
+    kind: 'question',
+    section: 'about-you',
+    input: 'multi',
+    layout: 'pills',
+    title: 'What else matters to you?',
+    subtitle: 'Choose all that apply',
+    options: [
+      { id: 'travel_partner', label: 'Someone to travel with', icon: '✈' },
+      { id: 'emotional_connection', label: 'Emotional connection', icon: '♡' },
+      { id: 'fun_spontaneity', label: 'Fun and spontaneity', icon: '✦' },
+      { id: 'building_family', label: 'Building a family', icon: '⌂' },
+      { id: 'supports_goals', label: 'A partner who supports my goals', icon: '⚑' },
+    ],
+  },
+  {
     key: 'body_type_preference',
     kind: 'question',
     section: 'about-you',
@@ -131,11 +169,48 @@ const rawFlow = [
     title: 'Which body type do you find most attractive?',
     subtitle: 'Choose all that apply',
     options: [
-      { id: 'slim', label: 'Slim', image: image.social, crop: 'social-left' },
-      { id: 'athletic', label: 'Athletic', image: image.lifestyle, crop: 'lifestyle-wide' },
-      { id: 'curvy', label: 'Curvy', image: image.social, crop: 'social-right' },
-      { id: 'average', label: 'Average', image: image.lifestyle, crop: 'lifestyle-close' },
+      { id: 'slim', label: 'Slim', image: image.bodyTypeSlim, crop: 'center' },
+      { id: 'athletic', label: 'Athletic', image: image.bodyTypeAthletic, crop: 'center' },
+      { id: 'curvy', label: 'Curvy', image: image.bodyTypeCurvy, crop: 'center' },
+      { id: 'average', label: 'Average', image: image.bodyTypeAverage, crop: 'center' },
     ],
+    variants: {
+      female: {
+        options: [
+          { id: 'slim', label: 'Slim', image: image.bodyTypeMenSlim, crop: 'center' },
+          { id: 'athletic', label: 'Athletic', image: image.bodyTypeMenAthletic, crop: 'center' },
+          { id: 'stocky', label: 'Stocky', image: image.bodyTypeMenStocky, crop: 'center' },
+          { id: 'average', label: 'Average', image: image.bodyTypeMenAverage, crop: 'center' },
+        ],
+      },
+    },
+  },
+  {
+    key: 'body_build',
+    kind: 'question',
+    section: 'about-you',
+    input: 'single',
+    layout: 'image-grid',
+    title: 'How would you describe your build?',
+    subtitle: 'Choose one. “Prefer not to say” is always okay.',
+    options: [
+      { id: 'slim', label: 'Slim', image: image.bodyTypeMenSlim, crop: 'center' },
+      { id: 'athletic', label: 'Athletic', image: image.bodyTypeMenAthletic, crop: 'center' },
+      { id: 'stocky', label: 'Stocky', image: image.bodyTypeMenStocky, crop: 'center' },
+      { id: 'average', label: 'Average', image: image.bodyTypeMenAverage, crop: 'center' },
+      { id: 'prefer_not_say', label: 'Prefer not to say', tone: 'violet', visualIcon: '×' },
+    ],
+    variants: {
+      female: {
+        options: [
+          { id: 'slim', label: 'Slim', image: image.bodyTypeSlim, crop: 'center' },
+          { id: 'athletic', label: 'Athletic', image: image.bodyTypeAthletic, crop: 'center' },
+          { id: 'curvy', label: 'Curvy', image: image.bodyTypeCurvy, crop: 'center' },
+          { id: 'average', label: 'Average', image: image.bodyTypeAverage, crop: 'center' },
+          { id: 'prefer_not_say', label: 'Prefer not to say', tone: 'violet', visualIcon: '×' },
+        ],
+      },
+    },
   },
   {
     key: 'style_preference',
@@ -153,19 +228,13 @@ const rawFlow = [
     ],
   },
   {
-    key: 'ten-minutes',
-    kind: 'interstitial',
-    section: 'about-you',
-    variant: 'avatar-cluster',
-    title: 'Just 10 minutes a day is enough.',
-    body: "You don't need to swipe for hours. Our algorithm learns your type and brings the right women to you. You just pick who to talk to.",
-    variants: {
-      female: {
-        body: "You don't need to swipe for hours. Our algorithm learns your type and brings the right men to you. You just pick who to talk to.",
-      },
-    },
+    key: 'location',
+    kind: 'question',
+    section: 'almost-there',
+    input: 'location',
+    layout: 'location',
+    title: 'Where do you live?',
   },
-
   {
     key: 'distance_preference',
     kind: 'question',
@@ -196,15 +265,9 @@ const rawFlow = [
     options: [
       { id: 'student', label: 'Student', icon: '🎓' },
       { id: 'private_employee', label: 'Private company employee', icon: '💼' },
-      { id: 'government', label: 'Government worker', icon: '🏛' },
       { id: 'business_owner', label: 'Business owner', icon: '🏪' },
       { id: 'freelancer', label: 'Freelancer', icon: '💻' },
-      { id: 'healthcare', label: 'Healthcare worker', icon: '⚕' },
-      { id: 'teacher', label: 'Teacher', icon: '📚' },
-      { id: 'engineer_tech', label: 'Engineer / Tech', icon: '⚙' },
-      { id: 'hospitality', label: 'Hospitality / Service', icon: '🍽' },
       { id: 'between_jobs', label: 'Between jobs', icon: '⌁' },
-      { id: 'other', label: 'Other', icon: '✦' },
     ],
   },
   {
@@ -222,77 +285,7 @@ const rawFlow = [
       { id: 'own_business', label: 'I run my own thing', icon: '▣' },
     ],
   },
-  {
-    key: 'home_atmosphere',
-    kind: 'question',
-    section: 'lifestyle',
-    input: 'single',
-    layout: 'hero-grid',
-    title: 'What atmosphere should you two have at home?',
-    autoAdvance: true,
-    heroImage: image.lifestyle,
-    options: [
-      { id: 'warm_caring', label: 'Warm and caring' },
-      { id: 'independent_busy', label: 'Independent and busy' },
-      { id: 'playful_fun', label: 'Playful and fun' },
-      { id: 'calm_grounded', label: 'Calm and grounded' },
-    ],
-  },
 
-  {
-    key: 'activity_level_preference',
-    kind: 'question',
-    section: 'relationship-goals',
-    input: 'single',
-    layout: 'hero-grid',
-    title: 'How active should she be?',
-    autoAdvance: true,
-    heroImage: image.social,
-    variants: {
-      female: { title: 'How active should he be?' },
-    },
-    options: [
-      { id: 'very_sporty', label: 'Very sporty' },
-      { id: 'weekend_active', label: 'Active on weekends' },
-      { id: 'occasional_walks', label: 'Chill, occasional walks' },
-      { id: 'doesnt_matter', label: "Doesn't matter to me" },
-    ],
-  },
-  {
-    key: 'kids_preference',
-    kind: 'question',
-    section: 'relationship-goals',
-    input: 'single',
-    layout: 'hero-grid',
-    title: 'Kids in the picture?',
-    autoAdvance: true,
-    heroImage: image.social,
-    options: [
-      { id: 'want_together', label: 'Want kids together' },
-      { id: 'open_to_it', label: 'Open to it' },
-      {
-        id: 'already_have_open',
-        label: 'Already have, open to hers',
-        labelByGender: { female: 'Already have, open to his' },
-      },
-      { id: 'prefer_none', label: 'Prefer no kids' },
-    ],
-  },
-  {
-    key: 'religion_preference',
-    kind: 'question',
-    section: 'relationship-goals',
-    input: 'single',
-    layout: 'pills',
-    title: 'Should your match share your religion?',
-    autoAdvance: true,
-    options: [
-      { id: 'same_religion', label: 'Yes, same religion', icon: '✝' },
-      { id: 'same_faith_family', label: 'Same faith family is fine', icon: '♡' },
-      { id: 'respect_mine', label: 'Different is fine if they respect mine', icon: '⚖' },
-      { id: 'doesnt_matter', label: "Doesn't matter", icon: '×' },
-    ],
-  },
   {
     key: 'common_interests',
     kind: 'question',
@@ -353,14 +346,6 @@ const rawFlow = [
     ],
   },
 
-  {
-    key: 'location',
-    kind: 'question',
-    section: 'almost-there',
-    input: 'location',
-    layout: 'location',
-    title: 'Where do you live?',
-  },
   {
     key: 'photos',
     kind: 'question',
@@ -507,7 +492,7 @@ export function isStepVisible(step, gender, answers) {
  * Resolve a step for a gender: applies the `variants` copy override, resolves
  * gendered option labels, and attaches gender-correct progress metadata.
  * Pass `answers` so progress counts also exclude answer-hidden (`showIf`) steps
- * (the lifestyle counter shrinks when `home_atmosphere` is skipped).
+ * and shrink the relevant section counter accordingly.
  * Unknown/null gender returns the step unchanged (base copy).
  */
 export function resolveOnboardingStep(step, gender, answers = undefined) {
@@ -586,8 +571,7 @@ export function getRequiredKeysForGender(gender) {
 
 /**
  * Required answers for the journey these answers unlock: the gender filter
- * plus every `showIf` gate (e.g. `home_atmosphere` is required only when
- * `looking_for` includes "Serious relationship").
+ * plus questions whose `showIf` gates match the answers already provided.
  */
 export function getRequiredKeysForAnswers(answers) {
   const gender = normalizeGender(answers?.gender);

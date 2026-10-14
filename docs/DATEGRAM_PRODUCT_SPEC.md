@@ -188,6 +188,18 @@ Two-column image-card grid:
 
 Cards have full-bleed imagery, bottom scrim/label, and top-corner checkbox.
 
+**Active-flow addition immediately after this preference question:**
+
+**How would you describe your build?**
+*Choose one; “Prefer not to say” is always okay.*
+
+Single-select image-card grid, using the user’s own gender variant:
+
+- Men: Slim, Athletic, Stocky, Average
+- Women: Slim, Athletic, Curvy, Average
+
+This self-description is distinct from the attraction preference above.
+
 #### Q1.6 — Style preference
 
 **What’s your type?**
@@ -209,7 +221,9 @@ Two-column image-card grid:
 - More than 3 years ago
 - Never had a serious one
 
-#### I4 — Time commitment
+#### I4 — Time commitment (omitted from active onboarding)
+
+> This interstitial is not included in the current app flow.
 
 - Heading: **Just 10 minutes a day is enough.**
 - Copy: “You don't need to swipe for hours. Our algorithm learns your type and brings the right women to you. You just pick who to talk to.”
@@ -347,7 +361,9 @@ Large restaurant/garden image, then a two-by-two text grid:
 - Something active
 - Haven’t decided yet
 
-#### Q3.5 — Home atmosphere
+#### Q3.5 — Home atmosphere (omitted from active onboarding)
+
+> This question is not included in the current app flow.
 
 **What atmosphere should you two have at home?**
 
@@ -360,7 +376,9 @@ Large warm couch/reading image, then:
 
 ### 3.5 Section 4 — Relationship Goals
 
-#### Q4.1 — Desired activity level
+#### Q4.1 — Desired activity level (omitted from active onboarding)
+
+> This question is not included in the current app flow.
 
 **How active should she be?**
 
@@ -371,7 +389,9 @@ Tennis-court hero image, then:
 - Chill, occasional walks
 - Doesn’t matter to me
 
-#### Q4.2 — Children
+#### Q4.2 — Children (omitted from active onboarding)
+
+> This question is not included in the current app flow.
 
 **Kids in the picture?**
 

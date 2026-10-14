@@ -13,27 +13,6 @@ function PhotoVisual({ step, verified = false }) {
 // Shared with question banners (see MatchPreviewCard.jsx).
 import MatchPreview from './MatchPreviewCard.jsx';
 
-function AvatarCluster() {
-  const avatars = [
-    ['social-left', '/images/onboarding-social.jpg'],
-    ['lifestyle-close', '/images/onboarding-lifestyle.jpg'],
-    ['social-right', '/images/onboarding-social.jpg'],
-    ['lifestyle-wide', '/images/onboarding-lifestyle.jpg'],
-  ];
-  return (
-    <div className="avatar-cluster">
-      {avatars.map(([crop, source], index) => (
-        <span
-          key={crop}
-          className={`avatar-cluster__avatar avatar-cluster__avatar--${index + 1} image-crop--${crop}`}
-          style={{ backgroundImage: `url(${source})` }}
-        ><b>✓</b></span>
-      ))}
-      <span className="avatar-cluster__heart">♥<b>✦</b></span>
-    </div>
-  );
-}
-
 function SuccessCheck() {
   return (
     <div className="success-orbit">
@@ -137,7 +116,6 @@ function Visual({ gender, step }) {
     case 'photo': return <PhotoVisual step={step} />;
     case 'verified-photo': return <PhotoVisual step={step} verified />;
     case 'match-preview': return <MatchPreview gender={gender} />;
-    case 'avatar-cluster': return <AvatarCluster />;
     case 'success-check': return <SuccessCheck />;
     case 'algorithm': return <AlgorithmVisual />;
     case 'testimonials': return <Testimonials step={step} />;
