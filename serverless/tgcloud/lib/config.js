@@ -15,8 +15,7 @@ export const BOT_DISPLAY_NAME = 'addisdating (test)';
 
 // Public HTTPS URL of the Dategram Mini App frontend. Used for every
 // "Open Dategram" web_app button and for the persistent menu button.
-// Example: 'https://dategram.example.com'
-export const WEBAPP_URL = 'https://your-dategram-mini-app.example.com';
+export const WEBAPP_URL = 'https://addisdating.vercel.app/';
 
 // Label of the persistent menu button (set once, see lib/setup.js).
 export const MENU_BUTTON_TEXT = 'Open Dategram';

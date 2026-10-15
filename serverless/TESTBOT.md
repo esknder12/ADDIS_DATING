@@ -7,7 +7,7 @@ Everything for the sandbox deploy in one place. The live bot
 
 - [ ] @BotSupport enabled Serverless (button visible in @BotFather → test bot)
 - [ ] Old exposed test-bot token revoked (API Token → Revoke current token)
-- [ ] `WEBAPP_URL` decided (real URL, or bot-only test — see step 2)
+- [x] `WEBAPP_URL` decided → `https://addisdating.vercel.app/` (Vercel, live ✅)
 - [ ] `npx tgcloud login` works (`npx tgcloud status` runs)
 - [ ] `npx tgcloud push` deployed
 - [ ] `npx tgcloud migrate` applied the schema
