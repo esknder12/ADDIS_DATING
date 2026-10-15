@@ -11,6 +11,7 @@ bot itself.
 
 Full feature map: [docs/PORT_MAP.md](docs/PORT_MAP.md).
 SDK reference (offline copy): [docs/tgcloud-sdk.md](docs/tgcloud-sdk.md).
+Test-bot deploy runbook: [TESTBOT.md](TESTBOT.md) (start here — @addisdatingtest_Bot).
 
 ## What the bot does
 

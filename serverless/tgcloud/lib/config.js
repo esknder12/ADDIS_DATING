@@ -4,6 +4,15 @@
 // so every setting lives here as a plain constant. Edit the values, then
 // `npx tgcloud push` to deploy them with your code.
 
+// --- DEPLOY TARGET: TEST BOT -----------------------------------------------
+// BotFather bot: @addisdatingtest_Bot (sandbox).
+// Live bot (@addisdating_Bot) stays on the main backend until cutover day.
+// Cutover checklist: `npx tgcloud login` against the live bot, set
+// BOT_USERNAME below to 'addisdating_Bot', re-check WEBAPP_URL,
+// then `npx tgcloud push` + `npx tgcloud migrate`.
+export const BOT_USERNAME = 'addisdatingtest_Bot';
+export const BOT_DISPLAY_NAME = 'addisdating (test)';
+
 // Public HTTPS URL of the Dategram Mini App frontend. Used for every
 // "Open Dategram" web_app button and for the persistent menu button.
 // Example: 'https://dategram.example.com'
