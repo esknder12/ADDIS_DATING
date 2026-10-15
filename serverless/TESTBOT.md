@@ -30,9 +30,23 @@ npx tgcloud status    # should run without errors = login OK
 **A. You have a deployed Mini App URL** (Vercel / Netlify / Cloudflare / VPS):
 set it in `tgcloud/lib/config.js` → all "Open Dategram" buttons work.
 
-**B. Not deployed yet:** deploy `frontend/` free (Vercel or Cloudflare Pages:
-import repo → root `frontend/` → build `npm run build` → output `dist`),
-then use that `https://…` URL.
+**B. Not deployed yet:** deploy `frontend/` free with these exact settings
+(verified: `npm run build --workspace frontend` → `frontend/dist/`).
+Root Directory must stay repo root `.` — the frontend needs the `@dategram/shared`
+workspace installed from the root:
+
+*Vercel (recommended):* vercel.com → Add New Project → Import
+`esknder12/ADDIS_DATING` → Framework `Vite` → Root Directory `.` →
+Build Command `npm run build --workspace frontend` →
+Output Directory `frontend/dist` → Deploy. No env vars needed
+(demo mode is ON by default, so the app loads without a backend).
+
+*Cloudflare Pages (alternative):* Pages → Connect to Git → same repo →
+Build command `npm run build --workspace frontend` →
+Build output `frontend/dist` → Deploy.
+
+Then paste the resulting `https://…` URL back here (or set it as
+`WEBAPP_URL` in `tgcloud/lib/config.js` + `npx tgcloud push`).
 
 **C. Bot-only test for now:** leave the placeholder. Commands, verification
 video notes, menus and text notifications all work; web_app buttons and the
