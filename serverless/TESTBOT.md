@@ -11,7 +11,8 @@ Everything for the sandbox deploy in one place. The live bot
 - [x] Auth works (`TGCLOUD_TOKEN` env var, `status` → Linked to app8948725364)
 - [x] `npx tgcloud push` deployed (11 modules)
 - [x] `npx tgcloud migrate` applied (16 tables, 0 skipped)
-- [ ] `/start` answered by Serverless (test script below — DOING NOW)
+- [x] `/start` answered by Serverless ✅ (verified live 2026-10-16: welcome, menu,
+  verify flow, video-note intake, help/back navigation all working)
 
 ## 1. Login (needs the Serverless button first)
 
