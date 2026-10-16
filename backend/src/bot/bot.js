@@ -25,17 +25,21 @@ export function initBot(runtimeConfig, { appRepository } = {}) {
 
   const bot = new Bot(runtimeConfig.botToken);
 
-  bot.api.setChatMenuButton({
-    menu_button: {
-      type: 'web_app',
-      text: 'Open Dategram',
-      web_app: { url: runtimeConfig.webappUrl },
-    },
+  // The CI pipeline owns the menu button (?v=<run> freshness per deploy), so the
+  // backend never resets it — it ADOPTS the menu URL for in-chat buttons instead.
+  // Falls back to WEBAPP_URL when the menu has no web-app URL (yet).
+  let liveWebappUrl = runtimeConfig.webappUrl;
+  bot.api.getChatMenuButton().then((button) => {
+    const url = button?.web_app?.url;
+    if (typeof url === 'string' && url.startsWith('https://')) {
+      liveWebappUrl = url;
+      console.log(`🔗 Adopted menu webapp URL for in-chat buttons: ${url}`);
+    }
   }).catch((error) => {
-    console.warn('Could not set the persistent Dategram chat button:', error.message);
+    console.warn('Could not read the Dategram menu button; using WEBAPP_URL:', error.message);
   });
 
-  const dategramKeyboard = () => new InlineKeyboard().webApp('Go to Dategram', runtimeConfig.webappUrl);
+  const dategramKeyboard = () => new InlineKeyboard().webApp('Go to Dategram', liveWebappUrl);
 
   bot.command('start', async (context) => {
     await context.reply(welcomeMessage, { reply_markup: dategramKeyboard() });
@@ -45,7 +49,7 @@ export function initBot(runtimeConfig, { appRepository } = {}) {
   // nudge plus instructions are sent on demand.
   bot.command('verify', async (context) => {
     await context.reply(verificationNudge, {
-      reply_markup: new InlineKeyboard().webApp('Return to Dategram 🖤', runtimeConfig.webappUrl),
+      reply_markup: new InlineKeyboard().webApp('Return to Dategram 🖤', liveWebappUrl),
     });
     await context.reply(verificationInstructions);
   });
