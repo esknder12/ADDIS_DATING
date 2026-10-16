@@ -1,0 +1,99 @@
+# Deploy Mini App to Telegram — fully automatic, no PC needed.
+#
+# Trigger: any push to the arena branch that touches frontend/**,
+# or manual: GitHub repo -> Actions -> Deploy Mini App -> Run workflow.
+#
+# What it does:
+#   1. Builds the frontend (VITE_API_URL baked in, see env below).
+#   2. Pushes it to Telegram static hosting (tgcloud webapp/).
+#   3. Points the TEST bot's menu button at ?v=<run number> (fresh, never cached).
+#   4. Syncs Render's WEBAPP_URL to the same URL (in-chat buttons + reboot-safe).
+#
+# One-time setup (5 min, then never again):
+#   GitHub repo -> Settings -> Secrets and variables -> Actions -> New secret:
+#     TGCLOUD_TOKEN  = CLI token (Telegram -> test bot -> Serverless -> CLI Access)
+#     TEST_BOT_TOKEN = test bot API token (@BotFather -> test bot -> API Token)
+#     RENDER_API_KEY = Render dashboard -> avatar -> Account Settings -> API Keys
+#
+# NOTE: if the Render service is ever recreated, update RENDER_SERVICE_ID below
+# (Render dashboard URL: dashboard.render.com/web-<SERVICE_ID>/...).
+# If the API moves off Render, update VITE_API_URL below.
+
+name: Deploy Mini App to Telegram
+
+on:
+  push:
+    branches: [arena/95f0f2a6-addis-dating]
+    paths: ['frontend/**']
+  workflow_dispatch:
+
+env:
+  VITE_API_URL: https://addis-dating.onrender.com
+  WEBAPP_BASE_URL: https://app8948725364.tgcloud.ai/
+  RENDER_SERVICE_ID: srv-db91fgfav73c2elg
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: arena/95f0f2a6-addis-dating
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build frontend
+        run: npm run build --workspace frontend
+
+      - name: Stage webapp for tgcloud
+        run: |
+          rm -rf serverless/webapp
+          cp -r frontend/dist serverless/webapp
+          ls serverless/webapp
+
+      - name: Push to Telegram static hosting
+        working-directory: serverless
+        env:
+          TGCLOUD_TOKEN: ${{ secrets.TGCLOUD_TOKEN }}
+        run: |
+          npm install
+          npx tgcloud push
+
+      - name: Point test-bot menu at fresh URL
+        env:
+          TEST_BOT_TOKEN: ${{ secrets.TEST_BOT_TOKEN }}
+        run: |
+          MENU_URL="${WEBAPP_BASE_URL}?v=${{ github.run_number }}"
+          echo "Menu URL: $MENU_URL"
+          curl -sS -X POST "https://api.telegram.org/bot${TEST_BOT_TOKEN}/setChatMenuButton" \
+            -H 'Content-Type: application/json' \
+            -d "{\"menu_button\":{\"type\":\"web_app\",\"text\":\"Open Dategram\",\"web_app\":{\"url\":\"$MENU_URL\"}}}"
+          echo "MENU_URL=$MENU_URL" >> "$GITHUB_ENV"
+
+      - name: Sync Render WEBAPP_URL
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -sS -X PUT "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/env-vars" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d "[{\"key\":\"WEBAPP_URL\",\"value\":\"${MENU_URL}\"}]"
+          echo "(Render will redeploy with the new URL — backend boots in ~2 min.)"
+
+      - name: Summary
+        run: |
+          {
+            echo "## :rocket: Mini App deployed"
+            echo ""
+            echo "Menu button + backend now point at:"
+            echo "\`${MENU_URL}\`"
+            echo ""
+            echo "Reopen the app from the test bot to load it fresh."
+          } >> "$GITHUB_STEP_SUMMARY"
