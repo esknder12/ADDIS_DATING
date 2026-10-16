@@ -1,9 +1,0 @@
-{
-  // Project config for the tgcloud CLI.
-  // Schema reference for editor support (after `npm install`):
-  "$schema": "./node_modules/@tgcloud/cli/schema/tgcloud.json"
-
-  // Bot-only project: there is NO "static" key on purpose.
-  // The Dategram Mini App frontend keeps deploying from `frontend/`
-  // through its own hosting — this project deploys bot code + SQLite only.
-}

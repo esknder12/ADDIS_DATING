@@ -286,6 +286,18 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
         <ChevronRightIcon />
       </button>
 
+      {botLink.inTelegram && botLink.state !== 'idle' && (
+        <button
+          type="button"
+          className={`verification-row${botLink.state !== 'ready' ? ' verification-row--pending' : ''}`}
+          onClick={() => { impact('light'); botLink.retry(); }}
+          title={botLink.state === 'error' ? botLink.error?.message : undefined}
+        >
+          <span>{botLinkCopy(botLink)}</span>
+          <ChevronRightIcon />
+        </button>
+      )}
+
       <section className="settings-group" aria-label="Profile management">
         <h3>Profile management</h3>
         <SettingRow icon="👤" label="Edit profile" onClick={() => {

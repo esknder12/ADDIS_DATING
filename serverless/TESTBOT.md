@@ -88,6 +88,9 @@ npx tgcloud webhook   # must show "in sync"
 6. Tap **« Back** on any sub-screen → returns to the menu. ✅
 7. (Needs Bot API token, later) block the bot → notifications stop without
    errors; unblock → `/start` works again. ✅
+8. Endpoints: open the Mini App from the test bot → Profile tab → the
+   🤖 bot-link row must say `Bot connected • …` (full procedure:
+   `docs/ENDPOINTS.md` "routing experiment"). ✅
 
 Debug from your laptop without Telegram:
 
