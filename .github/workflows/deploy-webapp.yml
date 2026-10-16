@@ -59,7 +59,10 @@ jobs:
         run: |
           rm -rf serverless/webapp
           cp -r frontend/dist serverless/webapp
-          ls serverless/webapp
+          RDIR="serverless/webapp/r${{ github.run_number }}"
+          mkdir -p "$RDIR"
+          cp frontend/dist/index.html "$RDIR/index.html"
+          ls serverless/webapp "$RDIR"
 
       - name: Install tgcloud CLI
         working-directory: serverless
@@ -106,7 +109,7 @@ jobs:
         env:
           TEST_BOT_TOKEN: ${{ secrets.TEST_BOT_TOKEN }}
         run: |
-          MENU_URL="${WEBAPP_BASE_URL}?v=ci-${{ github.run_number }}"
+          MENU_URL="https://app8948725364.tgcloud.ai/r${{ github.run_number }}/?v=ci-${{ github.run_number }}"
           echo "Menu URL: $MENU_URL"
           echo "::add-mask::$TEST_BOT_TOKEN"
           RESP=$(curl -sS -w "\nHTTP %{http_code}" -X POST "https://api.telegram.org/bot${TEST_BOT_TOKEN}/setChatMenuButton" \
