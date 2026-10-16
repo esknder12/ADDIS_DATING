@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { deleteProfilePhoto, uploadProfilePhoto } from '../../api/client.js';
+import { checkFace } from '../../lib/faceCheck.js';
 import { impact } from '../../lib/telegram.js';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -69,6 +70,32 @@ function ModerationModal({ onClose }) {
   );
 }
 
+function FaceModal({ reason, onClose }) {
+  return (
+    <div className="moderation-overlay" role="alertdialog" aria-modal="true" aria-labelledby="face-title">
+      <div className="moderation-card">
+        <button type="button" className="moderation-close" aria-label="Close" onClick={onClose}>×</button>
+        <span className="moderation-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m5 17 5-4 3 3 3-3 3 4" /></svg>
+          <b>!</b>
+        </span>
+        <h2 id="face-title">No clear face detected</h2>
+        <p>
+          {reason === 'small'
+            ? 'Your face is too small in this photo. Please use one where:'
+            : 'We could not find a human face in this photo. Please use one where:'}
+        </p>
+        <ul>
+          <li><span aria-hidden="true">✓</span> Your face is clearly visible and close up</li>
+          <li><span aria-hidden="true">✓</span> Good lighting, no sunglasses or masks</li>
+          <li><span aria-hidden="true">✓</span> You&apos;re the only person in the foreground</li>
+        </ul>
+        <button type="button" className="moderation-dismiss" onClick={onClose}>Got it</button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Onboarding photo step: one interface, four states per the product shots —
  * empty (+) → uploading (spinner) → moderation modal on rule violations →
@@ -80,13 +107,29 @@ export default function PhotoUploadInput({ step, value, onChange, isDemo }) {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [showModeration, setShowModeration] = useState(false);
+  const [faceIssue, setFaceIssue] = useState(null);
   const [uploadError, setUploadError] = useState('');
 
   function openPicker() {
     if (uploading || photos.length >= maxPhotos) return;
     impact('light');
     setUploadError('');
+    setFaceIssue(null);
     fileRef.current?.click();
+  }
+
+  async function facePasses(image) {
+    try {
+      const result = await checkFace(image);
+      if (result.ok) return true;
+      impact('heavy');
+      setFaceIssue(result.reason);
+      return false;
+    } catch (error) {
+      // Fail open: a missing or broken face model must never brick uploads.
+      console.warn('Face check unavailable; skipping:', error?.message || error);
+      return true;
+    }
   }
 
   async function addFile(file) {
@@ -107,6 +150,7 @@ export default function PhotoUploadInput({ step, value, onChange, isDemo }) {
           setShowModeration(true);
           return;
         }
+        if (!(await facePasses(probe))) return;
         impact('medium');
         onChange([...photos, { url: dataUrl }]);
         return;
@@ -120,6 +164,7 @@ export default function PhotoUploadInput({ step, value, onChange, isDemo }) {
           setShowModeration(true);
           return;
         }
+        if (!(await facePasses(probe))) return;
       } finally {
         window.URL.revokeObjectURL(objectUrl);
       }
@@ -239,6 +284,7 @@ export default function PhotoUploadInput({ step, value, onChange, isDemo }) {
       <p className="photo-hint">JPG, PNG or WebP · max 5 MB · face clearly visible</p>
       {uploadError && <p className="onboarding-error" role="alert">{uploadError}</p>}
       {showModeration && <ModerationModal onClose={() => setShowModeration(false)} />}
+      {faceIssue && <FaceModal reason={faceIssue} onClose={() => setFaceIssue(null)} />}
     </div>
   );
 }

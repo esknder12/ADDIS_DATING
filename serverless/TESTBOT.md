@@ -14,6 +14,9 @@ Everything for the sandbox deploy in one place. The live bot
   + Neon Postgres (Frankfurt) — schema auto-applied, `/health` OK ✅
 - [x] End-to-end verified 2026-10-16: Mini App opens from test bot, Telegram auth
   works, onboarding loads ("What's your gender?") ✅
+- [x] Photo upload fixed (axios was JSON-stringifying the file) + Cloudinary live ✅
+- [ ] Face gate (Build A): TinyFaceDetector in onboarding uploader — needs
+  rebuild + `tgcloud push` + menu `?v=4` bump, then statue-vs-selfie test
 - [x] Auth works (`TGCLOUD_TOKEN` env var, `status` → Linked to app8948725364)
 - [x] `npx tgcloud push` deployed (11 modules)
 - [x] `npx tgcloud migrate` applied (16 tables, 0 skipped)
