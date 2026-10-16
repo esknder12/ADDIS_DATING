@@ -42,11 +42,25 @@ or only from `*.tgcloud.ai`?
      points at same-host-only routing.
 4. Restore the menu button to the production URL when done.
 
-**If same-host-only (Plan B):** deploy the frontend to tgcloud static
-("Mini App Files"): build `frontend/`, copy `dist/` into this project as
-`webapp/`, set `tgcloud.jsonc` → `{ "static": { "source": "webapp", "spa": true } }`,
-`push` — then point the test bot at the printed `https://app*.tgcloud.ai/`
-URL and re-run the test. Same-host calls are guaranteed by the platform.
+**If same-host-only (Plan B — Mini App Files, pre-configured):**
+`tgcloud.jsonc` already has the `static` block (`source: webapp`, `spa`).
+On your PC:
+
+```powershell
+cd ~/ADDIS_DATING
+git pull
+npm install                      # root install (workspaces)
+npm run build --workspace frontend
+Remove-Item -Recurse -Force .\serverless\webapp -ErrorAction SilentlyContinue
+Copy-Item -Recurse .\frontend\dist .\serverless\webapp
+cd serverless
+$env:TGCLOUD_TOKEN = (Get-Content <your-token-file> | Out-String).Trim()
+npx tgcloud push                 # prints the https://app*.tgcloud.ai/ URL
+```
+
+Then point the test bot's menu button at the printed URL and re-run the
+test. Same-host calls are guaranteed by the platform. `webapp/` is
+gitignored build output — never committed.
 
 ## Adding a new endpoint (checklist)
 

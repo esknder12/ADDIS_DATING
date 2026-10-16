@@ -1,2 +1,5 @@
 node_modules/
 .tgcloud/
+# Local Mini App build output (copied from frontend/dist before push).
+# Never committed — `tgcloud push` uploads it from disk.
+webapp/

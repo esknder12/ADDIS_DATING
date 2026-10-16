@@ -1,9 +1,14 @@
 {
   // Project config for the tgcloud CLI.
   // Schema reference for editor support (after `npm install`):
-  "$schema": "./node_modules/@tgcloud/cli/schema/tgcloud.json"
+  "$schema": "./node_modules/@tgcloud/cli/schema/tgcloud.json",
 
-  // Bot-only project: there is NO "static" key on purpose.
-  // The Dategram Mini App frontend keeps deploying from `frontend/`
-  // through its own hosting — this project deploys bot code + SQLite only.
+  // Mini App hosting ("Mini App Files" panel): `push` uploads ./webapp/
+  // (copy of frontend/dist — see docs/ENDPOINTS.md) and serves it at
+  // https://app<app_id>.tgcloud.ai/ . `spa` serves index.html for
+  // extension-less routes (client-side routing).
+  "static": {
+    "source": "webapp",
+    "spa": true
+  }
 }
