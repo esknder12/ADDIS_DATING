@@ -77,7 +77,19 @@ jobs:
           TGCLOUD_TOKEN: ${{ secrets.TGCLOUD_TOKEN }}
         run: |
           export TGCLOUD_TOKEN="$(printf '%s' "$TGCLOUD_TOKEN" | tr -d '[:space:]')"
-          npx tgcloud push
+          echo "::add-mask::$TGCLOUD_TOKEN"
+          echo "::notice::cli-version=$(npm ls @tgcloud/cli 2>/dev/null | head -2 | tr '\n' ' ')"
+          set +e
+          npx tgcloud push > push-output.txt 2>&1
+          code=$?
+          set -e
+          echo "--- push output (token masked) ---"
+          cat push-output.txt
+          echo "----------------------------------"
+          if [ "$code" -ne 0 ]; then
+            echo "::error::tgcloud push failed (exit $code): $(head -c 2500 push-output.txt | tr '\n' ' ')"
+            exit "$code"
+          fi
 
       - name: Point test-bot menu at fresh URL
         env:
