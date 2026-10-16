@@ -70,6 +70,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
   const [actionError, setActionError] = useState('');
   const [photoError, setPhotoError] = useState('');
   const fileInputRef = useRef(null);
+  const sheetBodyRef = useRef(null);
   const editSaveRef = useRef(null);
 
   const displayName = profile.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || 'You';
@@ -110,6 +111,11 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
   }, [appData.saveProfile, draftBio, draftCity, draftCountry, draftName, saving]);
 
   useEffect(() => { editSaveRef.current = saveEdit; }, [saveEdit]);
+  useEffect(() => { sheetBodyRef.current?.scrollTo(0, 0); }, [sheet]);
+  useEffect(() => {
+    if (!sheet) return undefined;
+    return showTelegramBackButton(() => { setSheet(null); setActionError(''); });
+  }, [sheet]);
 
   useEffect(() => {
     if (sheet !== 'edit') return undefined;
@@ -390,7 +396,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'edit' && (
               <>
-              <div className="sheet__body">
+              <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Edit profile</h2>
                 <label className="promo-field">
                   <span>Your name</span>
@@ -422,7 +428,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'info' && (
               <>
-              <div className="sheet__body">
+              <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Additional info</h2>
                 <p className="profile-form-note">Share a little more about yourself. These details stay on your profile.</p>
                 {[
@@ -453,7 +459,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'score' && (
               <>
-              <div className="sheet__body">
+              <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Profile score</h2>
                 {profile.profileScoreReady && profile.profileScore != null ? (
                   <div className="profile-score-result">
@@ -489,7 +495,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'looking' && (
               <>
-              <div className="sheet__body">
+              <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Looking for</h2>
                 <dl className="looking-list">
                   <div><dt>Your type</dt><dd>{lookingSummary.aboutYou}</dd></div>
@@ -502,7 +508,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'settings' && (
               <>
-              <div className="sheet__body">
+              <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Settings</h2>
                 <p className="profile-form-note">Choose which Dategram activity can send a Telegram message.</p>
                 <label className="settings-toggle">
@@ -521,7 +527,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'support' && (
               <>
-              <div className="sheet__body">
+              <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Contact support</h2>
                 <p>Need help with your profile, a match, or a safety concern? Message us on Telegram and we’ll get back to you.</p>
                 <a className="support-link" href="https://t.me/DategramAppBot" target="_blank" rel="noreferrer">Message @DategramAppBot</a>
@@ -531,7 +537,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'faq' && (
               <>
-              <div className="sheet__body">
+              <div ref={sheetBodyRef} className="sheet__body">
                 <h2>FAQ</h2>
                 <dl className="faq-list">
                   <div><dt>Is Dategram free?</dt><dd>Yes. VIP adds free direct messages and visibility perks.</dd></div>
@@ -545,7 +551,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'privacy' && (
               <>
-              <div className="sheet__body">
+              <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Privacy policy</h2>
                 <p>Dategram runs inside Telegram. Your Telegram credentials never leave Telegram; we receive only signed profile basics. Answers you give personalize your matches and are never sold. City-level location is shown, never exact coordinates.</p>
               </div>
