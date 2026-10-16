@@ -347,7 +347,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
       {sheet && (
         <div className="sheet-backdrop" role="presentation" onClick={() => { setSheet(null); setActionError(''); }}>
-          <div className="sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <div key={sheet} className="sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
             <button type="button" className="icon-button sheet__close" aria-label="Close" onClick={() => { setSheet(null); setActionError(''); }}>
               <CloseIcon />
             </button>
@@ -373,9 +373,11 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   <input type="text" value={draftCountry} maxLength={120} onChange={(event) => setDraftCountry(event.target.value)} />
                 </label>
                 {actionError && <p className="field-error" role="alert">{actionError}</p>}
+                <div className="sheet__actions">
                 <button type="button" className="onboarding-primary" onClick={() => void saveEdit()} disabled={saving || draftName.trim().length < 2}>
                   {saving ? 'SAVING…' : 'SAVE PROFILE'}
                 </button>
+                </div>
                 <small className="telegram-button-hint">You can also save with Telegram’s native button below.</small>
               </>
             )}
@@ -401,9 +403,11 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   </label>
                 ))}
                 {actionError && <p className="field-error" role="alert">{actionError}</p>}
+                <div className="sheet__actions">
                 <button type="button" className="onboarding-primary" onClick={saveAdditionalInfo} disabled={saving}>
                   {saving ? 'SAVING…' : 'SAVE'}
                 </button>
+                </div>
               </>
             )}
 
@@ -421,9 +425,11 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                     <p className="score-learning">Your score is ready to calculate</p>
                     <p className="score-note">Get a quick view of your profile’s match potential.</p>
                     {actionError && <p className="field-error" role="alert">{actionError}</p>}
+                    <div className="sheet__actions">
                     <button type="button" className="onboarding-primary score-button" onClick={requestScore} disabled={scoreBusy}>
                       {scoreBusy ? 'CALCULATING…' : 'Find out the score'}
                     </button>
+                    </div>
                   </>
                 )}
                 <div className="score-stats">
@@ -458,9 +464,11 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   <input type="checkbox" checked={notificationsEnabled} onChange={(event) => setNotificationsEnabled(event.target.checked)} />
                 </label>
                 {actionError && <p className="field-error" role="alert">{actionError}</p>}
+                <div className="sheet__actions">
                 <button type="button" className="onboarding-primary" onClick={saveSettings} disabled={saving}>
                   {saving ? 'SAVING…' : 'SAVE SETTINGS'}
                 </button>
+                </div>
               </>
             )}
 
