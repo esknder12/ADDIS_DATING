@@ -7,7 +7,13 @@ Everything for the sandbox deploy in one place. The live bot
 
 - [x] @BotSupport enabled Serverless — found in bot Settings → Serverless → toggle ON ✅
 - [x] Old exposed test-bot token revoked
-- [x] `WEBAPP_URL` decided → `https://addisdating.vercel.app/` (Vercel, live ✅)
+- [x] `WEBAPP_URL` decided → `https://app8948725364.tgcloud.ai/` (tgcloud static ✅;
+  Vercel build OK but unreachable from Telegram webview — kept as backup)
+- [x] Mini App Files pushed (25 files, 17.8 MB) — app renders inside Telegram ✅
+- [x] Backend live: Render `https://addis-dating.onrender.com` (`main` branch, Frankfurt)
+  + Neon Postgres (Frankfurt) — schema auto-applied, `/health` OK ✅
+- [x] End-to-end verified 2026-10-16: Mini App opens from test bot, Telegram auth
+  works, onboarding loads ("What's your gender?") ✅
 - [x] Auth works (`TGCLOUD_TOKEN` env var, `status` → Linked to app8948725364)
 - [x] `npx tgcloud push` deployed (11 modules)
 - [x] `npx tgcloud migrate` applied (16 tables, 0 skipped)
