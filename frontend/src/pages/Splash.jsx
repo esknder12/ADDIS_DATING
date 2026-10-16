@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { authenticateUser } from '../api/client.js';
+import { authenticateUser, getApiBaseUrl } from '../api/client.js';
 import BrandMark from '../components/BrandMark.jsx';
 import { loadAppState, ONBOARDING_STORAGE_PREFIX } from '../lib/demoStore.js';
 import { getTelegramUser, isTelegramMiniApp, notify } from '../lib/telegram.js';
 
 const minimumSplashTime = 900;
+const buildId = import.meta.env.VITE_BUILD_ID || 'manual-local';
 
 function demoOnboardingCompleted(telegramId) {
   try {
@@ -104,6 +105,7 @@ export default function Splash({ onAuthenticated }) {
           </button>
         </div>
         <p className="bot-handle">@DategramAppBot</p>
+        <p className="build-stamp">build {buildId} · api {getApiBaseUrl() || 'same-host'}</p>
       </main>
     );
   }
@@ -124,6 +126,7 @@ export default function Splash({ onAuthenticated }) {
         </div>
       </div>
       <p className="bot-handle">@DategramAppBot</p>
+      <p className="build-stamp">build {buildId} · api {getApiBaseUrl() || 'same-host'}</p>
     </main>
   );
 }

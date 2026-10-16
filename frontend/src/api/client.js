@@ -13,6 +13,10 @@ apiClient.interceptors.request.use((request) => {
   return request;
 });
 
+export function getApiBaseUrl() {
+  return apiClient.defaults.baseURL || '';
+}
+
 export async function authenticateUser() {
   const response = await apiClient.post('/api/auth/telegram');
   return response.data;
