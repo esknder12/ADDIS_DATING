@@ -33,13 +33,13 @@ function fieldError(error, fallback) {
 }
 
 function botLinkCopy(botLink) {
-  if (botLink.state === 'loading') return '\U0001F916 Bot link: connecting\u2026';
+  if (botLink.state === 'loading') return '🤖 Bot link: connecting\u2026';
   if (botLink.state === 'ready') {
-    return botLink.data?.isVip ? '\U0001F916 Bot link: connected \u2022 VIP' : '\U0001F916 Bot link: connected';
+    return botLink.data?.isVip ? '🤖 Bot link: connected \u2022 VIP' : '🤖 Bot link: connected';
   }
-  if (botLink.state === 'unavailable') return '\U0001F916 Bot link: unavailable here';
-  if (botLink.state === 'error') return '\U0001F916 Bot link: tap to retry';
-  return '\U0001F916 Bot link';
+  if (botLink.state === 'unavailable') return '🤖 Bot link: unavailable here';
+  if (botLink.state === 'error') return '🤖 Bot link: tap to retry';
+  return '🤖 Bot link';
 }
 
 export default function ProfileTab({ user, appData, photoUrl, onShowVerification, onShowPaywall }) {
