@@ -126,7 +126,6 @@ export default function Splash({ onAuthenticated }) {
         </div>
       </div>
       <p className="bot-handle">@DategramAppBot</p>
-      <p className="build-stamp">build {buildId} · api {getApiBaseUrl() || 'same-host'}</p>
     </main>
   );
 }
