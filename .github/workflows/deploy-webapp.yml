@@ -24,7 +24,7 @@ name: Deploy Mini App to Telegram
 on:
   push:
     branches: [arena/95f0f2a6-addis-dating]
-    paths: ['frontend/**']
+    paths: ['frontend/**', '.github/workflows/deploy-webapp.yml']
   workflow_dispatch:
 
 env:
@@ -58,12 +58,25 @@ jobs:
           cp -r frontend/dist serverless/webapp
           ls serverless/webapp
 
+      - name: Install tgcloud CLI
+        working-directory: serverless
+        run: |
+          npm install
+          npm ls @tgcloud/cli
+
+      - name: Pre-push diagnostics
+        working-directory: serverless
+        env:
+          TGCLOUD_TOKEN: ${{ secrets.TGCLOUD_TOKEN }}
+        run: |
+          node -e "const t=(process.env.TGCLOUD_TOKEN||''); console.log('token present:', t.length>0, '| raw length:', t.length, '| stripped length:', t.replace(/\\s+/g,'').length)"
+
       - name: Push to Telegram static hosting
         working-directory: serverless
         env:
           TGCLOUD_TOKEN: ${{ secrets.TGCLOUD_TOKEN }}
         run: |
-          npm install
+          export TGCLOUD_TOKEN="$(printf '%s' "$TGCLOUD_TOKEN" | tr -d '[:space:]')"
           npx tgcloud push
 
       - name: Point test-bot menu at fresh URL
@@ -72,7 +85,7 @@ jobs:
         run: |
           MENU_URL="${WEBAPP_BASE_URL}?v=${{ github.run_number }}"
           echo "Menu URL: $MENU_URL"
-          curl -sS -X POST "https://api.telegram.org/bot${TEST_BOT_TOKEN}/setChatMenuButton" \
+          curl -sS -w "\nHTTP %{http_code}\n" -X POST "https://api.telegram.org/bot${TEST_BOT_TOKEN}/setChatMenuButton" \
             -H 'Content-Type: application/json' \
             -d "{\"menu_button\":{\"type\":\"web_app\",\"text\":\"Open Dategram\",\"web_app\":{\"url\":\"$MENU_URL\"}}}"
           echo "MENU_URL=$MENU_URL" >> "$GITHUB_ENV"
@@ -81,7 +94,7 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          curl -sS -X PUT "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/env-vars" \
+          curl -sS -w "\nHTTP %{http_code}\n" -X PUT "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/env-vars" \
             -H "Authorization: Bearer ${RENDER_API_KEY}" \
             -H 'Content-Type: application/json' \
             -d "[{\"key\":\"WEBAPP_URL\",\"value\":\"${MENU_URL}\"}]"
