@@ -5,13 +5,13 @@ Everything for the sandbox deploy in one place. The live bot
 
 ## 0. Status board (edit as you go)
 
-- [ ] @BotSupport enabled Serverless (button visible in @BotFather → test bot)
-- [ ] Old exposed test-bot token revoked (API Token → Revoke current token)
+- [x] @BotSupport enabled Serverless — found in bot Settings → Serverless → toggle ON ✅
+- [x] Old exposed test-bot token revoked
 - [x] `WEBAPP_URL` decided → `https://addisdating.vercel.app/` (Vercel, live ✅)
-- [ ] `npx tgcloud login` works (`npx tgcloud status` runs)
-- [ ] `npx tgcloud push` deployed
-- [ ] `npx tgcloud migrate` applied the schema
-- [ ] `/start` answered by Serverless (test script below passes)
+- [x] Auth works (`TGCLOUD_TOKEN` env var, `status` → Linked to app8948725364)
+- [x] `npx tgcloud push` deployed (11 modules)
+- [x] `npx tgcloud migrate` applied (16 tables, 0 skipped)
+- [ ] `/start` answered by Serverless (test script below — DOING NOW)
 
 ## 1. Login (needs the Serverless button first)
 
