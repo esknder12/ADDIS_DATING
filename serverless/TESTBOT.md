@@ -17,8 +17,12 @@ Everything for the sandbox deploy in one place. The live bot
 - [x] Photo upload fixed (axios was JSON-stringifying the file) + Cloudinary live ✅
 - [x] Face gate (Build A) verified live 2026-10-16: faceless photo rejected with
   "No clear face detected" popup in Telegram ✅ (TinyFaceDetector, ?v=4)
-- [ ] Auto-deploy: `.github/workflows/deploy-webapp.yml` pushed — needs 3 repo
-  secrets (TGCLOUD_TOKEN, TEST_BOT_TOKEN, RENDER_API_KEY), then PC deploys retire
+- [x] Auto-deploy GREEN 2026-10-16: push → build → tgcloud push → menu ?v=<run>
+  all automatic ✅ (2 secrets: TGCLOUD_TOKEN, TEST_BOT_TOKEN; Render API step
+  dropped — backend adopts the CI-managed menu URL instead, no reset)
+- [ ] Render: flip service branch main → arena/95f0f2a6-addis-dating (dashboard →
+  service → Settings → Branch) so the backend picks up menu adoption
+- [ ] Cleanup: delete RENDER_API_KEY repo secret (not needed) + Desktop serverless.txt
 - [x] Auth works (`TGCLOUD_TOKEN` env var, `status` → Linked to app8948725364)
 - [x] `npx tgcloud push` deployed (11 modules)
 - [x] `npx tgcloud migrate` applied (16 tables, 0 skipped)

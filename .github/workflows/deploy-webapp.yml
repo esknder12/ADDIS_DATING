@@ -104,7 +104,7 @@ jobs:
         env:
           TEST_BOT_TOKEN: ${{ secrets.TEST_BOT_TOKEN }}
         run: |
-          MENU_URL="${WEBAPP_BASE_URL}?v=${{ github.run_number }}"
+          MENU_URL="${WEBAPP_BASE_URL}?v=ci-${{ github.run_number }}"
           echo "Menu URL: $MENU_URL"
           echo "::add-mask::$TEST_BOT_TOKEN"
           RESP=$(curl -sS -w "\nHTTP %{http_code}" -X POST "https://api.telegram.org/bot${TEST_BOT_TOKEN}/setChatMenuButton" \
