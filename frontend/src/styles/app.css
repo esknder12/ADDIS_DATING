@@ -998,7 +998,9 @@
   max-height: 86%;
   padding: 10px 22px calc(24px + var(--safe-bottom));
   margin: 0 auto;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: #131316;
   border: 1px solid var(--dg-border);
   border-bottom: 0;
@@ -1006,13 +1008,14 @@
   animation: sheet-up 0.26s cubic-bezier(0.3, 0.9, 0.3, 1);
 }
 @keyframes sheet-up { from { transform: translateY(24%); opacity: 0.5; } to { transform: none; opacity: 1; } }
-.sheet__grabber { width: 44px; height: 5px; margin: 4px auto 14px; background: #3f3f46; border-radius: 99px; }
+.sheet__grabber { width: 44px; height: 5px; margin: 4px auto 14px; background: #3f3f46; border-radius: 99px; flex-shrink: 0; }
+.sheet__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .sheet__actions {
-  position: sticky;
-  bottom: 0;
-  margin: 18px -22px 0;
-  padding: 14px 22px 2px;
-  background: linear-gradient(to bottom, rgba(19, 19, 22, 0), #131316 32%);
+  flex-shrink: 0;
+  margin: 12px -22px 0;
+  padding: 12px 22px 0;
+  background: #131316;
+  border-top: 1px solid var(--dg-border);
 }
 .sheet__actions .onboarding-primary { width: 100%; }
 .sheet h2 { margin: 4px 0 14px; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }

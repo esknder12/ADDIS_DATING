@@ -390,6 +390,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
 
             {sheet === 'edit' && (
               <>
+              <div className="sheet__body">
                 <h2>Edit profile</h2>
                 <label className="promo-field">
                   <span>Your name</span>
@@ -408,17 +409,20 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   <input type="text" value={draftCountry} maxLength={120} onChange={(event) => setDraftCountry(event.target.value)} />
                 </label>
                 {actionError && <p className="field-error" role="alert">{actionError}</p>}
-                <div className="sheet__actions">
-                <button type="button" className="onboarding-primary" onClick={() => void saveEdit()} disabled={saving || draftName.trim().length < 2}>
-                  {saving ? 'SAVING…' : 'SAVE PROFILE'}
-                </button>
-                </div>
+                
                 <small className="telegram-button-hint">You can also save with Telegram’s native button below.</small>
+              </div>
+              <div className="sheet__actions">
+              <button type="button" className="onboarding-primary" onClick={() => void saveEdit()} disabled={saving || draftName.trim().length < 2}>
+                {saving ? 'SAVING…' : 'SAVE PROFILE'}
+              </button>
+              </div>
               </>
             )}
 
             {sheet === 'info' && (
               <>
+              <div className="sheet__body">
                 <h2>Additional info</h2>
                 <p className="profile-form-note">Share a little more about yourself. These details stay on your profile.</p>
                 {[
@@ -438,16 +442,18 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   </label>
                 ))}
                 {actionError && <p className="field-error" role="alert">{actionError}</p>}
-                <div className="sheet__actions">
-                <button type="button" className="onboarding-primary" onClick={saveAdditionalInfo} disabled={saving}>
-                  {saving ? 'SAVING…' : 'SAVE'}
-                </button>
-                </div>
+              </div>
+              <div className="sheet__actions">
+              <button type="button" className="onboarding-primary" onClick={saveAdditionalInfo} disabled={saving}>
+                {saving ? 'SAVING…' : 'SAVE'}
+              </button>
+              </div>
               </>
             )}
 
             {sheet === 'score' && (
               <>
+              <div className="sheet__body">
                 <h2>Profile score</h2>
                 {profile.profileScoreReady && profile.profileScore != null ? (
                   <div className="profile-score-result">
@@ -460,11 +466,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                     <p className="score-learning">Your score is ready to calculate</p>
                     <p className="score-note">Get a quick view of your profile’s match potential.</p>
                     {actionError && <p className="field-error" role="alert">{actionError}</p>}
-                    <div className="sheet__actions">
-                    <button type="button" className="onboarding-primary score-button" onClick={requestScore} disabled={scoreBusy}>
-                      {scoreBusy ? 'CALCULATING…' : 'Find out the score'}
-                    </button>
-                    </div>
+                    
                   </>
                 )}
                 <div className="score-stats">
@@ -476,22 +478,31 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                     <div><dt>Match pool</dt><dd>{result.matchPoolLabel}</dd></div>
                   </dl>
                 </div>
+              </div>
+              <div className="sheet__actions">
+              <button type="button" className="onboarding-primary score-button" onClick={requestScore} disabled={scoreBusy}>
+                {scoreBusy ? 'CALCULATING…' : 'Find out the score'}
+              </button>
+              </div>
               </>
             )}
 
             {sheet === 'looking' && (
               <>
+              <div className="sheet__body">
                 <h2>Looking for</h2>
                 <dl className="looking-list">
                   <div><dt>Your type</dt><dd>{lookingSummary.aboutYou}</dd></div>
                   <div><dt>Free to meet</dt><dd>{lookingSummary.availability}</dd></div>
                 </dl>
                 <small>Start onboarding again from the top bar to adjust these answers.</small>
+              </div>
               </>
             )}
 
             {sheet === 'settings' && (
               <>
+              <div className="sheet__body">
                 <h2>Settings</h2>
                 <p className="profile-form-note">Choose which Dategram activity can send a Telegram message.</p>
                 <label className="settings-toggle">
@@ -499,24 +510,28 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   <input type="checkbox" checked={notificationsEnabled} onChange={(event) => setNotificationsEnabled(event.target.checked)} />
                 </label>
                 {actionError && <p className="field-error" role="alert">{actionError}</p>}
-                <div className="sheet__actions">
-                <button type="button" className="onboarding-primary" onClick={saveSettings} disabled={saving}>
-                  {saving ? 'SAVING…' : 'SAVE SETTINGS'}
-                </button>
-                </div>
+              </div>
+              <div className="sheet__actions">
+              <button type="button" className="onboarding-primary" onClick={saveSettings} disabled={saving}>
+                {saving ? 'SAVING…' : 'SAVE SETTINGS'}
+              </button>
+              </div>
               </>
             )}
 
             {sheet === 'support' && (
               <>
+              <div className="sheet__body">
                 <h2>Contact support</h2>
                 <p>Need help with your profile, a match, or a safety concern? Message us on Telegram and we’ll get back to you.</p>
                 <a className="support-link" href="https://t.me/DategramAppBot" target="_blank" rel="noreferrer">Message @DategramAppBot</a>
+              </div>
               </>
             )}
 
             {sheet === 'faq' && (
               <>
+              <div className="sheet__body">
                 <h2>FAQ</h2>
                 <dl className="faq-list">
                   <div><dt>Is Dategram free?</dt><dd>Yes. VIP adds free direct messages and visibility perks.</dd></div>
@@ -524,13 +539,16 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   <div><dt>How do I get verified?</dt><dd>Tap Get verified on your profile and follow the Telegram verification flow.</dd></div>
                   <div><dt>How do I change my photos?</dt><dd>Use the photo controls on your profile to add, remove, or reorder up to six photos.</dd></div>
                 </dl>
+              </div>
               </>
             )}
 
             {sheet === 'privacy' && (
               <>
+              <div className="sheet__body">
                 <h2>Privacy policy</h2>
                 <p>Dategram runs inside Telegram. Your Telegram credentials never leave Telegram; we receive only signed profile basics. Answers you give personalize your matches and are never sold. City-level location is shown, never exact coordinates.</p>
+              </div>
               </>
             )}
           </div>
