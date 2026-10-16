@@ -11,6 +11,7 @@ import {
 } from '../../lib/telegram.js';
 import { ChevronRightIcon, CloseIcon, VerifiedBadge } from './icons.jsx';
 import useBotStatus from '../../hooks/useBotStatus.js';
+import { checkFace } from '../../lib/faceCheck.js';
 
 function initials(user, name) {
   const source = name || user.firstName || 'D';
@@ -30,6 +31,15 @@ function SettingRow({ icon, label, chevron = true, onClick, tone }) {
 
 function fieldError(error, fallback) {
   return error?.response?.data?.error?.message || error?.message || fallback;
+}
+
+function loadImageElement(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('unreadable'));
+    image.src = source;
+  });
 }
 
 function botLinkCopy(botLink) {
@@ -157,11 +167,36 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
     }
   };
 
+  const profilePhotoFacePasses = async (file) => {
+    try {
+      const objectUrl = window.URL.createObjectURL(file);
+      try {
+        const probe = await loadImageElement(objectUrl);
+        const result = await checkFace(probe);
+        if (result.ok) return true;
+        impact('heavy');
+        setPhotoError(
+          result.reason === 'small'
+            ? 'Your face is too small in this photo — use a close-up with your face clearly visible.'
+            : 'No human face found in this photo — profile photos must show your face clearly.',
+        );
+        return false;
+      } finally {
+        window.URL.revokeObjectURL(objectUrl);
+      }
+    } catch (error) {
+      // Fail open, same as onboarding: a broken model must never brick uploads.
+      console.warn('Face check unavailable; skipping:', error?.message || error);
+      return true;
+    }
+  };
+
   const uploadPhoto = async (file) => {
     if (!file) return;
     setPhotoBusy(true);
     setPhotoError('');
     try {
+      if (!(await profilePhotoFacePasses(file))) return;
       await appData.uploadPhoto(file);
     } catch (error) {
       setPhotoError(fieldError(error, 'Photo upload failed. Please try again.'));
