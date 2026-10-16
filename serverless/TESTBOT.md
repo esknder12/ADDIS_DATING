@@ -17,6 +17,8 @@ Everything for the sandbox deploy in one place. The live bot
 - [x] Photo upload fixed (axios was JSON-stringifying the file) + Cloudinary live ✅
 - [x] Face gate (Build A) verified live 2026-10-16: faceless photo rejected with
   "No clear face detected" popup in Telegram ✅ (TinyFaceDetector, ?v=4)
+- [ ] Auto-deploy: `.github/workflows/deploy-webapp.yml` pushed — needs 3 repo
+  secrets (TGCLOUD_TOKEN, TEST_BOT_TOKEN, RENDER_API_KEY), then PC deploys retire
 - [x] Auth works (`TGCLOUD_TOKEN` env var, `status` → Linked to app8948725364)
 - [x] `npx tgcloud push` deployed (11 modules)
 - [x] `npx tgcloud migrate` applied (16 tables, 0 skipped)
