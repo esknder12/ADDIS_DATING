@@ -143,7 +143,18 @@ export async function updateOwnProfile(patch) {
 export async function uploadProfilePhoto(file) {
   const formData = new FormData();
   formData.append('photo', file);
-  const response = await apiClient.post('/api/profile/photos', formData);
+  const response = await apiClient.post('/api/profile/photos', formData, {
+    // Undo this client's global `Content-Type: application/json` for this call:
+    // axios stringifies FormData payloads to JSON when a JSON content type is
+    // set, and multer cannot parse that (backend answers PHOTO_REQUIRED).
+    // With no content type the browser sends real multipart with a boundary.
+    transformRequest: [
+      (data, headers) => {
+        if (headers && typeof headers.delete === 'function') headers.delete('Content-Type');
+        return data;
+      },
+    ],
+  });
   return response.data;
 }
 
