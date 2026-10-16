@@ -25,6 +25,18 @@ npx tgcloud status    # should run without errors = login OK
 
 > The CLI Access token is NOT the bot API token. Never screenshot either.
 
+## 1b. Self-test the bot on your PC (recommended, 10 seconds, no Telegram needed)
+
+```bash
+cd serverless
+git pull
+node local-test/smoke.mjs
+```
+
+This runs the REAL bot code with a fake Telegram: 48 checks across schema,
+commands, video notes, buttons, the Mini App endpoint and all four
+notifications. All green = safe to `push`.
+
 ## 2. Decide WEBAPP_URL (pick one)
 
 **A. You have a deployed Mini App URL** (Vercel / Netlify / Cloudflare / VPS):
