@@ -10,6 +10,7 @@ import {
   showTelegramMainButton,
 } from '../../lib/telegram.js';
 import { ChevronRightIcon, CloseIcon, VerifiedBadge } from './icons.jsx';
+import useBotStatus from '../../hooks/useBotStatus.js';
 
 function initials(user, name) {
   const source = name || user.firstName || 'D';
@@ -31,8 +32,19 @@ function fieldError(error, fallback) {
   return error?.response?.data?.error?.message || error?.message || fallback;
 }
 
+function botLinkCopy(botLink) {
+  if (botLink.state === 'loading') return '\U0001F916 Bot link: connecting\u2026';
+  if (botLink.state === 'ready') {
+    return botLink.data?.isVip ? '\U0001F916 Bot link: connected \u2022 VIP' : '\U0001F916 Bot link: connected';
+  }
+  if (botLink.state === 'unavailable') return '\U0001F916 Bot link: unavailable here';
+  if (botLink.state === 'error') return '\U0001F916 Bot link: tap to retry';
+  return '\U0001F916 Bot link';
+}
+
 export default function ProfileTab({ user, appData, photoUrl, onShowVerification, onShowPaywall }) {
   const { profile } = appData;
+  const botLink = useBotStatus();
   const [sheet, setSheet] = useState(null); // edit | info | score | looking | settings | support | faq | privacy
   const [draftName, setDraftName] = useState(profile.name || user.firstName || '');
   const [draftBio, setDraftBio] = useState(profile.bio || user.bio || '');
