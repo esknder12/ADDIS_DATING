@@ -141,6 +141,7 @@ export default function MainApp({ user, appData }) {
 
   return (
     <div className="main-app">
+      {user.isDemo && <div className="demo-ribbon" role="note">DEMO MODE — nothing here is saved</div>}
       {tab === 'discover' && (
         <DiscoverTab
           discover={appData.discover}
