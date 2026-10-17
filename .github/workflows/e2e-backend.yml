@@ -1,0 +1,70 @@
+# Backend E2E — live API against throwaway Postgres. No PC, no real tokens.
+#
+# Trigger: any push to the arena branch that touches backend/**.
+# What it does:
+#   1. Boots Postgres 16 (service container) + applies backend/src/db/schema.sql.
+#   2. Boots the real backend with a FAKE bot token.
+#   3. Runs backend/e2e/e2e-live.mjs: forged initData -> auth -> swipe ->
+#      mutual match -> message -> re-read (reload proof) -> discovery exclusion.
+# The E2E blocks nothing on failure except confidence: a red run means a real
+# user-facing regression in swipe/match/chat persistence. Fix forward.
+
+name: Backend E2E (live API + Postgres)
+
+on:
+  push:
+    branches: [arena/95f0f2a6-addis-dating]
+    paths: ['backend/**', '.github/workflows/e2e-backend.yml']
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: e2e
+          POSTGRES_DB: dategram_e2e
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s --health-timeout=5s --health-retries=10
+    env:
+      DATABASE_URL: postgresql://postgres:e2e@localhost:5432/dategram_e2e
+      BOT_TOKEN: e2e-fake-token
+      WEBAPP_URL: https://e2e.invalid
+      CORS_ORIGINS: https://e2e.invalid
+      PORT: 4000
+      NODE_ENV: test
+      E2E_API_URL: http://127.0.0.1:4000
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: arena/95f0f2a6-addis-dating
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start backend
+        run: |
+          npm start --workspace backend > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
+          for _ in $(seq 1 30); do
+            sleep 2
+            if curl -sf http://127.0.0.1:4000/health > /dev/null; then echo "backend up"; exit 0; fi
+          done
+          echo "backend never came up:"; tail -40 /tmp/backend.log; exit 1
+
+      - name: Run live E2E
+        working-directory: backend
+        run: node e2e/e2e-live.mjs
+
+      - name: Backend log (on failure)
+        if: failure()
+        run: tail -60 /tmp/backend.log
