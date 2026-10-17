@@ -34,6 +34,7 @@ jobs:
       BOT_TOKEN: e2e-fake-token
       WEBAPP_URL: https://e2e.invalid
       CORS_ORIGINS: https://e2e.invalid
+      ADMIN_API_KEY: e2e-admin
       PORT: 4000
       NODE_ENV: test
       E2E_API_URL: http://127.0.0.1:4000

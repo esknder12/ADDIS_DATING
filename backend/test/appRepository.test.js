@@ -313,6 +313,7 @@ describe('database-backed mutual swipe and rewind', () => {
           return { rows: [] };
         }
 
+        if (sql.includes('FROM blocks')) return { rows: [] };
         throw new Error(`Unexpected test SQL: ${sql}`);
       },
       release() {},

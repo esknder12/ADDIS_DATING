@@ -77,6 +77,7 @@ describe('chat repository receipts and previews', () => {
             read_at: null,
           }] };
         }
+        if (normalized.includes('FROM blocks')) return { rows: [] };
         throw new Error(`Unexpected create message SQL: ${normalized}`);
       },
       release() {},

@@ -86,6 +86,17 @@ async function userIdFor(client, telegramId) {
   return result.rows[0]?.id ?? null;
 }
 
+async function isBlockedUser(executor, userId, otherId) {
+  const result = await executor.query(
+    `SELECT 1 FROM blocks
+     WHERE (blocker_user_id = $1 AND blocked_user_id = $2)
+        OR (blocker_user_id = $2 AND blocked_user_id = $1)
+     LIMIT 1`,
+    [userId, otherId],
+  );
+  return result.rows.length > 0;
+}
+
 export function createAppRepository(pool) {
   if (!pool) {
     return {
@@ -123,6 +134,128 @@ export function createAppRepository(pool) {
       requestVerification: unavailable,
       submitVerificationVideo: unavailable,
     };
+  }
+
+  const REPORT_REASONS = new Set(['harassment', 'spam', 'fake_profile', 'inappropriate_content', 'other']);
+
+  async function resolveActiveUserId(executor, idText) {
+    if (!/^[1-9]\d{0,18}$/.test(String(idText ?? '').trim())) return null;
+    const result = await executor.query(
+      'SELECT id FROM users WHERE id::text = $1 AND is_active = TRUE LIMIT 1',
+      [String(idText).trim()],
+    );
+    return result.rows[0]?.id ?? null;
+  }
+
+  async function blockUser(telegramId, targetId) {
+    const userId = await userIdFor(pool, telegramId);
+    if (!userId) return null;
+    const target = await resolveActiveUserId(pool, targetId);
+    if (!target || String(target) === String(userId)) return { invalid: true };
+    await pool.query(
+      `INSERT INTO blocks (blocker_user_id, blocked_user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (blocker_user_id, blocked_user_id) DO NOTHING`,
+      [userId, target],
+    );
+    return { blocked: true };
+  }
+
+  async function unblockUser(telegramId, targetId) {
+    const userId = await userIdFor(pool, telegramId);
+    if (!userId) return null;
+    const target = await resolveActiveUserId(pool, targetId);
+    if (!target) return { unblocked: false };
+    const result = await pool.query(
+      'DELETE FROM blocks WHERE blocker_user_id = $1 AND blocked_user_id = $2',
+      [userId, target],
+    );
+    return { unblocked: result.rowCount > 0 };
+  }
+
+  async function listBlockedUsers(telegramId) {
+    const userId = await userIdFor(pool, telegramId);
+    if (!userId) return null;
+    const result = await pool.query(
+      `SELECT b.blocked_user_id::text AS id, u.name, u.first_name,
+              COALESCE(photo.url, u.photo_url) AS photo, b.created_at AS blocked_at
+       FROM blocks b
+       JOIN users u ON u.id = b.blocked_user_id
+       LEFT JOIN photos photo ON photo.user_id = u.id AND photo.is_primary = TRUE
+       WHERE b.blocker_user_id = $1
+       ORDER BY b.created_at DESC, b.id DESC
+       LIMIT 200`,
+      [userId],
+    );
+    return result.rows.map((row) => ({
+      id: String(row.id),
+      name: row.name || row.first_name || 'Unknown',
+      photo: row.photo || null,
+      blockedAt: row.blocked_at,
+    }));
+  }
+
+  async function reportUser(telegramId, targetId, { reason, details, block } = {}) {
+    const cleanReason = String(reason ?? '').trim().toLowerCase();
+    if (!REPORT_REASONS.has(cleanReason)) return { invalid: true };
+    const cleanDetails = String(details ?? '').trim().slice(0, 500) || null;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const userId = await userIdFor(client, telegramId);
+      if (!userId) { await client.query('ROLLBACK'); return null; }
+      const target = await resolveActiveUserId(client, targetId);
+      if (!target || String(target) === String(userId)) {
+        await client.query('ROLLBACK');
+        return { invalid: true };
+      }
+      const inserted = await client.query(
+        `INSERT INTO reports (reporter_user_id, reported_user_id, reason, details)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id`,
+        [userId, target, cleanReason, cleanDetails],
+      );
+      let blocked = false;
+      if (block) {
+        await client.query(
+          `INSERT INTO blocks (blocker_user_id, blocked_user_id)
+           VALUES ($1, $2)
+           ON CONFLICT (blocker_user_id, blocked_user_id) DO NOTHING`,
+          [userId, target],
+        );
+        blocked = true;
+      }
+      await client.query('COMMIT');
+      return { report: { id: String(inserted.rows[0].id) }, blocked };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async function listSafetyReports({ status = 'all', limit = 50 } = {}) {
+    const cleanLimit = Number.isSafeInteger(Number(limit))
+      ? Math.max(1, Math.min(100, Number(limit)))
+      : 50;
+    const statuses = new Set(['open', 'reviewed', 'actioned', 'dismissed']);
+    const filter = statuses.has(String(status)) ? String(status) : null;
+    const result = await pool.query(
+      `SELECT r.id::text AS id, r.reason, r.details, r.status, r.created_at,
+              r.reporter_user_id::text AS reporter_id,
+              COALESCE(reporter.name, reporter.first_name) AS reporter_name,
+              r.reported_user_id::text AS reported_id,
+              COALESCE(reported.name, reported.first_name) AS reported_name
+       FROM reports r
+       LEFT JOIN users reporter ON reporter.id = r.reporter_user_id
+       LEFT JOIN users reported ON reported.id = r.reported_user_id
+       WHERE ($1::text IS NULL OR r.status = $1)
+       ORDER BY r.created_at DESC, r.id DESC
+       LIMIT $2`,
+      [filter, cleanLimit],
+    );
+    return result.rows;
   }
 
   async function saveConversion(telegramId, { results, email, name }) {
@@ -221,6 +354,11 @@ export function createAppRepository(pool) {
            SELECT 1 FROM swipes s
            WHERE s.user_id = $1 AND s.profile_id = u.id::text
          )
+         AND NOT EXISTS (
+           SELECT 1 FROM blocks b
+           WHERE (b.blocker_user_id = $1 AND b.blocked_user_id = u.id)
+              OR (b.blocker_user_id = u.id AND b.blocked_user_id = $1)
+         )
        ORDER BY EXISTS (
                   SELECT 1 FROM profile_boosts boost
                   WHERE boost.user_id = u.id AND boost.is_active = TRUE AND boost.expires_at > NOW()
@@ -267,6 +405,11 @@ export function createAppRepository(pool) {
          AND NOT EXISTS (
            SELECT 1 FROM swipes s
            WHERE s.user_id = $1 AND s.profile_id = u.id::text
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM blocks b
+           WHERE (b.blocker_user_id = $1 AND b.blocked_user_id = u.id)
+              OR (b.blocker_user_id = u.id AND b.blocked_user_id = $1)
          )
          AND NOT EXISTS (
            SELECT 1 FROM ai_pick_items existing
@@ -501,6 +644,10 @@ export function createAppRepository(pool) {
         return { matched: false, profile: null, match: null };
       }
       const targetId = targetLookup.rows[0].id;
+      if (await isBlockedUser(client, userId, targetId)) {
+        await client.query('ROLLBACK');
+        return { blocked: true };
+      }
 
       // Lock both accounts in deterministic order so simultaneous mutual likes
       // cannot both miss each other's uncommitted swipe.
@@ -717,6 +864,11 @@ export function createAppRepository(pool) {
          ON intention.user_id = other.id AND intention.question_key = 'looking_for'
        WHERE (m.user1_id = $1 OR m.user2_id = $1)
           OR (m.user1_id IS NULL AND m.user_id = $1)
+         AND NOT EXISTS (
+           SELECT 1 FROM blocks b
+           WHERE (b.blocker_user_id = $1 AND b.blocked_user_id = other.id)
+              OR (b.blocker_user_id = other.id AND b.blocked_user_id = $1)
+         )
        ORDER BY COALESCE(last_message.created_at, m.created_at) DESC, m.id DESC`,
       [userId],
     );
@@ -812,6 +964,11 @@ export function createAppRepository(pool) {
                WHERE (m.user1_id = LEAST($2::bigint, u.id) AND m.user2_id = GREATEST($2::bigint, u.id))
                   OR (m.user1_id IS NULL AND m.user_id = $2 AND m.profile_id = u.id::text)
              )
+             AND NOT EXISTS (
+               SELECT 1 FROM blocks b
+               WHERE (b.blocker_user_id = $2 AND b.blocked_user_id = u.id)
+                  OR (b.blocker_user_id = u.id AND b.blocked_user_id = $2)
+             )
            ORDER BY s.created_at DESC, s.id DESC
            LIMIT 100`,
           [String(userId), userId],
@@ -883,7 +1040,19 @@ export function createAppRepository(pool) {
        LIMIT 1${lock ? ' FOR SHARE' : ''}`,
       [numericId.toString(), userId],
     );
-    return result.rows[0] || null;
+    const row = result.rows[0] || null;
+    if (!row) return null;
+    let otherId = null;
+    if (row.user1_id != null && row.user2_id != null) {
+      otherId = String(row.user1_id) === String(userId) ? row.user2_id : row.user1_id;
+    } else if (String(row.user_id) === String(userId)
+        && /^[1-9]\d{0,18}$/.test(String(row.profile_id || ''))) {
+      otherId = row.profile_id;
+    } else if (String(row.user_id) !== String(userId)) {
+      otherId = row.user_id;
+    }
+    if (otherId && await isBlockedUser(client, userId, otherId)) return null;
+    return row;
   }
 
   async function hasMatchAccess(userId, matchId) {
@@ -1575,5 +1744,10 @@ export function createAppRepository(pool) {
     grantVip,
     requestVerification,
     submitVerificationVideo,
+    blockUser,
+    unblockUser,
+    listBlockedUsers,
+    reportUser,
+    listSafetyReports,
   };
 }

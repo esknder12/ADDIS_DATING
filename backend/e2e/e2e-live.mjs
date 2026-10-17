@@ -81,6 +81,7 @@ try {
   assert(rC.status === 200 && rC.json?.success, `C: ${rC.status} ${rC.text}`);
   const aId = String(rA.json.user.id);
   const bId = String(rB.json.user.id);
+  const cId = String(rC.json.user.id);
 
   step = 'seed fixtures (onboarded users with preferences)';
   for (const u of [A, B, C]) {
@@ -147,6 +148,55 @@ try {
   const g3 = await api('GET', '/api/matches', initA);
   const matches2 = listOf(g3.json, 'matches', 'data') || [];
   assert(s3.status === 200 && matches2.length === 1, `${s3.status} matches=${matches2.length}`);
+
+  step = 'A blocks C';
+  const b1 = await api('POST', `/api/users/${cId}/block`, initA);
+  assert(b1.status === 200 && b1.json?.blocked === true, `${b1.status} ${b1.text}`);
+
+  step = 'blocked list shows C';
+  const bl = await api('GET', '/api/blocks', initA);
+  const blocked = listOf(bl.json, 'blocked', 'data') || [];
+  assert(bl.status === 200 && blocked.some((x) => String(x.id) === cId), `${bl.status} ${bl.text}`);
+
+  step = 'blocked user excluded from discovery';
+  const d2 = await api('GET', '/api/discovery?limit=30', initA);
+  const profiles2 = listOf(d2.json, 'profiles', 'data') || [];
+  assert(d2.status === 200 && !profiles2.some((x) => String(x.id) === cId), `${d2.status} profiles=${profiles2.length}`);
+
+  step = 'swipe on blocked profile rejected';
+  const s4 = await api('POST', '/api/swipe', initA, { swipedUserId: cId, action: 'like' });
+  assert(s4.status === 403 && s4.json?.error?.code === 'USER_BLOCKED', `${s4.status} ${s4.text}`);
+
+  step = 'B blocks A: match hidden both sides, chat closed';
+  const b2 = await api('POST', `/api/users/${aId}/block`, initB);
+  assert(b2.status === 200, `${b2.status} ${b2.text}`);
+  const g4 = await api('GET', '/api/matches', initB);
+  const matchesB = listOf(g4.json, 'matches', 'data') || [];
+  assert(!matchesB.some((m) => String(m.id) === matchId), `B still sees match: ${g4.text}`);
+  const g4a = await api('GET', '/api/matches', initA);
+  const matchesA = listOf(g4a.json, 'matches', 'data') || [];
+  assert(!matchesA.some((m) => String(m.id) === matchId), `A still sees match: ${g4a.text}`);
+  const m3 = await api('GET', `/api/matches/${matchId}/messages`, initB);
+  assert(m3.status === 404, `${m3.status} ${m3.text}`);
+  const m4 = await api('POST', `/api/matches/${matchId}/messages`, initB, { content: 'should fail' });
+  assert(m4.status === 403, `${m4.status} ${m4.text}`);
+
+  step = 'B unblocks A: match restored';
+  const u1 = await api('DELETE', `/api/users/${aId}/block`, initB);
+  assert(u1.status === 200 && u1.json?.unblocked === true, `${u1.status} ${u1.text}`);
+  const g5 = await api('GET', '/api/matches', initB);
+  const matchesB2 = listOf(g5.json, 'matches', 'data') || [];
+  assert(matchesB2.some((m) => String(m.id) === matchId), `${g5.status} ${g5.text}`);
+
+  step = 'A reports C (spam + block)';
+  const r1 = await api('POST', `/api/users/${cId}/report`, initA, { reason: 'spam', details: 'e2e probe', block: true });
+  assert(r1.status === 201 && r1.json?.report?.id && r1.json?.blocked === true, `${r1.status} ${r1.text}`);
+
+  step = 'admin lists reports';
+  const admRes = await fetch(`${API}/api/admin/reports`, { headers: { 'x-admin-key': 'e2e-admin' } });
+  const admJson = await admRes.json();
+  const admReports = Array.isArray(admJson?.reports) ? admJson.reports : [];
+  assert(admRes.status === 200 && admReports.some((r) => r.reason === 'spam' && r.reported_id === cId), `${admRes.status} n=${admReports.length}`);
 
   console.log('E2E PASS: swipe -> match -> message -> persistence, all steps green');
 } finally {

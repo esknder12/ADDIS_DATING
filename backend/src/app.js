@@ -14,6 +14,7 @@ import { createLikesRouter } from './routes/likes.routes.js';
 import { createMatchesRouter } from './routes/matches.routes.js';
 import { createOnboardingRouter } from './routes/onboarding.routes.js';
 import { createProfileRouter } from './routes/profile.routes.js';
+import { createSafetyRouter } from './routes/safety.routes.js';
 import { createSwipeRouter } from './routes/swipe.routes.js';
 
 function createCorsOptions(runtimeConfig) {
@@ -131,6 +132,7 @@ export function createApp({
   app.use('/api/app/chats', appLimiter, createChatsRouter({ appRepository, runtimeConfig }));
   app.use('/api/app/profile', appLimiter, createProfileRouter({ appRepository, runtimeConfig }));
 
+  app.use('/api', appLimiter, createSafetyRouter({ appRepository, runtimeConfig }));
   app.use('/api', (_req, res) => {
     res.status(404).json({
       error: { code: 'NOT_FOUND', message: 'API route not found.' },

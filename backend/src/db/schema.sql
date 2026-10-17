@@ -268,4 +268,28 @@ CREATE TRIGGER onboarding_progress_set_updated_at
 BEFORE UPDATE ON onboarding_progress
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+-- Safety: blocks + reports (P1: user protection).
+CREATE TABLE IF NOT EXISTS blocks (
+  id BIGSERIAL PRIMARY KEY,
+  blocker_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (blocker_user_id, blocked_user_id),
+  CHECK (blocker_user_id <> blocked_user_id)
+);
+CREATE INDEX IF NOT EXISTS blocks_blocker_idx ON blocks(blocker_user_id);
+CREATE INDEX IF NOT EXISTS blocks_blocked_idx ON blocks(blocked_user_id);
+
+CREATE TABLE IF NOT EXISTS reports (
+  id BIGSERIAL PRIMARY KEY,
+  reporter_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reported_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason VARCHAR(32) NOT NULL,
+  details TEXT,
+  status VARCHAR(16) NOT NULL DEFAULT 'open',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (reporter_user_id <> reported_user_id)
+);
+CREATE INDEX IF NOT EXISTS reports_reported_idx ON reports(reported_user_id, status);
+
 COMMIT;

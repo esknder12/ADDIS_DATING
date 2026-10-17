@@ -44,6 +44,7 @@ export function createSwipeRouter({ appRepository, runtimeConfig }) {
 
       const outcome = await appRepository.saveSwipe(req.telegramUser.id, swipedUserId, action);
       if (!outcome) return userNotFound(res);
+      if (outcome.blocked) return res.status(403).json({ error: { code: 'USER_BLOCKED', message: 'This profile is unavailable.' } });
       if (!outcome.profile) return invalid(res, 'Unknown or unavailable profile.', 'UNKNOWN_PROFILE');
       await notifyAfterSwipe(req, outcome);
 

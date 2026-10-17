@@ -57,5 +57,27 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
     }
   });
 
+  router.get('/reports', async (req, res, next) => {
+    try {
+      if (!runtimeConfig.adminApiKey) {
+        return errorResponse(res, 503, 'ADMIN_AUTH_NOT_CONFIGURED', 'Report review is not configured.');
+      }
+      if (!secretMatches(runtimeConfig.adminApiKey, req.get('x-admin-key'))) {
+        return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
+      }
+      if (!appRepository.isAvailable || typeof appRepository.listSafetyReports !== 'function') {
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+      }
+      const limit = Number(req.query.limit);
+      const reports = await appRepository.listSafetyReports({
+        status: req.query.status,
+        limit: Number.isSafeInteger(limit) ? limit : 50,
+      });
+      return res.json({ success: true, reports });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   return router;
 }
