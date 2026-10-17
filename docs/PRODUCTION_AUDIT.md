@@ -1,106 +1,118 @@
-# Dategram — Production Readiness Audit (test-bot phase)
+# Dategram — Production Readiness Audit v2 (evidence-backed)
 
-Date: 2026-10-17 · Branch: `arena/95f0f2a6-addis-dating` · Auditor: Arena agent (code + live probes)
-Scope: backend (Render + Neon Postgres), frontend (Telegram Mini App via tgcloud),
-CI deploy pipeline. Production cutover is OUT of scope (deferred by owner).
+Date: 2026-10-17 · Branch: `arena/95f0f2a6-addis-dating` · Auditor: Arena agent
+Method: code review + unit suite + live CI E2E + live probes + dependency audit.
+Scope: backend (Render + Neon Postgres), Mini App frontend (tgcloud), CI pipelines.
+Out of scope: promo economics, AI-picks quality, any non-Telegram distribution.
 
 ## Verdict
 
-**TEST-READY ✅ · NOT prod-ready ⛔.** No P0 blocking test-phase use was found.
-Ship P1s before any production cutover.
+**TEST-READY ✅ · PUBLIC-PROD ⛔ (7 P1s below).** No P0 found. "Public-prod" =
+strangers meeting strangers; the dating-safety P1s (report/block, deletion) are what
+stand between test and public, plus reliability hardening.
 
-## Test evidence (this session)
+## Test evidence
 
 | Test | Method | Result |
 |---|---|---|
-| Backend unit/integration | `npm test --workspace backend` (node --test) | **95/95 pass**, incl. swipe/match/chat/auth/socket suites |
-| Frontend build | CI `vite build` runs 4–12 | Green (run 12 deploys the DEMO ribbon) |
-| Live backend | `GET /health` | `ok`, `database.connected: true` |
-| Live API shape | `GET /api/auth/me` (no auth) | Correct `MISSING_INIT_DATA` JSON |
-| Swipe→match→chat trace | Static E2E walk of `saveSwipe`/`listMatchesFor`/`listChats`/`listMessages` | Correct: mutual-like match, TX locks, both-side visibility |
-| Discovery exclusion | `listDiscover` SQL | Correct: swiped users excluded |
-| Auth forgery | `telegramAuth.js` | HMAC-SHA256 `WebAppData` validation — correct algorithm |
-| IDOR (messages) | REST + socket paths | `ownedMatchRow` check, 403 `MATCH_REQUIRED` — enforced both paths |
-| Rate limiting | `app.js` | Auth 60/min + app limiter, helmet, CORS allowlist, 32kb JSON cap |
-| Upload abuse | `cloudinary.js` multer | 5MB, 1 file, `fileFilter` |
-| Telegram cache | Live user screenshots + build stamps | Solved: versioned `/r<run>/` menu path + build stamp + 💖 button refresh |
-| E2E in Telegram | — | **Requires human driver (tap-script below)** — no bot token in sandbox |
-| Load test | — | **Blocked from sandbox** (no egress to Render). Recipe below for PC |
+| Backend unit/integration | `npm test --workspace backend` | **95/95 pass** |
+| Live backend E2E | CI `e2e-backend.yml` vs throwaway Postgres 16 (run 39033339978) | **GREEN** — auth→like→match→message→re-read→exclusion→IDOR→idempotency |
+| Frontend builds | CI runs 4–12 | Green (stamped, cache-proof `/r<run>/` menu paths) |
+| Live backend + DB | `GET /health` on Render | `ok`, `database.connected: true` |
+| API error shape | `GET /api/auth/me` unauthenticated | Correct `MISSING_INIT_DATA` JSON |
+| Dependencies | `npm audit --omit=dev` | **0 vulnerabilities** |
+| Secrets in repo | grep bot tokens/connection strings/keys | **Clean** |
+| Human E2E in Telegram | 3-min tap-script (needs phone driver) | ⏳ OPEN — decisive for the Sofi case |
+| Load vs prod | — | ⛔ Blocked from sandbox; PC recipe below |
 
-## The "vanished match" case (Sofi, 2026-10-16)
+## The "vanished match" case (Sofi) — resolved, pending human confirm
 
-Symptoms: match + chat seen, then after reload chats empty and Sofi back in Discover.
-Finding: backend persistence is correct (95 tests + trace). The match/chat were either
-created in a **different context** (browser demo mode = localStorage-only) or the swipe
-never reached the backend in that session. Not a backend bug.
-Permanent fix shipped: a sticky **DEMO MODE ribbon** — any local-only session now
-identifies itself. Confirm with the tap-script; if a *Telegram* match ever vanishes,
-that becomes P0 with Render logs as next evidence.
+Backend persistence proven correct three ways (95 tests, live E2E green, SQL trace).
+Conclusion: the match/chat lived in another context (browser demo is localStorage-only)
+or the swipe never reached the server that session. Shipped: sticky **DEMO MODE**
+ribbon so local-only sessions self-identify. If a *Telegram* match ever vanishes after
+the tap-script passes once, escalate to P0 with Render logs.
 
-## P1 — fix before production
+## Security checklist (all verified in code)
 
-1. **Cold start vs client timeout.** Render free sleeps; wake takes 30–60s; the app
-   gives up after 10s (`client.js`). Users get `CONNECTION PAUSED` on a healthy-but-sleepy
-   backend. Fix: paid Render (no sleep) and/or keep-alive ping and/or raise timeout + retry.
-2. **Face gate is client-side only.** A direct `POST /api/profile/photos` skips face
-   detection entirely. Fix: server-side check (Cloudinary `adv_face` or a small service)
-   or explicitly accept the risk for the test phase.
-3. **Uptime monitoring: none.** Nobody is paged when Render/Neon hiccups. Fix: free
-   UptimeRobot (or similar) pinging `/health` every 5 min.
-4. **Migration story unverified.** How schema changes reach Neon (manual SQL? migrate
-   script? tgcloud `migrations` are a different system) was not verified. Fix: one
-   documented `npm run migrate` path + a staging apply before prod.
-5. **Menu-button cache lag.** Telegram clients can show yesterday's menu button for
-   hours. Mitigated (`/r<run>/` paths + stamp). Keep the stamp; never reuse a menu path.
+| Area | Evidence | Status |
+|---|---|---|
+| Telegram auth forgery | HMAC-SHA256 `WebAppData`, expiry 24h (`middleware/telegramAuth.js`) | ✅ |
+| Chat IDOR (REST) | `ownedMatchRow`, stranger GET→404, POST→403 | ✅ |
+| Chat IDOR (socket) | `hasMatchAccess` on `send_message` (`socketServer.js:161`) | ✅ |
+| Socket auth | middleware on connect, disconnect on failure | ✅ |
+| Admin endpoints | `X-Admin-Key` + `timingSafeEqual`, 503 when unconfigured | ✅ |
+| Rate limits | 60/180/240 per min tiers + helmet + 32kb JSON cap | ✅ |
+| CORS | allowlist; missing-origin allowed (native/health) | ✅ |
+| Uploads | auth middleware runs BEFORE multer; 5MB/1 file/jpg-png-webp allowlist | ✅ |
+| Error leakage | 500s return generic "Something went wrong" | ✅ |
+
+## P1 — must fix before public prod
+
+1. **No report/block.** A dating app with strangers and no harassment controls cannot
+   go public. Endpoints + UI + enforcement in discovery/matches.
+2. **No account/data deletion.** Users cannot delete themselves. Privacy-law exposure
+   (GDPR-style). Endpoint + UI + cascade verify.
+3. **Render free sleeps vs 10s app timeout.** Wake takes 30–60s; users see false
+   `CONNECTION PAUSED`. Paid Render (no sleep) and/or keep-alive ping and/or raise
+   timeout + retry copy.
+4. **No migration tooling.** No `migrate` script exists; schema goes to Neon by hand.
+   Every deploy risks drift. One `npm run migrate` + CI-gated or documented apply.
+5. **Face gate is client-side only.** Direct `POST /api/profile/photos` skips face
+   detection. Server-side check (Cloudinary `adv_face`) or explicit risk acceptance.
+6. **No uptime monitoring.** Nobody is paged on Render/Neon failure. Free UptimeRobot
+   on `/health` every 5 min.
+7. **Menu-button cache lag.** Telegram clients can show yesterday's menu for hours.
+   Mitigated (`/r<run>/` paths + build stamp + 💖 refresh). Keep the discipline:
+   never reuse a menu path, keep the stamp.
 
 ## P2 — harden soon
 
-- `console.error(error)` logs full objects (may include PII) — scrub/minimize in prod.
-- Face-api models (~1.9MB) download on first photo step — fine on Wi-Fi, heavy on H+.
-  Keep lazy-loading; consider a smaller detector later.
-- Likes polling every 5s per active user — fine for test scale; move to socket push
-  before growth.
-- Socket scale-out: polling bot + in-memory socket state assume ONE Render instance.
-  Do not scale past 1 without sticky sessions / adapter.
-- Account/data deletion flow + retention policy not reviewed — needed before real users.
-- Neon backup/PITR tier + restore drill not confirmed.
+- Full-object `console.error` (15 sites) can land PII/DB detail in Render logs — scrub.
+- Stranger message auth mismatch: GET→404 `MATCH_NOT_FOUND`, POST→403
+  `MATCH_REQUIRED` — pick one (cosmetic).
+- Upload type check is mimetype-only (client-declared, no magic-byte sniff);
+  mitigated by Cloudinary reprocessing. Fine for test.
+- Likes polling every 5s/user — fine at test scale; socket push before growth.
+- Single-instance assumptions: bot polling + in-memory socket state. Do not scale
+  Render past 1 without sticky sessions/adapter.
+- Face models (~1.9MB) on first photo step — heavy on H+. Keep lazy.
+- Promo/discount abuse paths not reviewed.
+- Neon backup/PITR tier + restore drill unconfirmed.
 
-- Message auth mismatch: stranger GET returns 404 `MATCH_NOT_FOUND`, POST returns 403 `MATCH_REQUIRED` — pick one before prod (cosmetic).
+## Cannot verify from here (dashboard checklist for owner)
+
+- [ ] Render env: `BOT_TOKEN` belongs to the TEST bot; `DATABASE_URL` = Neon test DB;
+      `CORS_ORIGINS` lists only `https://app8948725364.tgcloud.ai`
+- [ ] Render service tracks branch `arena/95f0f2a6-addis-dating`, Frankfurt, auto-deploy on
+- [ ] Neon plan/tier + PITR enabled + one restore drill done
+- [ ] Cloudinary plan usage vs photo volume; `adv_face` quota if used server-side
+- [ ] Render logs show `🔗 Adopted menu webapp URL … ?v=ci-<n>` after each deploy
 
 ## Remaining tests (human / PC side)
 
-### A. 3-minute user-flow E2E (phone, Telegram, test bot)
-1. Discover → like Sofi (or anyone new) → card leaves the stack.
-2. Likes tab (badge) → like back the person who liked you → **match modal** appears.
-3. Open the match → send "hello test" → message appears.
-4. **Close Telegram completely** (swipe away) → reopen → Matches still lists them,
-   chat still shows "hello test", liked profiles NOT back in Discover.
-5. Profile → Privacy → sheet opens centered, no scroll needed.
-Pass = all 5. Any fail → screenshot + note the step.
+### A. 3-minute user-flow E2E (phone, Telegram, test bot) — DO THIS
+1. Discover → like someone new → card leaves.
+2. Likes → like back → **match modal**.
+3. Open match → send `hello test` → appears.
+4. **Kill Telegram completely** → reopen → match + message persist; liked gone from Discover.
+5. Profile → Privacy → sheet opens centered.
+Pass = all 5. Any fail → screenshot + step number.
 
-### B. Load smoke (PC, against Render — only meaningful on a non-sleeping tier)
+### B. Load smoke (PC, only meaningful on a non-sleeping tier)
 ```bash
 npm i -g autocannon
 autocannon -c 20 -d 30 https://addis-dating.onrender.com/health
 ```
-Watch: p99 latency, non-2xx count, Render CPU/RAM graphs. Start 20 conn; raise toward
-expected peak only on paid tiers. Never load-test Neon free past its connection limit
-(pool size in `db/index.js` is the ceiling — check before running).
+Watch p99, non-2xx, Render CPU/RAM. Pool max is 10 (`db/index.js`) — the ceiling;
+raise toward expected peak only on paid tiers, never past Neon's connection limit.
 
-### C. Authenticated API E2E (PC — needs YOUR test-bot token locally, never share it)
-```bash
-export TEST_BOT_TOKEN='<from @BotFather, test bot>'
-# 1. forge initData (HMAC per telegramAuth.js), 2. POST /api/auth/telegram,
-# 3. swipe → match → message → re-GET matches/messages, assert persistence.
-```
-(Candidate for a `backend/test/e2e-live.mjs` script in a later pass.)
+## Pre-public checklist
 
-## Pre-prod checklist
-
-- [ ] P1s closed (sleep/timeout, face-gate decision, monitoring, migrations)
-- [ ] Tap-script passes 3 sessions in a row, 2 different accounts mutual-matching
-- [ ] Render on paid tier (or accepted sleep behavior with UX copy for it)
-- [ ] Backups verified (Neon PITR + one restore drill)
-- [ ] Secrets rotated into prod bot/service; test tokens never reused in prod
-- [ ] Privacy policy + account deletion live and tapped through
-- [ ] Store/ToS review if leaving Telegram-only distribution
+- [ ] P1s 1–7 closed
+- [ ] Tap-script passes 3 sessions in a row, 2 accounts mutual-matching
+- [ ] Paid Render (or accepted + messaged sleep behavior)
+- [ ] Backups verified (Neon PITR + restore drill)
+- [ ] Prod bot/service with ROTATED secrets (test tokens never reused)
+- [ ] Privacy policy + deletion + report/block all tapped through
+- [ ] This audit's dashboard checklist signed off
