@@ -63,7 +63,16 @@ jobs:
 
       - name: Run live E2E
         working-directory: backend
-        run: node e2e/e2e-live.mjs
+        run: |
+          set +e
+          node e2e/e2e-live.mjs > /tmp/e2e.log 2>&1
+          code=$?
+          set -e
+          cat /tmp/e2e.log
+          if [ "$code" -ne 0 ]; then
+            echo "::error::E2E failed: $(tail -c 2000 /tmp/e2e.log | tr '\n' ' ')"
+            exit "$code"
+          fi
 
       - name: Backend log (on failure)
         if: failure()

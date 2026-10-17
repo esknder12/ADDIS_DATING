@@ -140,7 +140,7 @@ try {
 
   step = 'IDOR: stranger C cannot read the match';
   const x1 = await api('GET', `/api/matches/${matchId}/messages`, initC);
-  assert(x1.status === 403, `${x1.status} ${x1.text}`);
+  assert(x1.status === 404 && x1.json?.error?.code === 'MATCH_NOT_FOUND', `${x1.status} ${x1.text}`);
 
   step = 'double-like is idempotent (still one match)';
   const s3 = await api('POST', '/api/swipe', initA, { swipedUserId: bId, action: 'like' });
