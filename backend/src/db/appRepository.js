@@ -862,8 +862,8 @@ export function createAppRepository(pool) {
        LEFT JOIN user_presence presence ON presence.user_id = other.id
        LEFT JOIN onboarding_answers intention
          ON intention.user_id = other.id AND intention.question_key = 'looking_for'
-       WHERE (m.user1_id = $1 OR m.user2_id = $1)
-          OR (m.user1_id IS NULL AND m.user_id = $1)
+       WHERE ((m.user1_id = $1 OR m.user2_id = $1)
+          OR (m.user1_id IS NULL AND m.user_id = $1))
          AND NOT EXISTS (
            SELECT 1 FROM blocks b
            WHERE (b.blocker_user_id = $1 AND b.blocked_user_id = other.id)
