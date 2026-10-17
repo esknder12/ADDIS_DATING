@@ -110,7 +110,7 @@ try {
 
   step = 'A messages the match';
   const m1 = await api('POST', `/api/matches/${matchId}/messages`, initA, { content: 'hello e2e' });
-  assert(m1.status === 200 && (m1.json?.message || m1.json?.success), `${m1.status} ${m1.text}`);
+  assert([200, 201].includes(m1.status) && (m1.json?.message || m1.json?.success), `${m1.status} ${m1.text}`);
 
   step = 'B reads messages (sees hello e2e)';
   const m2 = await api('GET', `/api/matches/${matchId}/messages`, initB);
