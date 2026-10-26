@@ -17,6 +17,13 @@ export function getApiBaseUrl() {
   return apiClient.defaults.baseURL || '';
 }
 
+export async function wakeServer() {
+  // Unauthenticated on purpose: a sleeping Render answers the first request
+  // after 30-60s, so this call carries the long timeout instead of every API call.
+  const response = await apiClient.get('/health', { timeout: 65_000 });
+  return response.data;
+}
+
 export async function authenticateUser() {
   const response = await apiClient.post('/api/auth/telegram');
   return response.data;

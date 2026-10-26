@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { authenticateUser, getApiBaseUrl } from '../api/client.js';
+import { authenticateUser, getApiBaseUrl, wakeServer } from '../api/client.js';
 import BrandMark from '../components/BrandMark.jsx';
 import { loadAppState, ONBOARDING_STORAGE_PREFIX } from '../lib/demoStore.js';
 import { getTelegramUser, isTelegramMiniApp, notify } from '../lib/telegram.js';
@@ -44,13 +44,16 @@ function demoUser() {
 export default function Splash({ onAuthenticated }) {
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
+  const [waking, setWaking] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    const wakeTimer = window.setTimeout(() => { if (!cancelled) setWaking(true); }, 8000);
 
     async function authenticate() {
       const startedAt = Date.now();
       setError(null);
+      setWaking(false);
 
       try {
         let user;
@@ -63,6 +66,9 @@ export default function Splash({ onAuthenticated }) {
           }
           user = demoUser();
         } else {
+          // Free-tier Render sleeps when idle; the wake ping absorbs the
+          // 30-60s cold start so auth below never sees a false timeout.
+          await wakeServer();
           const result = await authenticateUser();
           if (!result.success || !result.user) throw new Error('Authentication failed.');
           user = { ...result.user, isDemo: false };
@@ -76,15 +82,20 @@ export default function Splash({ onAuthenticated }) {
         }
       } catch (requestError) {
         if (cancelled) return;
+        const noResponse = !requestError.response
+          || requestError.code === 'ECONNABORTED'
+          || requestError.code === 'ERR_NETWORK';
         const message = requestError.response?.data?.error?.message
-          || requestError.message
+          || (noResponse
+            ? 'The Dategram server is waking up. Wait a few seconds, then tap TRY AGAIN.'
+            : requestError.message)
           || 'We could not connect to Dategram. Please try again.';
         setError(message);
       }
     }
 
     authenticate();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; window.clearTimeout(wakeTimer); };
   }, [attempt, onAuthenticated]);
 
   if (error) {
@@ -124,6 +135,9 @@ export default function Splash({ onAuthenticated }) {
           <span />
           <span />
         </div>
+        {waking && (
+          <p className="splash-wake">Waking up Dategram… first open can take up to a minute.</p>
+        )}
       </div>
       <p className="bot-handle">@DategramAppBot</p>
     </main>

@@ -1450,3 +1450,4 @@
 .blocked-row__unblock { flex: none; padding: 8px 14px; font-size: 13px; font-weight: 700; color: #fff; background: rgba(255, 255, 255, 0.12); border: 0; border-radius: 999px; cursor: pointer; }
 .blocked-row__unblock:disabled { opacity: 0.6; cursor: default; }
 .setting-row--danger { color: #fb7185; }
+.splash-wake { margin-top: 14px; font-size: 13px; line-height: 1.5; color: #9ca3af; }
