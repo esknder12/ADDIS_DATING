@@ -1792,8 +1792,10 @@ export function createAppRepository(pool) {
       `SELECT r.id::text AS id, r.status, r.telegram_file_id AS "telegramFileId",
               r.created_at, r.user_id::text AS "userId",
               COALESCE(u.name, u.first_name) AS "userName",
-              u.telegram_id::text AS "telegramId"
+              u.telegram_id::text AS "telegramId",
+              COALESCE(p.url, u.photo_url) AS "profilePhotoUrl"
        FROM verification_requests r JOIN users u ON u.id = r.user_id
+       LEFT JOIN photos p ON p.user_id = u.id AND p.is_primary = TRUE
        WHERE r.id::text = $1`,
       [requestId],
     );

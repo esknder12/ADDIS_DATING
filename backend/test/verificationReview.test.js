@@ -37,12 +37,14 @@ describe('verification review', () => {
         ? userRowQuery([{
           id: '7', status: 'pending', telegramFileId: 'file-1',
           userId: '11', userName: 'Abebe', telegramId: '700000002',
+          profilePhotoUrl: 'https://cdn.example.test/abebe.jpg',
         }])
         : userRowQuery([])),
     });
     const repository = createAppRepository(pool);
     const request = await repository.getVerificationRequest('7');
     assert.equal(request.telegramFileId, 'file-1');
+    assert.equal(request.profilePhotoUrl, 'https://cdn.example.test/abebe.jpg');
     assert.equal(request.telegramId, '700000002');
     assert.deepEqual(calls[0].values, ['7']);
     assert.equal(await repository.getVerificationRequest('nope'), null);
@@ -117,17 +119,22 @@ describe('verification review', () => {
       },
     };
     const notes = [];
+    const photos = [];
     const sent = [];
     const bot = { api: {
       async sendVideoNote(...args) { notes.push(args); return { message_id: 2 }; },
+      async sendPhoto(...args) { photos.push(args); return { message_id: 5 }; },
       async sendMessage(...args) { sent.push(args); return { message_id: 3 }; },
     } };
     const service = createNotificationHandler(pool, { webappUrl: 'https://libmatch.example' });
     const ok = await service.sendVerificationReviewRequest(bot, '999', {
       id: '7', userId: '11', userName: 'Abebe', telegramFileId: 'file-1',
+      profilePhotoUrl: 'https://cdn.example.test/abebe.jpg',
     });
     assert.equal(ok, true);
     assert.deepEqual(notes[0], ['999', 'file-1']);
+    assert.deepEqual(photos[0].slice(0, 2), ['999', 'https://cdn.example.test/abebe.jpg']);
+    assert.match(photos[0][2].caption, /compare faces/);
     const buttons = sent[0][2].reply_markup.inline_keyboard[0];
     assert.equal(buttons[0].callback_data, 'verify:approve:7');
     assert.equal(buttons[1].callback_data, 'verify:reject:7');

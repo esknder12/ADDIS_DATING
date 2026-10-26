@@ -58,8 +58,9 @@ review falls back to the curl commands above.
 
 ## Verification review
 
-Every video note DMs you automatically: the video itself, then a card with
-✅ Verify / ❌ Reject buttons. Verify grants the badge instantly; Reject
+Every video note DMs you automatically: the video itself, then the user's
+profile photo (compare the faces ☝️), then a card with ✅ Verify / ❌ Reject
+buttons. Verify grants the badge instantly; Reject
 resets the user to unverified (they can retry) and tells them why. The user
 is notified of your decision either way.
 

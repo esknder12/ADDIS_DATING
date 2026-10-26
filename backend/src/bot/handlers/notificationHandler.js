@@ -260,6 +260,11 @@ export function createNotificationHandler(pool, runtimeConfig) {
       if (request.telegramFileId) {
         await bot.api.sendVideoNote(String(adminTelegramId), request.telegramFileId);
       }
+      if (request.profilePhotoUrl) {
+        await bot.api.sendPhoto(String(adminTelegramId), request.profilePhotoUrl, {
+          caption: `\uD83D\uDCF7 ${request.userName || 'Someone'}'s profile photo — compare faces \u261D\uFE0F`,
+        });
+      }
       const message = await bot.api.sendMessage(
         String(adminTelegramId),
         `\uD83C\uDFAC Verification — ${request.userName || 'Someone'} (user ${request.userId})\nRequest #${request.id}`,

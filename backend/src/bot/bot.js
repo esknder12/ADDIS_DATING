@@ -130,9 +130,11 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
   // Photo review: the owner taps Approve/Reject on the review DM. The sender
   // check is the authorization — callback buttons alone prove nothing.
   if (adminTelegramId && appRepository?.isAvailable && typeof appRepository.updatePhotoStatus === 'function') {
-    bot.on('callback_query:data', async (context) => {
+    bot.on('callback_query:data', async (context, next) => {
       const parsed = parsePhotoModerationCallback(context.callbackQuery?.data);
-      if (!parsed) return;
+      // Not a photo tap: MUST call next() — returning here would silently
+      // swallow taps meant for handlers registered below (e.g. verify:*).
+      if (!parsed) return next();
       if (String(context.from?.id || '') !== adminTelegramId) {
         await context.answerCallbackQuery({ text: 'Only the LibMatch owner can review photos.' });
         return;
@@ -167,9 +169,9 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
   // Verification review: same owner-only shape as photos. The DM is a text
   // message (video notes carry no caption), so we edit its text on decision.
   if (adminTelegramId && appRepository?.isAvailable && typeof appRepository.updateVerificationStatus === 'function') {
-    bot.on('callback_query:data', async (context) => {
+    bot.on('callback_query:data', async (context, next) => {
       const parsed = parseVerificationCallback(context.callbackQuery?.data);
-      if (!parsed) return;
+      if (!parsed) return next();
       if (String(context.from?.id || '') !== adminTelegramId) {
         await context.answerCallbackQuery({ text: 'Only the LibMatch owner can verify people.' });
         return;
