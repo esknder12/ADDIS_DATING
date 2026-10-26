@@ -267,7 +267,7 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
     }
   });
 
-  router.post('/gifts', async (req, res, next) => {
+  router.post('/gifts/invoice', async (req, res, next) => {
     try {
       if (!repositoriesAvailable()) return unavailableResponse(res);
       const gift = giftById.get(String(req.body?.giftId ?? ''));
@@ -288,27 +288,86 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
         });
       }
 
-      // DEVELOPER FEE (future): confirm the Telegram Stars invoice
-      // server-side here, then split gift.stars (developer cut vs gift
-      // value) before recording. Until then gifts are free; stars are
-      // recorded as the gift's price for later settlement.
-      const transaction = await appRepository.sendGift(
+      const order = await appRepository.createPendingGift(
         req.telegramUser.id,
         String(recipient.userId),
         gift,
         clientRef,
       );
-      if (!transaction) return userNotFound(res);
+      if (!order) return userNotFound(res);
 
-      // Delivery: matched couples get the gift IN their chat (live socket,
-      // offline Telegram DM via dispatch). Strangers get a gift DM with a
-      // way back into the app. Delivery never fails the 201 — the
-      // transaction is already recorded.
+      let invoiceLink = null;
+      try {
+        const bot = req.app.get('bot');
+        invoiceLink = await bot.api.createInvoiceLink({
+          title: `${gift.icon} ${gift.label} Gift`,
+          description: `Send ${recipient.recipientName} a ${gift.label} on LibMatch`,
+          payload: `gift:${clientRef}`,
+          currency: 'XTR',
+          prices: [{ label: gift.label, amount: gift.stars }],
+        });
+      } catch (mintError) {
+        // Minting failed (Telegram hiccup) — release the pending order so it
+        // can never be confirmed as paid later, and tell the client to retry.
+        try {
+          await appRepository.confirmGiftPayment(clientRef, 'failed');
+        } catch {
+          // Order rows are released lazily via status; mint failed anyway.
+        }
+        console.error('Stars invoice failed:', mintError.message);
+        return res.status(502).json({
+          error: { code: 'INVOICE_FAILED', message: 'Could not start the Stars payment, try again.' },
+        });
+      }
+      // DEVELOPER FEE (future): stars land in the bot's Stars balance for
+      // now; split gift.stars (cut vs gift value) before recording here.
+      return res.status(201).json({ success: true, invoiceLink, clientRef, stars: gift.stars });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.post('/gifts/confirm', async (req, res, next) => {
+    try {
+      if (!repositoriesAvailable()) return unavailableResponse(res);
+      const clientRef = String(req.body?.clientRef ?? '').slice(0, 128);
+      const status = String(req.body?.status ?? '');
+      if (!clientRef || (status !== 'paid' && status !== 'failed' && status !== 'cancelled')) {
+        return invalid(res, 'Payment confirmation is invalid.');
+      }
+      const tx = await appRepository.confirmGiftPayment(clientRef, status, req.telegramUser.id);
+      if (!tx) {
+        return res.status(404).json({
+          error: { code: 'GIFT_ORDER_NOT_FOUND', message: 'Gift order not found.' },
+        });
+      }
+      if (tx.forbidden) {
+        return res.status(403).json({
+          error: { code: 'FORBIDDEN', message: 'This gift order is not yours.' },
+        });
+      }
+      if (tx.alreadyPaid) {
+        return res.status(200).json({ success: true, duplicate: true, delivered: tx.delivered ? 'delivered' : 'none' });
+      }
+      if (tx.status !== 'paid') {
+        return res.status(200).json({ success: true, delivered: 'none' });
+      }
+      const gift = giftById.get(tx.giftId);
+
+      // Paid for real — deliver. Matched couples get the gift IN their chat
+      // (live socket, offline Telegram DM via dispatch). Strangers get a
+      // gift DM with a way back into the app. Delivery never fails the
+      // confirm — the order is already settled as paid.
       let delivered = 'recorded';
       try {
         let matchId = null;
         if (typeof appRepository.findMatchIdBetween === 'function') {
-          matchId = await appRepository.findMatchIdBetween(recipient.senderUserId, recipient.userId);
+          const recipient = typeof appRepository.findGiftRecipient === 'function'
+            ? await appRepository.findGiftRecipient(req.telegramUser.id, String(tx.profileId))
+            : null;
+          if (recipient && !recipient.invalid) {
+            matchId = await appRepository.findMatchIdBetween(recipient.senderUserId, recipient.userId);
+          }
         }
         if (matchId && typeof appRepository.createMessageForTelegramId === 'function') {
           const created = await appRepository.createMessageForTelegramId(
@@ -335,16 +394,28 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
         const bot = req.app.get('bot');
         const notifications = req.app.get('notificationService');
         if (bot && notifications?.sendGiftNotification) {
-          const ok = await notifications.sendGiftNotification(bot, {
-            userId: recipient.userId,
-            telegramId: recipient.telegramId,
-            senderName: recipient.senderName,
-            gift,
-          }).catch(() => false);
-          if (ok) delivered = 'dm';
+          const recipient = typeof appRepository.findGiftRecipient === 'function'
+            ? await appRepository.findGiftRecipient(req.telegramUser.id, String(tx.profileId))
+            : null;
+          if (recipient && !recipient.invalid) {
+            const ok = await notifications.sendGiftNotification(bot, {
+              userId: recipient.userId,
+              telegramId: recipient.telegramId,
+              senderName: recipient.senderName,
+              gift,
+            }).catch(() => false);
+            if (ok) delivered = 'dm';
+          }
         }
       }
-      return res.status(201).json({ success: true, transaction, delivered });
+      try {
+        if (typeof appRepository.markGiftDelivered === 'function') {
+          await appRepository.markGiftDelivered(clientRef);
+        }
+      } catch {
+        // The order is paid and delivered; the flag is bookkeeping.
+      }
+      return res.status(200).json({ success: true, giftId: tx.giftId, stars: tx.stars, delivered });
     } catch (error) {
       return next(error);
     }

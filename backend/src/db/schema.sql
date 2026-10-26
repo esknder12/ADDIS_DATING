@@ -163,6 +163,10 @@ CREATE TABLE IF NOT EXISTS gift_transactions (
   UNIQUE (user_id, client_ref)
 );
 
+ALTER TABLE gift_transactions ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'pending'
+  CHECK (status IN ('pending', 'paid', 'failed'));
+ALTER TABLE gift_transactions ADD COLUMN IF NOT EXISTS delivered BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE TABLE IF NOT EXISTS premium_orders (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

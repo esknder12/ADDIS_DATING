@@ -345,17 +345,54 @@ try {
   const vChat = await api('POST', '/api/app/verification/start-chat', initA);
   assert(vChat.status === 200 && vChat.json?.success === true, `${vChat.status} ${vChat.text}`);
 
-  step = 'gifts are real: chat delivery, validation, graceful DM';
-  const giftOk = await api('POST', '/api/app/gifts', initA, { profileId: bId, giftId: 'rose', clientRef: `e2e-gift-${Date.now()}` });
-  assert(giftOk.status === 201 && giftOk.json?.delivered === 'chat', `${giftOk.status} ${giftOk.text}`);
+  step = 'gifts: invoice validation guards the mint (live mint needs real Stars)';
+  const giftSelf = await api('POST', '/api/app/gifts/invoice', initA, { profileId: aId, giftId: 'rose', clientRef: 'e2e-invoice-self' });
+  assert(giftSelf.status === 422, `${giftSelf.status}`);
+  const giftBad = await api('POST', '/api/app/gifts/invoice', initA, { profileId: bId, giftId: 'castle', clientRef: 'e2e-invoice-bad' });
+  assert(giftBad.status === 422, `${giftBad.status}`);
+  const giftGhost = await api('POST', '/api/app/gifts/invoice', initA, { profileId: '999999999', giftId: 'rose', clientRef: 'e2e-invoice-ghost' });
+  assert(giftGhost.status === 404, `${giftGhost.status}`);
+  const giftFree = await api('POST', '/api/app/gifts', initA, { profileId: bId, giftId: 'rose', clientRef: 'e2e-gift-free' });
+  assert(giftFree.status === 404, `${giftFree.status}`);
+
+  step = 'gifts: only paid orders deliver, exactly once';
+  await pool.query(
+    `INSERT INTO gift_transactions (user_id, profile_id, gift_id, stars, client_ref, status)
+     VALUES ($1::bigint, $2, 'rose', 31, 'e2e-paid-delivers', 'pending')`,
+    [aId, bId],
+  );
+  const giftPaid = await api('POST', '/api/app/gifts/confirm', initA, { clientRef: 'e2e-paid-delivers', status: 'paid' });
+  assert(giftPaid.status === 200 && giftPaid.json?.delivered === 'chat', `${giftPaid.status} ${giftPaid.text}`);
+  const giftFlag = await pool.query('SELECT delivered, status FROM gift_transactions WHERE client_ref = $1', ['e2e-paid-delivers']);
+  assert(giftFlag.rows[0]?.delivered === true && giftFlag.rows[0]?.status === 'paid', JSON.stringify(giftFlag.rows[0]));
   const giftMsg = await pool.query('SELECT body FROM messages WHERE match_id = $1::bigint ORDER BY id DESC LIMIT 1', [matchId]);
   assert(giftMsg.rows[0]?.body === '\uD83C\uDF81 \uD83C\uDF39 Rose', `${JSON.stringify(giftMsg.rows[0])}`);
-  const giftSelf = await api('POST', '/api/app/gifts', initA, { profileId: aId, giftId: 'rose', clientRef: 'e2e-gift-self' });
-  assert(giftSelf.status === 422, `${giftSelf.status}`);
-  const giftGhost = await api('POST', '/api/app/gifts', initA, { profileId: '999999999', giftId: 'rose', clientRef: 'e2e-gift-ghost' });
-  assert(giftGhost.status === 404, `${giftGhost.status}`);
-  const giftStranger = await api('POST', '/api/app/gifts', initC, { profileId: aId, giftId: 'diamond', clientRef: 'e2e-gift-stranger' });
-  assert(giftStranger.status === 201 && giftStranger.json?.delivered === 'recorded', `${giftStranger.status} ${giftStranger.text}`);
+  const giftDup = await api('POST', '/api/app/gifts/confirm', initA, { clientRef: 'e2e-paid-delivers', status: 'paid' });
+  assert(giftDup.status === 200 && giftDup.json?.duplicate === true, `${giftDup.status} ${giftDup.text}`);
+
+  step = 'gifts: cancelled orders release, strangers and thieves stay safe';
+  await pool.query(
+    `INSERT INTO gift_transactions (user_id, profile_id, gift_id, stars, client_ref, status)
+     VALUES ($1::bigint, $2, 'diamond', 125, 'e2e-stranger-order', 'pending')`,
+    [cId, aId],
+  );
+  const giftStranger = await api('POST', '/api/app/gifts/confirm', initC, { clientRef: 'e2e-stranger-order', status: 'paid' });
+  assert(giftStranger.status === 200 && giftStranger.json?.delivered === 'recorded', `${giftStranger.status} ${giftStranger.text}`);
+  await pool.query(
+    `INSERT INTO gift_transactions (user_id, profile_id, gift_id, stars, client_ref, status)
+     VALUES ($1::bigint, $2, 'rose', 31, 'e2e-cancelled-order', 'pending')`,
+    [cId, aId],
+  );
+  const giftTheft = await api('POST', '/api/app/gifts/confirm', initA, { clientRef: 'e2e-cancelled-order', status: 'paid' });
+  assert(giftTheft.status === 403, `${giftTheft.status} ${giftTheft.text}`);
+  const giftStill = await pool.query('SELECT status FROM gift_transactions WHERE client_ref = $1', ['e2e-cancelled-order']);
+  assert(giftStill.rows[0]?.status === 'pending', JSON.stringify(giftStill.rows[0]));
+  const giftCancelled = await api('POST', '/api/app/gifts/confirm', initC, { clientRef: 'e2e-cancelled-order', status: 'cancelled' });
+  assert(giftCancelled.status === 200 && giftCancelled.json?.delivered === 'none', `${giftCancelled.status} ${giftCancelled.text}`);
+  const giftUnknown = await api('POST', '/api/app/gifts/confirm', initA, { clientRef: 'e2e-no-such-order', status: 'paid' });
+  assert(giftUnknown.status === 404, `${giftUnknown.status}`);
+  const giftMaybe = await api('POST', '/api/app/gifts/confirm', initA, { clientRef: 'e2e-paid-delivers', status: 'maybe' });
+  assert(giftMaybe.status === 422, `${giftMaybe.status}`);
 
   step = 'deletion requires the DELETE confirmation';
   const del0 = await api('DELETE', '/api/account', initC, { confirmation: 'nope' });

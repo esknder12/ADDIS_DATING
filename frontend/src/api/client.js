@@ -189,8 +189,13 @@ export async function requestProfileScore() {
   return response.data;
 }
 
-export async function sendGift({ profileId, giftId, clientRef }) {
-  const response = await apiClient.post('/api/app/gifts', { profileId, giftId, clientRef });
+export async function createGiftInvoice({ profileId, giftId, clientRef }) {
+  const response = await apiClient.post('/api/app/gifts/invoice', { profileId, giftId, clientRef });
+  return response.data;
+}
+
+export async function confirmGiftPayment({ clientRef, status }) {
+  const response = await apiClient.post('/api/app/gifts/confirm', { clientRef, status });
   return response.data;
 }
 

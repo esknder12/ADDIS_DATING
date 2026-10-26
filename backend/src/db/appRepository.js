@@ -126,7 +126,10 @@ export function createAppRepository(pool) {
       reorderProfilePhotos: unavailable,
       getProfileScore: unavailable,
       requestProfileScore: unavailable,
-      sendGift: unavailable,
+      createPendingGift: unavailable,
+      confirmGiftPayment: unavailable,
+      findPendingGiftByRef: unavailable,
+      markGiftDelivered: unavailable,
       activatePremium: unavailable,
       activateBoost: unavailable,
       getBoostStatus: unavailable,
@@ -1638,7 +1641,7 @@ export function createAppRepository(pool) {
     if (!senderRow) return null;
     if (!/^[1-9]\d{0,18}$/.test(profileId)) return { invalid: true };
     const target = await pool.query(
-      'SELECT id, telegram_id::text AS "telegramId" FROM users WHERE id::text = $1 AND is_active = TRUE LIMIT 1',
+      'SELECT id, telegram_id::text AS "telegramId", COALESCE(name, first_name) AS name FROM users WHERE id::text = $1 AND is_active = TRUE LIMIT 1',
       [profileId],
     );
     const targetRow = target.rows[0];
@@ -1647,6 +1650,7 @@ export function createAppRepository(pool) {
     return {
       userId: targetRow.id,
       telegramId: targetRow.telegramId,
+      recipientName: targetRow.name || 'your match',
       senderUserId: senderRow.id,
       senderName: senderRow.name || 'Someone',
     };
@@ -1662,28 +1666,65 @@ export function createAppRepository(pool) {
     return result.rows[0]?.id ?? null;
   }
 
-  async function sendGift(telegramId, profileId, gift, clientRef) {
-    // Idempotent on (user_id, client_ref): optimistic retries/network replays
-    // can never double-charge (implementation rule 14). Production fulfillment
-    // must be confirmed via the Telegram Stars invoice flow before granting.
+  async function createPendingGift(telegramId, profileId, gift, clientRef) {
     const result = await pool.query(
-      `INSERT INTO gift_transactions (user_id, profile_id, gift_id, stars, client_ref)
-       SELECT u.id, $2, $3, $4, $5
+      `INSERT INTO gift_transactions (user_id, profile_id, gift_id, stars, client_ref, status)
+       SELECT u.id, $2, $3, $4, $5, 'pending'
        FROM users u
        WHERE u.telegram_id = $1 AND u.is_active = TRUE
-       ON CONFLICT (user_id, client_ref) DO UPDATE SET stars = gift_transactions.stars
-       RETURNING id, profile_id, gift_id, stars, created_at`,
+       ON CONFLICT (user_id, client_ref) DO NOTHING
+       RETURNING id::text AS id, gift_id AS "giftId", stars, status, client_ref AS "clientRef"`,
       [telegramId, profileId, gift.id, gift.stars, clientRef],
     );
-    if (result.rows.length === 0) return null;
-    const row = result.rows[0];
-    return {
-      id: String(row.id),
-      profileId: row.profile_id,
-      giftId: row.gift_id,
-      stars: row.stars,
-      createdAt: row.created_at,
-    };
+    if (result.rows[0]) return result.rows[0];
+    const existing = await pool.query(
+      `SELECT g.id::text AS id, g.gift_id AS "giftId", g.stars, g.status, g.client_ref AS "clientRef"
+       FROM gift_transactions g JOIN users u ON u.id = g.user_id
+       WHERE u.telegram_id = $1 AND u.is_active = TRUE AND g.client_ref = $2 LIMIT 1`,
+      [telegramId, clientRef],
+    );
+    return existing.rows[0] || null;
+  }
+
+  async function findPendingGiftByRef(clientRef) {
+    const result = await pool.query(
+      `SELECT id::text AS id, gift_id AS "giftId", stars, status
+       FROM gift_transactions WHERE client_ref = $1 LIMIT 1`,
+      [String(clientRef ?? '').slice(0, 120)],
+    );
+    return result.rows[0] || null;
+  }
+
+  async function confirmGiftPayment(clientRef, status, ownerTelegramId = null) {
+    const clean = status === 'paid' ? 'paid' : 'failed';
+    const existing = await pool.query(
+      `SELECT g.id::text AS id, g.gift_id AS "giftId", g.stars, g.status, g.delivered,
+              g.user_id AS "userId", g.profile_id AS "profileId",
+              s.telegram_id AS "senderTelegramId",
+              COALESCE(s.name, s.first_name) AS "senderName",
+              r.telegram_id::text AS "recipientTelegramId"
+       FROM gift_transactions g
+       JOIN users s ON s.id = g.user_id
+       LEFT JOIN users r ON r.id::text = g.profile_id
+       WHERE g.client_ref = $1 LIMIT 1`,
+      [String(clientRef ?? '').slice(0, 120)],
+    );
+    const row = existing.rows[0];
+    if (!row) return null;
+    if (ownerTelegramId !== null && row.senderTelegramId
+        && String(row.senderTelegramId) !== String(ownerTelegramId)) {
+      return { forbidden: true };
+    }
+    if (row.status !== 'pending') {
+      return { ...row, alreadyPaid: row.status === 'paid' };
+    }
+    await pool.query('UPDATE gift_transactions SET status = $2 WHERE client_ref = $1', [clientRef, clean]);
+    return { ...row, status: clean, alreadyPaid: false };
+  }
+
+  async function markGiftDelivered(clientRef) {
+    await pool.query('UPDATE gift_transactions SET delivered = TRUE WHERE client_ref = $1', [clientRef]);
+    return true;
   }
 
   async function activatePremium(telegramId, { plan, promoCode, percent }) {
@@ -1970,7 +2011,10 @@ export function createAppRepository(pool) {
     requestProfileScore,
     findGiftRecipient,
     findMatchIdBetween,
-    sendGift,
+    createPendingGift,
+    findPendingGiftByRef,
+    confirmGiftPayment,
+    markGiftDelivered,
     activatePremium,
     activateBoost,
     getBoostStatus,

@@ -232,6 +232,7 @@ export default function MainApp({ user, appData }) {
             await appData.refreshLikes();
           }}
           onSendGift={appData.sendGiftTo}
+          onConfirmGift={appData.confirmGiftTo}
           onDirectMessage={() => setPaywall({ context: 'direct-message' })}
           onOpenChat={(profileId) => { setDetailMember(null); openChatForProfile(profileId); }}
           onSafety={(profile, view) => setSafetyTarget({ profile, view: view || 'menu' })}

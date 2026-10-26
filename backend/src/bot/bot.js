@@ -1,4 +1,5 @@
 import { Bot, InlineKeyboard } from 'grammy';
+import { giftById } from '@libmatch/shared/catalog';
 
 const welcomeMessage = `Welcome to LibMatch 🖤
 
@@ -29,6 +30,13 @@ export const VERIFICATION_VIDEO_MAX_SECONDS = 10;
 
 export function verificationVideoTooLong(duration) {
   return Number.isFinite(Number(duration)) && Number(duration) > VERIFICATION_VIDEO_MAX_SECONDS;
+}
+
+export function parseGiftPayload(raw) {
+  const text = String(raw ?? '');
+  if (!text.startsWith('gift:') || text.length > 133) return null;
+  const clientRef = text.slice(5);
+  return clientRef.length > 0 ? { clientRef } : null;
 }
 
 export function parseVerificationCallback(data) {
@@ -140,6 +148,67 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
     }
     await context.reply(verificationReceived, { reply_markup: libmatchKeyboard() });
   });
+
+  // Stars checkout: Telegram asks the bot to approve every payment BEFORE
+  // stars move (pre_checkout_query). No answer within ~10s = payment fails,
+  // so this handler is load-bearing. Any buyer (not just the owner) pays.
+  if (appRepository?.isAvailable) {
+    bot.on('pre_checkout_query', async (context) => {
+      const fail = (message) => context.answerPreCheckoutQuery(false, { error_message: message }).catch(() => {});
+      try {
+        const parsed = parseGiftPayload(context.preCheckoutQuery?.invoice_payload);
+        const expected = Number(context.preCheckoutQuery?.total_amount);
+        const lookup = parsed && typeof appRepository.findPendingGiftByRef === 'function'
+          ? await appRepository.findPendingGiftByRef(parsed.clientRef).catch(() => null)
+          : null;
+        const gift = lookup ? giftById.get(lookup.giftId) : undefined;
+        if (!parsed || !lookup || lookup.status !== 'pending' || !gift
+            || gift.stars !== lookup.stars || gift.stars !== expected) {
+          await fail('This gift order expired or changed — please start a new one.');
+          return;
+        }
+        await context.answerPreCheckoutQuery(true).catch(() => {});
+      } catch {
+        await fail('Could not verify this payment — please try again.');
+      }
+    });
+
+    // Authoritative backup: if the buyer paid but the app never confirmed
+    // (killed mid-payment), Telegram itself tells us. Idempotent via status.
+    bot.on('message:successful_payment', async (context) => {
+      try {
+        const parsed = parseGiftPayload(context.message?.successful_payment?.invoice_payload);
+        if (!parsed || typeof appRepository.confirmGiftPayment !== 'function') return;
+        const tx = await appRepository.confirmGiftPayment(parsed.clientRef, 'paid');
+        if (!tx || tx.alreadyPaid || tx.status !== 'paid') return;
+        const gift = giftById.get(tx.giftId);
+        if (!gift) return;
+        if (typeof appRepository.findMatchIdBetween === 'function'
+            && typeof appRepository.createMessageForTelegramId === 'function'
+            && tx.senderTelegramId) {
+          const matchId = await appRepository.findMatchIdBetween(tx.userId, tx.profileId).catch(() => null);
+          if (matchId) {
+            await appRepository.createMessageForTelegramId(
+              tx.senderTelegramId, matchId, `\uD83C\uDF81 ${gift.icon} ${gift.label}`,
+            ).catch(() => null);
+          }
+        }
+        if (tx.recipientTelegramId && notificationService?.sendGiftNotification) {
+          await notificationService.sendGiftNotification(bot, {
+            userId: Number(tx.profileId),
+            telegramId: tx.recipientTelegramId,
+            senderName: tx.senderName || 'Someone',
+            gift,
+          }).catch(() => false);
+        }
+        if (typeof appRepository.markGiftDelivered === 'function') {
+          await appRepository.markGiftDelivered(parsed.clientRef).catch(() => false);
+        }
+      } catch (error) {
+        console.error('Gift payment fulfillment failed:', error.message);
+      }
+    });
+  }
 
   // Photo review: the owner taps Approve/Reject on the review DM. The sender
   // check is the authorization — callback buttons alone prove nothing.

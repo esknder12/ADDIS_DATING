@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { giftCatalog } from '@libmatch/shared/catalog';
-import { impact, notify } from '../../lib/telegram.js';
+import { impact, notify, openInvoiceLink } from '../../lib/telegram.js';
 import {
   CloseIcon,
   PlainHeartIcon,
@@ -15,6 +15,7 @@ export default function ProfileDetailSheet({
   onClose,
   onSwipe,
   onSendGift,
+  onConfirmGift,
   onDirectMessage,
   onOpenChat,
   onSafety,
@@ -22,17 +23,46 @@ export default function ProfileDetailSheet({
   const [selectedGift, setSelectedGift] = useState('rose');
   const [giftBusy, setGiftBusy] = useState(false);
   const [giftSent, setGiftSent] = useState(null);
+  const [giftError, setGiftError] = useState('');
 
   const gift = useMemo(() => giftCatalog.find((entry) => entry.id === selectedGift), [selectedGift]);
 
   const sendGift = async () => {
     if (giftBusy || !gift) return;
     setGiftBusy(true);
+    setGiftError('');
     try {
-      await onSendGift({ profileId: member.id, giftId: gift.id, stars: gift.stars });
-      setGiftSent(gift);
-      notify('success');
-    } catch { /* toast stays silent on purpose */ }
+      const order = await onSendGift({ profileId: member.id, giftId: gift.id, stars: gift.stars });
+      if (order?.demo) {
+        setGiftSent(gift);
+        notify('success');
+        return;
+      }
+      if (!order?.invoiceLink || !order?.clientRef) {
+        throw new Error('invoice');
+      }
+      const status = await openInvoiceLink(order.invoiceLink);
+      if (status === 'paid') {
+        const done = await onConfirmGift({ clientRef: order.clientRef, status: 'paid' });
+        if (done?.success) {
+          setGiftSent(gift);
+          notify('success');
+        } else {
+          setGiftError('Paid — the gift is on its way and will arrive shortly.');
+          setGiftSent(gift);
+        }
+      } else if (status === 'cancelled') {
+        await onConfirmGift({ clientRef: order.clientRef, status: 'cancelled' }).catch(() => null);
+        setGiftError('Payment cancelled — no stars were charged.');
+      } else if (status === 'unsupported') {
+        setGiftError('Update Telegram to send gifts with Stars.');
+      } else {
+        await onConfirmGift({ clientRef: order.clientRef, status: 'failed' }).catch(() => null);
+        setGiftError('Payment failed — no stars were charged. Try again.');
+      }
+    } catch {
+      setGiftError('Could not start the payment. Try again.');
+    }
     setGiftBusy(false);
   };
 
@@ -96,8 +126,9 @@ export default function ProfileDetailSheet({
                 disabled={giftBusy || Boolean(giftSent)}
                 onClick={sendGift}
               >
-                {giftSent ? `SENT ${giftSent.icon}` : giftBusy ? 'SENDING…' : '🎁 Send gift'}
+                {giftSent ? `SENT ${giftSent.icon}` : giftBusy ? 'PAYING…' : '🎁 Send gift'}
               </button>
+              {giftError && <p className="field-error" role="alert">{giftError}</p>}
             </section>
 
             <div className="safety-row">

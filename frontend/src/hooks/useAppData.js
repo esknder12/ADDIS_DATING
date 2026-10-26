@@ -27,7 +27,8 @@ import {
   unblockProfile as apiUnblockProfile,
   rewindLastSwipe,
   saveConversion as apiSaveConversion,
-  sendGift as apiSendGift,
+  createGiftInvoice as apiCreateGiftInvoice,
+  confirmGiftPayment as apiConfirmGiftPayment,
 } from '../api/client.js';
 import { createDemoStore, loadAppState, loadOnboardingAnswers } from '../lib/demoStore.js';
 
@@ -517,10 +518,16 @@ export function useAppData(user, { active = true } = {}) {
   const sendGiftTo = useCallback(async ({ profileId, giftId, stars }) => {
     const clientRef = `${user.telegramId}:${profileId}:${giftId}:${Date.now()}`;
     if (isDemo) {
-      return demoRef.current.sendGift({ profileId, giftId, clientRef, stars });
+      demoRef.current.sendGift({ profileId, giftId, clientRef, stars });
+      return { demo: true };
     }
-    return apiSendGift({ profileId, giftId, clientRef });
+    return apiCreateGiftInvoice({ profileId, giftId, clientRef });
   }, [isDemo, user.telegramId]);
+
+  const confirmGiftTo = useCallback(async ({ clientRef, status }) => {
+    if (isDemo) return { success: true };
+    return apiConfirmGiftPayment({ clientRef, status });
+  }, [isDemo]);
 
   const becomeVip = useCallback(async ({ planId, promoCode }) => {
     if (isDemo) {
@@ -623,6 +630,7 @@ export function useAppData(user, { active = true } = {}) {
     reorderPhotos,
     requestProfileScore,
     sendGiftTo,
+    confirmGiftTo,
     becomeVip,
     requestVerificationBadge,
     startVerificationInChat,

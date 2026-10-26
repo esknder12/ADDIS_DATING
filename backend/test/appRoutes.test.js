@@ -122,14 +122,26 @@ const appRepository = {
     calls.push(['addMessage', telegramId, matchId, body]);
     return { id: '42', sender: 'user', body, createdAt: new Date().toISOString() };
   },
-  async sendGift(...args) {
-    calls.push(['sendGift', ...args]);
-    return { id: '3', giftId: 'rose', stars: 31 };
+  async createPendingGift(...args) {
+    calls.push(['createPendingGift', ...args]);
+    return { id: '3', giftId: 'rose', stars: 31, status: 'pending', clientRef: args[3] };
+  },
+  async confirmGiftPayment(clientRef, status) {
+    calls.push(['confirmGiftPayment', clientRef, status]);
+    if (clientRef === 'ghost-order') return null;
+    if (clientRef === 'paid-order') {
+      return { id: '3', giftId: 'rose', stars: 31, status: 'paid', alreadyPaid: true, delivered: true };
+    }
+    return { id: '3', giftId: 'rose', stars: 31, status, profileId: '34', senderTelegramId: 135792468, alreadyPaid: false, delivered: false };
+  },
+  async markGiftDelivered(clientRef) {
+    calls.push(['markGiftDelivered', clientRef]);
+    return true;
   },
   async findGiftRecipient(telegramId, profileId) {
     if (profileId === 'self') return { invalid: true };
     if (profileId === 'ghost') return null;
-    return { userId: 34, telegramId: '700000034', senderUserId: 33, senderName: 'Phase Four' };
+    return { userId: 34, telegramId: '700000034', recipientName: 'Rodas', senderUserId: 33, senderName: 'Phase Four' };
   },
   async findMatchIdBetween() {
     return giftMatchId;
@@ -157,7 +169,8 @@ let baseUrl;
 
 before(async () => {
   calls.length = 0;
-  const app = createApp({ runtimeConfig, userRepository, onboardingRepository, appRepository });
+  const bot = { api: { async createInvoiceLink() { return 'https://t.me/invoice/test-order'; } } };
+  const app = createApp({ runtimeConfig, userRepository, onboardingRepository, appRepository, bot });
   await new Promise((resolve) => {
     server = app.listen(0, '127.0.0.1', resolve);
   });
@@ -310,38 +323,75 @@ describe('app routes (phase 4 discovery, matching, chat)', () => {
     assert.equal(response.status, 422);
   });
 
-  it('validates gifts against the catalog and stays idempotent by client ref', async () => {
-    const ok = await request('/api/app/gifts', {
+  it('mints a Stars invoice only for catalog gifts and real recipients', async () => {
+    const ok = await request('/api/app/gifts/invoice', {
       method: 'POST',
       body: JSON.stringify({ profileId: 'rodas', giftId: 'rose', clientRef: 'gift-001' }),
     });
     assert.equal(ok.status, 201);
-    assert.equal((await ok.json()).delivered, 'chat');
+    const link = await ok.json();
+    assert.equal(link.invoiceLink, 'https://t.me/invoice/test-order');
+    assert.equal(link.clientRef, 'gift-001');
 
-    const bad = await request('/api/app/gifts', {
+    const badGift = await request('/api/app/gifts/invoice', {
       method: 'POST',
       body: JSON.stringify({ profileId: 'rodas', giftId: 'castle', clientRef: 'gift-002' }),
     });
-    assert.equal(bad.status, 422);
-  });
+    assert.equal(badGift.status, 422);
 
-  it('rejects gifts to self and ghosts, degrades gracefully without a match', async () => {
-    const self = await request('/api/app/gifts', {
+    const self = await request('/api/app/gifts/invoice', {
       method: 'POST',
       body: JSON.stringify({ profileId: 'self', giftId: 'rose', clientRef: 'gift-self' }),
     });
     assert.equal(self.status, 422);
-    const ghost = await request('/api/app/gifts', {
+
+    const ghost = await request('/api/app/gifts/invoice', {
       method: 'POST',
       body: JSON.stringify({ profileId: 'ghost', giftId: 'rose', clientRef: 'gift-ghost' }),
     });
     assert.equal(ghost.status, 404);
-    giftMatchId = null;
-    const stranger = await request('/api/app/gifts', {
+  });
+
+  it('confirms paid orders into delivery, releases the rest, never double-delivers', async () => {
+    const paid = await request('/api/app/gifts/confirm', {
       method: 'POST',
-      body: JSON.stringify({ profileId: 'rodas', giftId: 'diamond', clientRef: 'gift-stranger' }),
+      body: JSON.stringify({ clientRef: 'gift-001', status: 'paid' }),
     });
-    assert.equal(stranger.status, 201);
+    assert.equal(paid.status, 200);
+    assert.equal((await paid.json()).delivered, 'chat');
+
+    const failed = await request('/api/app/gifts/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ clientRef: 'gift-001', status: 'failed' }),
+    });
+    assert.equal(failed.status, 200);
+    assert.equal((await failed.json()).delivered, 'none');
+
+    const unknown = await request('/api/app/gifts/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ clientRef: 'ghost-order', status: 'paid' }),
+    });
+    assert.equal(unknown.status, 404);
+
+    const badStatus = await request('/api/app/gifts/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ clientRef: 'gift-001', status: 'maybe' }),
+    });
+    assert.equal(badStatus.status, 422);
+
+    const dup = await request('/api/app/gifts/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ clientRef: 'paid-order', status: 'paid' }),
+    });
+    assert.equal(dup.status, 200);
+    assert.equal((await dup.json()).duplicate, true);
+
+    giftMatchId = null;
+    const stranger = await request('/api/app/gifts/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ clientRef: 'gift-002', status: 'paid' }),
+    });
+    assert.equal(stranger.status, 200);
     assert.equal((await stranger.json()).delivered, 'recorded');
     giftMatchId = '7';
   });

@@ -84,6 +84,21 @@ export function showTelegramBackButton(onClick) {
   });
 }
 
+export function openInvoiceLink(url) {
+  return new Promise((resolve) => {
+    try {
+      if (typeof WebApp.openInvoice === 'function') {
+        WebApp.openInvoice(url, (status) => resolve(status || 'failed'));
+      } else {
+        resolve('unsupported');
+      }
+    } catch (error) {
+      console.warn('Telegram invoice is unavailable:', error);
+      resolve('failed');
+    }
+  });
+}
+
 export function openTelegramLink(url) {
   safely(() => WebApp.openTelegramLink(url));
 }
