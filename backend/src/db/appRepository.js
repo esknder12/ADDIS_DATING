@@ -268,6 +268,34 @@ export function createAppRepository(pool) {
     }
   }
 
+  async function updateSafetyReportStatus(reportIdText, status) {
+    const reportId = String(reportIdText ?? '').trim();
+    const cleanStatus = String(status ?? '').trim().toLowerCase();
+    const statuses = new Set(['open', 'reviewed', 'actioned', 'dismissed']);
+    if (!/^[1-9]\d{0,18}$/.test(reportId) || !statuses.has(cleanStatus)) {
+      return { invalid: true };
+    }
+    const result = await pool.query(
+      `UPDATE reports SET status = $2 WHERE id::text = $1
+       RETURNING id::text AS id, status`,
+      [reportId, cleanStatus],
+    );
+    const row = result.rows[0];
+    return row ? { id: row.id, status: row.status } : null;
+  }
+
+  async function setUserActiveStatus(userIdText, isActive) {
+    const userId = String(userIdText ?? '').trim();
+    if (!/^[1-9]\d{0,18}$/.test(userId)) return { invalid: true };
+    const result = await pool.query(
+      `UPDATE users SET is_active = $2 WHERE id::text = $1
+       RETURNING id::text AS id, is_active AS "isActive"`,
+      [userId, Boolean(isActive)],
+    );
+    const row = result.rows[0];
+    return row ? { id: row.id, isActive: row.isActive } : null;
+  }
+
   async function listSafetyReports({ status = 'all', limit = 50 } = {}) {
     const cleanLimit = Number.isSafeInteger(Number(limit))
       ? Math.max(1, Math.min(100, Number(limit)))
@@ -1783,5 +1811,7 @@ export function createAppRepository(pool) {
     reportUser,
     deleteAccount,
     listSafetyReports,
+    updateSafetyReportStatus,
+    setUserActiveStatus,
   };
 }

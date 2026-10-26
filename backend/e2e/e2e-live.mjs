@@ -200,6 +200,56 @@ try {
   const admReports = Array.isArray(admJson?.reports) ? admJson.reports : [];
   assert(admRes.status === 200 && admReports.some((r) => r.reason === 'spam' && r.reported_id === cId), `${admRes.status} n=${admReports.length}`);
 
+  step = 'admin rejects a bad key';
+  const admBad = await fetch(`${API}/api/admin/reports`, { headers: { 'x-admin-key': 'nope' } });
+  assert(admBad.status === 401, `${admBad.status}`);
+
+  step = 'admin transitions the report to reviewed';
+  const admList = await (await fetch(`${API}/api/admin/reports?status=open`, { headers: { 'x-admin-key': 'e2e-admin' } })).json();
+  const openReports = Array.isArray(admList?.reports) ? admList.reports : [];
+  assert(openReports.length > 0, 'expected an open report');
+  const patchRes = await fetch(`${API}/api/admin/reports/${openReports[0].id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'reviewed' }),
+  });
+  const patchJson = await patchRes.json();
+  assert(patchRes.status === 200 && patchJson?.report?.status === 'reviewed', `${patchRes.status} ${JSON.stringify(patchJson).slice(0, 200)}`);
+
+  step = 'admin rejects bad report update input';
+  const patchBad = await fetch(`${API}/api/admin/reports/${openReports[0].id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'nope' }),
+  });
+  assert(patchBad.status === 422, `${patchBad.status}`);
+  const patchMissing = await fetch(`${API}/api/admin/reports/999999999`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'open' }),
+  });
+  assert(patchMissing.status === 404, `${patchMissing.status}`);
+
+  step = 'admin bans C: C locked out';
+  const banRes = await fetch(`${API}/api/admin/users/${cId}/ban`, {
+    method: 'POST',
+    headers: { 'x-admin-key': 'e2e-admin' },
+  });
+  const banJson = await banRes.json();
+  assert(banRes.status === 200 && banJson?.user?.isActive === false, `${banRes.status} ${JSON.stringify(banJson).slice(0, 200)}`);
+  const meCBanned = await api('GET', '/api/auth/me', initC);
+  assert(meCBanned.status === 404, `${meCBanned.status} ${meCBanned.text}`);
+
+  step = 'admin unbans C: access restored';
+  const unbanRes = await fetch(`${API}/api/admin/users/${cId}/unban`, {
+    method: 'POST',
+    headers: { 'x-admin-key': 'e2e-admin' },
+  });
+  const unbanJson = await unbanRes.json();
+  assert(unbanRes.status === 200 && unbanJson?.user?.isActive === true, `${unbanRes.status} ${JSON.stringify(unbanJson).slice(0, 200)}`);
+  const meCBack = await api('GET', '/api/auth/me', initC);
+  assert(meCBack.status === 200, `${meCBack.status} ${meCBack.text}`);
+
   step = 'deletion requires the DELETE confirmation';
   const del0 = await api('DELETE', '/api/account', initC, { confirmation: 'nope' });
   assert(del0.status === 422 && del0.json?.error?.code === 'INVALID_INPUT', `${del0.status} ${del0.text}`);

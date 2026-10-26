@@ -79,5 +79,52 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
     }
   });
 
+  router.patch('/reports/:reportId', async (req, res, next) => {
+    try {
+      if (!runtimeConfig.adminApiKey) {
+        return errorResponse(res, 503, 'ADMIN_AUTH_NOT_CONFIGURED', 'Report review is not configured.');
+      }
+      if (!secretMatches(runtimeConfig.adminApiKey, req.get('x-admin-key'))) {
+        return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
+      }
+      if (!appRepository.isAvailable || typeof appRepository.updateSafetyReportStatus !== 'function') {
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+      }
+      const outcome = await appRepository.updateSafetyReportStatus(req.params.reportId, req.body?.status);
+      if (outcome?.invalid) {
+        return errorResponse(res, 422, 'INVALID_INPUT', 'Report id or status is invalid.');
+      }
+      if (!outcome) return errorResponse(res, 404, 'REPORT_NOT_FOUND', 'Safety report not found.');
+      return res.json({ success: true, report: outcome });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  async function setActive(req, res, next, isActive) {
+    try {
+      if (!runtimeConfig.adminApiKey) {
+        return errorResponse(res, 503, 'ADMIN_AUTH_NOT_CONFIGURED', 'User moderation is not configured.');
+      }
+      if (!secretMatches(runtimeConfig.adminApiKey, req.get('x-admin-key'))) {
+        return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
+      }
+      if (!appRepository.isAvailable || typeof appRepository.setUserActiveStatus !== 'function') {
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+      }
+      const outcome = await appRepository.setUserActiveStatus(req.params.userId, isActive);
+      if (outcome?.invalid) {
+        return errorResponse(res, 422, 'INVALID_INPUT', 'User id is invalid.');
+      }
+      if (!outcome) return errorResponse(res, 404, 'USER_NOT_FOUND', 'Dategram profile not found.');
+      return res.json({ success: true, user: outcome });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  router.post('/users/:userId/ban', (req, res, next) => setActive(req, res, next, false));
+  router.post('/users/:userId/unban', (req, res, next) => setActive(req, res, next, true));
+
   return router;
 }

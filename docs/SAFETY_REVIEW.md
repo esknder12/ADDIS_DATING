@@ -31,25 +31,32 @@ curl -s -H "x-admin-key: $KEY" "$API/api/admin/reports?status=open&limit=50"
 Each row has `id`, `reason`, `details`, `status`, `created_at`,
 `reporter_id`/`reporter_name`, `reported_id`/`reported_name`.
 
-## Acting on a report (test phase = manual)
+## Acting on a report
 
-There is no moderation-write endpoint yet, so actions run in the Neon SQL
-console against the test database:
+No console SQL needed — the admin API covers the loop:
 
-```sql
--- Mark a report reviewed / actioned / dismissed:
-UPDATE reports SET status = 'actioned' WHERE id = 12;
+```bash
+# Move a report through the queue (open -> reviewed -> actioned/dismissed):
+curl -s -X PATCH -H "x-admin-key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"status":"reviewed"}' "$API/api/admin/reports/12"
 
--- Severe abuse (harassment, scam): remove the offender entirely.
--- Cascades wipe their profile, photos, swipes, matches, messages, blocks.
-DELETE FROM users WHERE id = 45;
+# Severe abuse (harassment, scam): ban the offender (reversible).
+# Banned users vanish from discovery, every authenticated call 404s,
+# and sockets refuse them on reconnect:
+curl -s -X POST -H "x-admin-key: $KEY" "$API/api/admin/users/45/ban"
+
+# Mistake / time served: restore them.
+curl -s -X POST -H "x-admin-key: $KEY" "$API/api/admin/users/45/unban"
 ```
 
 Then tell the reporter what happened (Telegram DM). For a first-time fake
-photo, prefer warning + asking for a retake over deletion.
+photo, prefer warning + asking for a retake over a ban. Fallback if the API
+is down: the same changes are one `UPDATE` each in the Neon console
+(`reports.status`, `users.is_active`). Permanent erasure stays
+`DELETE FROM users WHERE id = N;` (cascades everything).
 
 ## Pre-public backlog (from this runbook)
 
-- [ ] `PATCH /api/admin/reports/:id` (status transitions, no console SQL)
-- [ ] `POST /api/admin/users/:id/ban` (reversible ban + reason, no row delete)
+- [x] `PATCH /api/admin/reports/:id` — shipped + E2E-covered
+- [x] `POST /api/admin/users/:id/ban|unban` — shipped + E2E-covered (reversible `is_active` flip)
 - [ ] Server-side face check or human photo approval (closes the P1 #5 gap)
