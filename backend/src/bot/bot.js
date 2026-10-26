@@ -47,9 +47,22 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
 
   // The username tells the Mini App which bot chat to deep-link into
   // (test bot vs production bot); the modal reads it via /health.
-  bot.api.getMe().then((me) => {
-    if (me?.username) runtimeConfig.botUsername = me.username;
-  }).catch(() => {});
+  // Retried: a boot-time Telegram hiccup must not blank it forever.
+  async function learnBotUsername(attempts = 5) {
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        const me = await bot.api.getMe();
+        if (me?.username) {
+          runtimeConfig.botUsername = me.username;
+          return;
+        }
+      } catch {
+        // Fall through to the delayed retry below.
+      }
+      await new Promise((resolve) => { setTimeout(resolve, attempt * 2000); });
+    }
+  }
+  learnBotUsername();
 
   const dategramKeyboard = () => new InlineKeyboard().webApp('Go to Dategram', liveWebappUrl);
 
