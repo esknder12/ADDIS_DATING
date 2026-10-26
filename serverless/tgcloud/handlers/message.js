@@ -34,7 +34,7 @@ async function sendVerifyFlow(chatId) {
   await reply(
     chatId,
     VERIFICATION_NUDGE,
-    appKeyboard(WEBAPP_URL, 'Return to Dategram 🖤'),
+    appKeyboard(WEBAPP_URL, 'Return to LibMatch 🖤'),
   );
   await reply(chatId, VERIFICATION_INSTRUCTIONS);
 }
@@ -67,7 +67,7 @@ async function handleVideoNote(message, from) {
   }
   // Best-effort forward to the main backend (no-op in standalone mode).
   await submitVerificationVideo(from.id, fileId).catch(() => ({ ok: false }));
-  await reply(chatId, VERIFICATION_RECEIVED, appKeyboard(WEBAPP_URL, 'Go to Dategram'));
+  await reply(chatId, VERIFICATION_RECEIVED, appKeyboard(WEBAPP_URL, 'Go to LibMatch'));
 }
 
 function parseCommand(text) {
@@ -81,7 +81,7 @@ async function handleCommand(message, text) {
 
   switch (command) {
     case '/start': {
-      // Lazily ensure the persistent "Open Dategram" menu button (once).
+      // Lazily ensure the persistent "Open LibMatch" menu button (once).
       await ensureMenuButton().catch(() => ({ ok: false }));
       await reply(chatId, WELCOME_MESSAGE, mainMenuKeyboard(WEBAPP_URL));
       // Deep link support: t.me/<bot>?start=verify jumps into verification.
@@ -95,30 +95,30 @@ async function handleCommand(message, text) {
       return;
     }
     case '/help': {
-      await reply(chatId, HELP_MESSAGE, appKeyboard(WEBAPP_URL, 'Open Dategram 🖤'));
+      await reply(chatId, HELP_MESSAGE, appKeyboard(WEBAPP_URL, 'Open LibMatch 🖤'));
       return;
     }
     case '/about': {
-      await reply(chatId, ABOUT_MESSAGE, appKeyboard(WEBAPP_URL, 'Open Dategram 🖤'));
+      await reply(chatId, ABOUT_MESSAGE, appKeyboard(WEBAPP_URL, 'Open LibMatch 🖤'));
       return;
     }
     case '/vip': {
       await reply(
         chatId,
         VIP_INFO_MESSAGE,
-        appKeyboard(WEBAPP_URL, 'Open Dategram 🖤', { tab: 'profile' }),
+        appKeyboard(WEBAPP_URL, 'Open LibMatch 🖤', { tab: 'profile' }),
       );
       return;
     }
     case '/app': {
-      await reply(chatId, WELCOME_MESSAGE, appKeyboard(WEBAPP_URL, 'Go to Dategram'));
+      await reply(chatId, WELCOME_MESSAGE, appKeyboard(WEBAPP_URL, 'Go to LibMatch'));
       return;
     }
     default: {
       await reply(
         chatId,
         UNKNOWN_COMMAND_MESSAGE,
-        appKeyboard(WEBAPP_URL, 'Open Dategram 🖤'),
+        appKeyboard(WEBAPP_URL, 'Open LibMatch 🖤'),
       );
     }
   }

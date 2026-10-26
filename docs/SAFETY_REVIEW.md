@@ -1,4 +1,4 @@
-# Dategram — safety review runbook (test phase)
+# LibMatch — safety review runbook (test phase)
 
 ## Face-gate risk acceptance (owner decision, 2026-10-26)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Dategram Serverless smoke test — runs the REAL tgcloud/ modules on your
+// LibMatch Serverless smoke test — runs the REAL tgcloud/ modules on your
 // laptop with an in-memory database and a recording Bot API. No Telegram,
 // no token, no network needed.
 //

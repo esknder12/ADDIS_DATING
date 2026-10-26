@@ -24,13 +24,13 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_PASSWORD: e2e
-          POSTGRES_DB: dategram_e2e
+          POSTGRES_DB: libmatch_e2e
         ports: ['5432:5432']
         options: >-
           --health-cmd="pg_isready -U postgres"
           --health-interval=5s --health-timeout=5s --health-retries=10
     env:
-      DATABASE_URL: postgresql://postgres:e2e@localhost:5432/dategram_e2e
+      DATABASE_URL: postgresql://postgres:e2e@localhost:5432/libmatch_e2e
       BOT_TOKEN: e2e-fake-token
       WEBAPP_URL: https://e2e.invalid
       CORS_ORIGINS: https://e2e.invalid

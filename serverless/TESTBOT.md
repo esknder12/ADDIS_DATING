@@ -56,11 +56,11 @@ notifications. All green = safe to `push`.
 ## 2. Decide WEBAPP_URL (pick one)
 
 **A. You have a deployed Mini App URL** (Vercel / Netlify / Cloudflare / VPS):
-set it in `tgcloud/lib/config.js` → all "Open Dategram" buttons work.
+set it in `tgcloud/lib/config.js` → all "Open LibMatch" buttons work.
 
 **B. Not deployed yet:** deploy `frontend/` free with these exact settings
 (verified: `npm run build --workspace frontend` → `frontend/dist/`).
-Root Directory must stay repo root `.` — the frontend needs the `@dategram/shared`
+Root Directory must stay repo root `.` — the frontend needs the `@libmatch/shared`
 workspace installed from the root:
 
 *Vercel (recommended):* vercel.com → Add New Project → Import
@@ -81,7 +81,7 @@ video notes, menus and text notifications all work; web_app buttons and the
 menu button stay off until a real URL is set. (The bot never crashes on a
 missing URL — keyboards degrade gracefully.)
 
-`DATEGRAM_API_URL` stays `''` (standalone mode) until the bridge endpoints
+`LIBMATCH_API_URL` stays `''` (standalone mode) until the bridge endpoints
 exist on the main backend — see README "Bridge endpoints".
 
 ## 3. Deploy

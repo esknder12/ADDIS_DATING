@@ -18,8 +18,8 @@ export function withQuery(baseUrl, query = {}) {
   return url;
 }
 
-// Single "Open Dategram" web_app button (or undefined when no URL configured).
-export function appKeyboard(webappUrl, text = 'Go to Dategram', query = {}) {
+// Single "Open LibMatch" web_app button (or undefined when no URL configured).
+export function appKeyboard(webappUrl, text = 'Go to LibMatch', query = {}) {
   if (!webappUrl) return undefined;
   return {
     inline_keyboard: [[{ text, web_app: { url: withQuery(webappUrl, query) } }]],
@@ -30,7 +30,7 @@ export function appKeyboard(webappUrl, text = 'Go to Dategram', query = {}) {
 export function mainMenuKeyboard(webappUrl) {
   const rows = [];
   if (webappUrl) {
-    rows.push([{ text: 'Go to Dategram 🖤', web_app: { url: withQuery(webappUrl) } }]);
+    rows.push([{ text: 'Go to LibMatch 🖤', web_app: { url: withQuery(webappUrl) } }]);
   }
   rows.push([
     { text: '✅ Verify', callback_data: 'verify' },

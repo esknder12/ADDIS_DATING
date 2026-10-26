@@ -1,4 +1,4 @@
-# Dategram — DB migrations (30-second version)
+# LibMatch — DB migrations (30-second version)
 
 ## How schema flows
 
@@ -13,7 +13,7 @@
 
 ```bash
 # Local Postgres / CI-style (no SSL):
-DATABASE_URL=postgres://user:pass@localhost:5432/dategram npm run migrate --workspace backend
+DATABASE_URL=postgres://user:pass@localhost:5432/libmatch npm run migrate --workspace backend
 
 # Neon from your PC (SSL on):
 DATABASE_URL='postgres://...' DATABASE_SSL=true npm run migrate --workspace backend

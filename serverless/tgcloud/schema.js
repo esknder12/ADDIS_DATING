@@ -11,7 +11,7 @@ import {
   uniqueIndex,
 } from 'sdk/db';
 
-// Dategram SQLite schema for Telegram Serverless.
+// LibMatch SQLite schema for Telegram Serverless.
 //
 // Mirrors `backend/src/db/schema.sql` (PostgreSQL) in two groups:
 //   1. BOT TABLES (used right now) — everything the handlers/lib in this
@@ -19,7 +19,7 @@ import {
 //      notifications log, flags.
 //   2. APP MIRROR TABLES (reserved) — same names/shapes as Postgres so future
 //      `endpoints/` can take over Mini App features step by step. Nothing
-//      writes them yet except through the bridge to the main Dategram API.
+//      writes them yet except through the bridge to the main LibMatch API.
 //
 // Notes:
 // - No foreign keys: the platform throws on `.references()`/`foreignKey()`.

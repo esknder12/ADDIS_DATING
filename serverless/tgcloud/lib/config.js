@@ -13,24 +13,24 @@
 export const BOT_USERNAME = 'addisdatingtest_Bot';
 export const BOT_DISPLAY_NAME = 'addisdating (test)';
 
-// Public HTTPS URL of the Dategram Mini App frontend. Used for every
-// "Open Dategram" web_app button and for the persistent menu button.
+// Public HTTPS URL of the LibMatch Mini App frontend. Used for every
+// "Open LibMatch" web_app button and for the persistent menu button.
 export const WEBAPP_URL = 'https://addisdating.vercel.app/';
 
 // Label of the persistent menu button (set once, see lib/setup.js).
-export const MENU_BUTTON_TEXT = 'Open Dategram';
+export const MENU_BUTTON_TEXT = 'Open LibMatch';
 
-// Base URL of the MAIN Dategram backend (Express + PostgreSQL).
+// Base URL of the MAIN LibMatch backend (Express + PostgreSQL).
 // Hybrid mode: verification videos and profile lookups are forwarded there.
 // Leave '' to run standalone — the bot still works, using its own SQLite
 // mirror with generic fallbacks ("Someone just liked you!").
-// Example: 'https://api.dategram.example.com'
-export const DATEGRAM_API_URL = '';
+// Example: 'https://api.libmatch.example.com'
+export const LIBMATCH_API_URL = '';
 
 // Optional shared secret sent as `x-bridge-key` to the main backend's
 // bridge endpoints. Only needed if you configure the same secret there
 // (see serverless/README.md "Bridge endpoints"). Keep it out of screenshots.
-export const DATEGRAM_BRIDGE_KEY = '';
+export const LIBMATCH_BRIDGE_KEY = '';
 
 // Notifications of the same (user, type, related user) are sent at most once
 // per window — mirrors the Postgres `notifications_log` 24h rule.
@@ -44,5 +44,5 @@ export function isWebappConfigured() {
 }
 
 export function isBridgeEnabled() {
-  return typeof DATEGRAM_API_URL === 'string' && DATEGRAM_API_URL.startsWith('https://');
+  return typeof LIBMATCH_API_URL === 'string' && LIBMATCH_API_URL.startsWith('https://');
 }

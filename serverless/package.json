@@ -1,9 +1,9 @@
 {
-  "name": "@dategram/serverless-bot",
+  "name": "@libmatch/serverless-bot",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Dategram Telegram bot on Telegram Serverless (tgcloud) — JavaScript only, zero npm runtime dependencies",
+  "description": "LibMatch Telegram bot on Telegram Serverless (tgcloud) — JavaScript only, zero npm runtime dependencies",
   "scripts": {
     "deploy": "tgcloud push",
     "status": "tgcloud status",

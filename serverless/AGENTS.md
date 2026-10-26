@@ -1,4 +1,4 @@
-# AGENTS.md — Dategram Serverless bot
+# AGENTS.md — LibMatch Serverless bot
 
 Orientation for AI coding assistants (and humans) working in `serverless/`.
 This file is auto-loaded by Claude Code, Cursor, and similar tools — keep it
@@ -7,7 +7,7 @@ Feature map to the main backend: [docs/PORT_MAP.md](docs/PORT_MAP.md).
 
 ## What this project is
 
-The **Dategram Telegram bot** running on Telegram Serverless (tgcloud):
+The **LibMatch Telegram bot** running on Telegram Serverless (tgcloud):
 plain JavaScript modules executed in a V8 isolate on Telegram's own
 infrastructure — no VPS, no polling, no npm at runtime. It is the bot-side
 twin of the main Express + PostgreSQL backend in `../backend/`:
@@ -60,5 +60,5 @@ npx tgcloud migrate    # apply tgcloud/schema.js changes (interactive)
 npx tgcloud webhook    # platform-managed webhook state (derived from handlers/)
 ```
 
-Edit `tgcloud/lib/config.js` (`WEBAPP_URL`, `DATEGRAM_API_URL`) before the
+Edit `tgcloud/lib/config.js` (`WEBAPP_URL`, `LIBMATCH_API_URL`) before the
 first push. Test on a **test bot** first — never the live dating bot.

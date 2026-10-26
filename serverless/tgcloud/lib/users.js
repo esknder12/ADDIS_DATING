@@ -1,5 +1,5 @@
 // Bot-side user mirror. Every person who talks to the bot gets a row keyed
-// by Telegram id; the MAIN Dategram profile stays in PostgreSQL (see bridge.js).
+// by Telegram id; the MAIN LibMatch profile stays in PostgreSQL (see bridge.js).
 
 import { db } from 'sdk';
 import { eq } from 'sdk/db';

@@ -13,7 +13,7 @@ import { BotApiError, api, db } from 'sdk';
 import { and, eq, gt, isNull } from 'sdk/db';
 import { notificationsLog } from '../schema.js';
 import { CHAT_PREVIEW_LENGTH, DEDUP_WINDOW_HOURS, WEBAPP_URL } from './config.js';
-import { fetchDategramUser } from './bridge.js';
+import { fetchLibMatchUser } from './bridge.js';
 import { appKeyboard } from './keyboards.js';
 import {
   VIP_CAMPAIGN_MESSAGE,
@@ -81,7 +81,7 @@ async function pinIfPossible(chatId, messageId) {
     await api.pinChatMessage({ chat_id: chatId, message_id: messageId });
   } catch (error) {
     // Pin permissions vary by chat; delivery still counts as success.
-    console.warn('Could not pin Dategram notification:', error?.message || error);
+    console.warn('Could not pin LibMatch notification:', error?.message || error);
   }
 }
 
@@ -95,7 +95,7 @@ async function sendSafely(telegramId, send) {
       console.warn(`User ${telegramId} blocked the bot; marked inactive.`);
       return false;
     }
-    console.error('Failed to send Dategram notification:', error?.message || error);
+    console.error('Failed to send LibMatch notification:', error?.message || error);
     return false;
   }
 }
@@ -116,8 +116,8 @@ export async function sendLikedYouNotification(recipientTelegramId, likerTelegra
   if (await alreadySent(recipient.id, 'liked_you', liker.id)) return false;
 
   const [recipientBridge, likerBridge] = await Promise.all([
-    fetchDategramUser(recipientTelegramId),
-    fetchDategramUser(likerTelegramId),
+    fetchLibMatchUser(recipientTelegramId),
+    fetchLibMatchUser(likerTelegramId),
   ]);
   const bridgeVip = bridgeVipActive(recipientBridge);
   const isVip = bridgeVip == null ? isVipActiveRow(recipient) : bridgeVip;
@@ -125,7 +125,7 @@ export async function sendLikedYouNotification(recipientTelegramId, likerTelegra
   const photoUrl = absolutePhotoUrl(likerBridge?.photoUrl || liker.photoUrl);
 
   const caption = likeCaption({ isVip, likerName });
-  const keyboard = appKeyboard(WEBAPP_URL, 'Open Dategram 🖤', { tab: 'likes' });
+  const keyboard = appKeyboard(WEBAPP_URL, 'Open LibMatch 🖤', { tab: 'likes' });
 
   const delivered = await sendSafely(recipientTelegramId, async () => {
     const message = photoUrl
@@ -156,7 +156,7 @@ export async function sendMatchNotification(recipientTelegramId, matchedTelegram
   if (!recipient || !matched || !recipient.isActive) return false;
   if (await alreadySent(recipient.id, 'new_match', matched.id)) return false;
 
-  const matchedBridge = await fetchDategramUser(matchedTelegramId);
+  const matchedBridge = await fetchLibMatchUser(matchedTelegramId);
   const matchedName = matchedBridge?.name || matchedBridge?.firstName || displayName(matched, 'your match');
 
   const delivered = await sendSafely(recipientTelegramId, async () => {
@@ -178,20 +178,20 @@ export async function sendMessageNotification(recipientTelegramId, senderTelegra
   const sender = await fetchOrCreateByTelegramId(senderTelegramId);
   if (!recipient || !sender || !recipient.isActive) return false;
 
-  const recipientBridge = await fetchDategramUser(recipientTelegramId);
+  const recipientBridge = await fetchLibMatchUser(recipientTelegramId);
   const enabled = recipientBridge?.notificationsEnabled ?? notificationsEnabled(recipient);
   if (!enabled) return false;
 
   const senderBridge = senderTelegramId === recipientTelegramId
     ? recipientBridge
-    : await fetchDategramUser(senderTelegramId);
+    : await fetchLibMatchUser(senderTelegramId);
   const senderName = senderBridge?.name || senderBridge?.firstName || displayName(sender);
 
   const delivered = await sendSafely(recipientTelegramId, async () => {
     const message = await api.sendMessage({
       chat_id: recipientTelegramId,
       text: chatPreviewText(senderName, content, CHAT_PREVIEW_LENGTH),
-      reply_markup: appKeyboard(WEBAPP_URL, 'Reply on Dategram 🖤', { tab: 'chat', matchId }),
+      reply_markup: appKeyboard(WEBAPP_URL, 'Reply on LibMatch 🖤', { tab: 'chat', matchId }),
     });
     await logNotification(recipient.id, 'chat_message', sender.id, message.message_id);
     return true;
@@ -210,7 +210,7 @@ export async function sendVipGrantedNotification(recipientTelegramId) {
     const message = await api.sendMessage({
       chat_id: recipientTelegramId,
       text: VIP_CAMPAIGN_MESSAGE,
-      reply_markup: appKeyboard(WEBAPP_URL, 'Return to Dategram 🖤', { tab: 'profile' }),
+      reply_markup: appKeyboard(WEBAPP_URL, 'Return to LibMatch 🖤', { tab: 'profile' }),
     });
     await pinIfPossible(recipientTelegramId, message.message_id);
     await logNotification(recipient.id, 'vip_granted', null, message.message_id);

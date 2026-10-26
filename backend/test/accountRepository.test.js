@@ -40,7 +40,7 @@ describe('account repository (deleteAccount)', () => {
         if (sql === 'BEGIN' || sql === 'COMMIT' || sql === 'ROLLBACK') return userRowQuery([]);
         if (meByTelegram(sql)) return userRowQuery([{ id: MY_ID }]);
         if (sql.includes('FROM photos') && sql.includes('cloudinary_public_id')) {
-          return userRowQuery([{ public_id: 'dategram/profile-photos/a' }, { public_id: null }]);
+          return userRowQuery([{ public_id: 'libmatch/profile-photos/a' }, { public_id: null }]);
         }
         return userRowQuery([]);
       },
@@ -49,7 +49,7 @@ describe('account repository (deleteAccount)', () => {
     const outcome = await repository.deleteAccount(ME);
     assert.deepEqual(outcome, {
       deleted: true,
-      cloudinaryPublicIds: ['dategram/profile-photos/a'],
+      cloudinaryPublicIds: ['libmatch/profile-photos/a'],
     });
     const statements = calls.map((call) => call.sql);
     assert.ok(statements.includes('BEGIN'));

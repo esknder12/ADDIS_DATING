@@ -33,7 +33,7 @@ export async function ensureMenuButton() {
       .run();
     return { ok: true };
   } catch (error) {
-    console.warn('Could not set the persistent Dategram chat button:', error?.message || error);
+    console.warn('Could not set the persistent LibMatch chat button:', error?.message || error);
     return { ok: false, reason: error?.message || 'setChatMenuButton failed' };
   }
 }

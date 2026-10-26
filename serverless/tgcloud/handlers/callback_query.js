@@ -20,7 +20,7 @@ const SCREENS = {
   vip: () => ({ text: VIP_INFO_MESSAGE, keyboard: backKeyboard() }),
   verify: () => ({
     text: `${VERIFICATION_NUDGE}\n\n${VERIFICATION_INSTRUCTIONS}`,
-    keyboard: appKeyboard(WEBAPP_URL, 'Return to Dategram 🖤'),
+    keyboard: appKeyboard(WEBAPP_URL, 'Return to LibMatch 🖤'),
   }),
 };
 

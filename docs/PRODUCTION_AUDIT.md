@@ -1,4 +1,4 @@
-# Dategram — Production Readiness Audit v2 (evidence-backed)
+# LibMatch — Production Readiness Audit v2 (evidence-backed)
 
 Date: 2026-10-17 · Branch: `arena/95f0f2a6-addis-dating` · Auditor: Arena agent
 Method: code review + unit suite + live CI E2E + live probes + dependency audit.

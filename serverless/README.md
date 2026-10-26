@@ -1,6 +1,6 @@
-# Dategram bot on Telegram Serverless 🤖
+# LibMatch bot on Telegram Serverless 🤖
 
-JavaScript-only clone of **every Dategram bot feature**, running on Telegram's
+JavaScript-only clone of **every LibMatch bot feature**, running on Telegram's
 own infrastructure — no VPS, no polling process, no PostgreSQL needed for the
 bot itself.
 
@@ -15,7 +15,7 @@ Test-bot deploy runbook: [TESTBOT.md](TESTBOT.md) (start here — @addisdatingte
 
 ## What the bot does
 
-- `/start` — welcome + main menu + persistent "Open Dategram" menu button
+- `/start` — welcome + main menu + persistent "Open LibMatch" menu button
 - `/verify` — verification nudge + video-note instructions
 - 📹 video notes — verification intake (SQLite + forward to main API)
 - `/help` `/about` `/vip` `/app` + inline-button navigation
@@ -49,12 +49,12 @@ code, deployed with `push`):
 
 ```js
 export const WEBAPP_URL = 'https://your-mini-app-host.example.com'; // required
-export const DATEGRAM_API_URL = 'https://your-express-api.example.com'; // '' = standalone
-export const DATEGRAM_BRIDGE_KEY = ''; // optional shared secret
+export const LIBMATCH_API_URL = 'https://your-express-api.example.com'; // '' = standalone
+export const LIBMATCH_BRIDGE_KEY = ''; // optional shared secret
 ```
 
 - `WEBAPP_URL` — your Mini App frontend URL (every button needs it).
-- `DATEGRAM_API_URL` — main backend base URL. Leave `''` to run standalone:
+- `LIBMATCH_API_URL` — main backend base URL. Leave `''` to run standalone:
   the bot works fully on its SQLite mirror with generic fallbacks.
 
 ### 2. Deploy the code
@@ -120,7 +120,7 @@ POST /api/internal/bridge/verification-intake
 → { "ok": true }
 ```
 
-Guard both with the `x-bridge-key` header when `DATEGRAM_BRIDGE_KEY` is set.
+Guard both with the `x-bridge-key` header when `LIBMATCH_BRIDGE_KEY` is set.
 Until then, the bot runs standalone on its SQLite mirror.
 
 ## Cutover (test bot → live bot, later)
@@ -153,7 +153,7 @@ The clean follow-up (3 lines in `backend/src/bot/bot.js`) is a
 
 ## Keeping branches straight
 
-- `main` — the full Dategram app (Mini App + Express + Postgres). Untouched.
+- `main` — the full LibMatch app (Mini App + Express + Postgres). Untouched.
 - This Serverless project lives in `serverless/` and was built to move into
   its own branch. To create it locally:
 

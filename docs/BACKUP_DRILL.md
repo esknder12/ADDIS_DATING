@@ -1,4 +1,4 @@
-# Dategram — Neon backup + restore drill (do once, then quarterly)
+# LibMatch — Neon backup + restore drill (do once, then quarterly)
 
 ## 1. Confirm PITR is on (2 min, phone-friendly)
 
