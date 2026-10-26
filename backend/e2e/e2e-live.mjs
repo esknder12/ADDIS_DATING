@@ -6,7 +6,7 @@
 // NOTE: filename deliberately does NOT match `node --test` patterns, so the
 // unit suite never picks it up. CI workflow: e2e-backend.yml.
 import crypto from 'node:crypto';
-import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
@@ -63,10 +63,12 @@ const C = { telegram_id: 993333333, first_name: 'E2E_Cid', username: 'e2e_cid', 
 
 const pool = new pg.Pool({ connectionString: DATABASE_URL });
 try {
-  step = 'schema loads';
-  const schema = fs.readFileSync(path.join(HERE, '..', 'src', 'db', 'schema.sql'), 'utf8');
-  await pool.query(schema);
-  assert(true, 'schema.sql applied');
+  step = 'schema loads (npm run migrate)';
+  execFileSync('node', [path.join(HERE, '..', 'scripts', 'migrate.mjs')], {
+    stdio: 'inherit',
+    env: process.env,
+  });
+  assert(true, 'migrate script applied + verified schema.sql');
 
   const initA = forgeInitData({ id: A.telegram_id, first_name: A.first_name, username: A.username });
   const initB = forgeInitData({ id: B.telegram_id, first_name: B.first_name, username: B.username });

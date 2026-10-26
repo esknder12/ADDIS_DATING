@@ -7,15 +7,15 @@ Out of scope: promo economics, AI-picks quality, any non-Telegram distribution.
 
 ## Verdict
 
-**TEST-READY ✅ · PUBLIC-PROD ⛔ (7 P1s below).** No P0 found. "Public-prod" =
-strangers meeting strangers; the dating-safety P1s (report/block, deletion) are what
-stand between test and public, plus reliability hardening.
+**TEST-READY ✅ · PUBLIC-PROD ⛔ (2 P1s left: #5 face-gate server-side, #7 menu-cache
+discipline).** No P0 found. Closed since v2: #1 report/block, #2 deletion, #3 sleep
+UX, #4 migrations, #6 monitoring.
 
 ## Test evidence
 
 | Test | Method | Result |
 |---|---|---|
-| Backend unit/integration | `npm test --workspace backend` | **95/95 pass** |
+| Backend unit/integration | `npm test --workspace backend` | **107/107 pass** |
 | Live backend E2E | CI `e2e-backend.yml` vs throwaway Postgres 16 (run 39033339978) | **GREEN** — auth→like→match→message→re-read→exclusion→IDOR→idempotency |
 | Frontend builds | CI runs 4–12 | Green (stamped, cache-proof `/r<run>/` menu paths) |
 | Live backend + DB | `GET /health` on Render | `ok`, `database.connected: true` |
@@ -49,19 +49,24 @@ the tap-script passes once, escalate to P0 with Render logs.
 
 ## P1 — must fix before public prod
 
-1. **No report/block.** A dating app with strangers and no harassment controls cannot
-   go public. Endpoints + UI + enforcement in discovery/matches.
-2. **No account/data deletion.** Users cannot delete themselves. Privacy-law exposure
-   (GDPR-style). Endpoint + UI + cascade verify.
-3. **Render free sleeps vs 10s app timeout.** Wake takes 30–60s; users see false
-   `CONNECTION PAUSED`. Paid Render (no sleep) and/or keep-alive ping and/or raise
-   timeout + retry copy.
-4. **No migration tooling.** No `migrate` script exists; schema goes to Neon by hand.
-   Every deploy risks drift. One `npm run migrate` + CI-gated or documented apply.
+1. **No report/block.** ✅ DONE — endpoints + SafetyModal UI + discovery/match/chat
+   enforcement; E2E green; live-tested in Telegram (block -> blocked list -> unblock).
+2. **No account/data deletion.** ✅ DONE — `DELETE /api/account` (DELETE-typed
+   confirm) + danger-zone UI; transaction wipes user row (15 FK cascades) plus
+   dangling string refs; Cloudinary best-effort cleanup; E2E proves 422/200/404
+   + cascade + neighbor-match survival; demo-tested.
+3. **Render free sleeps vs 10s app timeout.** ✅ DONE — splash wake ping (65s
+   `/health`) absorbs cold start + honest "waking up" copy + smarter retry
+   message; UptimeRobot 5-min `/health` monitor doubles as keep-alive so the
+   free instance no longer sleeps at all.
+4. **No migration tooling.** ✅ DONE — `npm run migrate --workspace backend`
+   (apply + 17-table verify, `--check` for verify-only); server boot already
+   auto-applies the same idempotent file so Render self-heals; E2E dogfoods the
+   script; rules in `docs/DB_MIGRATIONS.md`.
 5. **Face gate is client-side only.** Direct `POST /api/profile/photos` skips face
    detection. Server-side check (Cloudinary `adv_face`) or explicit risk acceptance.
-6. **No uptime monitoring.** Nobody is paged on Render/Neon failure. Free UptimeRobot
-   on `/health` every 5 min.
+6. **No uptime monitoring.** ✅ DONE — UptimeRobot URL monitor on
+   `https://addis-dating-test.onrender.com/health`, every 5 min, email alerts on.
 7. **Menu-button cache lag.** Telegram clients can show yesterday's menu for hours.
    Mitigated (`/r<run>/` paths + build stamp + 💖 refresh). Keep the discipline:
    never reuse a menu path, keep the stamp.
