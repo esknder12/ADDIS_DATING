@@ -5,7 +5,7 @@ import {
   onboardingFlow,
   resolveOnboardingStep,
   validateOnboardingAnswer,
-} from '@dategram/shared/onboarding';
+} from '@libmatch/shared/onboarding';
 import {
   completeOnboarding,
   getOnboardingState,
@@ -80,7 +80,7 @@ export function useOnboarding(user) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const dataRef = useRef(initialData);
-  const storageKey = `dategram:onboarding:v2:${user.telegramId}`;
+  const storageKey = `libmatch:onboarding:v2:${user.telegramId}`;
 
   const applyData = useCallback((nextData) => {
     dataRef.current = nextData;

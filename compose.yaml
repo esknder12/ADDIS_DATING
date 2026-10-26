@@ -3,18 +3,18 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: dategram
-      POSTGRES_USER: dategram
-      POSTGRES_PASSWORD: dategram
+      POSTGRES_DB: libmatch
+      POSTGRES_USER: libmatch
+      POSTGRES_PASSWORD: libmatch
     ports:
       - "5432:5432"
     volumes:
-      - dategram_postgres:/var/lib/postgresql/data
+      - libmatch_postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dategram -d dategram"]
+      test: ["CMD-SHELL", "pg_isready -U libmatch -d libmatch"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  dategram_postgres:
+  libmatch_postgres:

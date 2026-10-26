@@ -1,10 +1,10 @@
-import { giftById, vipPlanById } from '@dategram/shared/catalog';
+import { giftById, vipPlanById } from '@libmatch/shared/catalog';
 import {
   computeMatchResult,
   validateDisplayName,
   validateEmail,
   validatePromoCode,
-} from '@dategram/shared/results';
+} from '@libmatch/shared/results';
 import { Router } from 'express';
 import { createTelegramAuthMiddleware } from '../middleware/telegramAuth.js';
 import { dispatchChatMessage } from '../socket/chatEvents.js';
@@ -16,7 +16,7 @@ function unavailableResponse(res) {
   return res.status(503).json({
     error: {
       code: 'DATABASE_UNAVAILABLE',
-      message: 'Dategram persistence is not configured yet.',
+      message: 'LibMatch persistence is not configured yet.',
     },
   });
 }
@@ -27,7 +27,7 @@ function invalid(res, message, code = 'INVALID_INPUT') {
 
 function userNotFound(res) {
   return res.status(404).json({
-    error: { code: 'USER_NOT_FOUND', message: 'Dategram profile not found.' },
+    error: { code: 'USER_NOT_FOUND', message: 'LibMatch profile not found.' },
   });
 }
 

@@ -19,11 +19,11 @@ import {
   resolveOnboardingStep,
   totalQuestionCount,
   validateOnboardingAnswer,
-} from '@dategram/shared/onboarding';
+} from '@libmatch/shared/onboarding';
 import {
   computeMatchResult,
   getResultsFlowForGender,
-} from '@dategram/shared/results';
+} from '@libmatch/shared/results';
 
 function firstValidAnswer(question) {
   if (question.input === 'single') return question.options[0].id;

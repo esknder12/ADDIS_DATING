@@ -5,7 +5,7 @@ function unavailableResponse(res) {
   return res.status(503).json({
     error: {
       code: 'DATABASE_UNAVAILABLE',
-      message: 'Dategram persistence is not configured yet.',
+      message: 'LibMatch persistence is not configured yet.',
     },
   });
 }

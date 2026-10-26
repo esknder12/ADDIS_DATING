@@ -1,5 +1,5 @@
 {
-  "name": "@dategram/frontend",
+  "name": "@libmatch/frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@dategram/shared": "0.1.0",
+    "@libmatch/shared": "0.1.0",
     "@twa-dev/sdk": "^8.0.2",
     "@vladmandic/face-api": "^1.7.15",
     "axios": "^1.7.9",

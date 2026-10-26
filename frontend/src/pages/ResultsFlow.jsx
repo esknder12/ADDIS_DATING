@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { computeMatchResult, getResultsFlowForGender } from '@dategram/shared/results';
+import { computeMatchResult, getResultsFlowForGender } from '@libmatch/shared/results';
 import { getOnboardingState } from '../api/client.js';
 import { AnswerAnalysisScreen, CandidateSearchScreen } from '../components/results/AnalysisScreens.jsx';
 import {

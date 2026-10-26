@@ -1,5 +1,5 @@
 const VIP_CAMPAIGN_MESSAGE = `🎁 Congratulations! Your VIP access is activated!
-We're giving you VIP in Dategram! Now you have access to:
+We're giving you VIP in LibMatch! Now you have access to:
 👀 See who liked you
 ❤️ More likes and skips
 💬 More messages to people you liked
@@ -9,7 +9,7 @@ We're giving you VIP in Dategram! Now you have access to:
 🚀 Your profile gets seen and liked more often
 Open the app and enjoy your gift!`;
 
-function appKeyboard(webappUrl, text = 'Open Dategram 🖤', query = {}) {
+function appKeyboard(webappUrl, text = 'Open LibMatch 🖤', query = {}) {
   if (!webappUrl) return undefined;
   let url = webappUrl;
   try {
@@ -66,7 +66,7 @@ export function createNotificationHandler(pool, runtimeConfig) {
     } catch (error) {
       // Pin permissions vary by private-chat settings; notification delivery
       // should still succeed when Telegram does not allow pinning.
-      console.warn('Could not pin Dategram notification:', error.message);
+      console.warn('Could not pin LibMatch notification:', error.message);
     }
   }
 
@@ -91,18 +91,18 @@ export function createNotificationHandler(pool, runtimeConfig) {
       const isVipActive = Boolean(recipient.is_vip)
         && (!recipient.vip_expires_at || new Date(recipient.vip_expires_at).getTime() > Date.now());
       const caption = isVipActive
-        ? `${recipient.liker_name} just liked you! Open Dategram to respond.`
-        : 'Someone just liked you! Open Dategram to see your free preview or unlock the rest with VIP.';
+        ? `${recipient.liker_name} just liked you! Open LibMatch to respond.`
+        : 'Someone just liked you! Open LibMatch to see your free preview or unlock the rest with VIP.';
       const options = {
         caption,
         has_spoiler: !isVipActive,
-        reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open Dategram 🖤', { tab: 'likes' }),
+        reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open LibMatch 🖤', { tab: 'likes' }),
       };
       const photoUrl = absolutePhotoUrl(recipient.photo_url, runtimeConfig.webappUrl);
       const message = photoUrl
         ? await bot.api.sendPhoto(recipient.telegram_id, photoUrl, options)
         : await bot.api.sendMessage(recipient.telegram_id, caption, {
-          reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open Dategram 🖤', { tab: 'likes' }),
+          reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open LibMatch 🖤', { tab: 'likes' }),
         });
       await pinIfPossible(bot, recipient.telegram_id, message.message_id);
       await logNotification(recipientId, 'liked_you', likerId, message.message_id);
@@ -130,7 +130,7 @@ export function createNotificationHandler(pool, runtimeConfig) {
       if (!recipient) return false;
       const message = await bot.api.sendMessage(
         recipient.telegram_id,
-        `🎉 It's a match! You and ${recipient.matched_name} liked each other. Open Dategram to start chatting!`,
+        `🎉 It's a match! You and ${recipient.matched_name} liked each other. Open LibMatch to start chatting!`,
         {
           reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Go to chat 💬', {
             tab: 'chat',
@@ -168,7 +168,7 @@ export function createNotificationHandler(pool, runtimeConfig) {
         recipient.telegram_id,
         `💬 ${recipient.sender_name}: “${preview}${suffix}”`,
         {
-          reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Reply on Dategram 🖤', {
+          reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Reply on LibMatch 🖤', {
             tab: 'chat',
             matchId,
           }),
@@ -193,7 +193,7 @@ export function createNotificationHandler(pool, runtimeConfig) {
       const user = result.rows[0];
       if (!user) return false;
       const message = await bot.api.sendMessage(user.telegram_id, VIP_CAMPAIGN_MESSAGE, {
-        reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Return to Dategram 🖤', { tab: 'profile' }),
+        reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Return to LibMatch 🖤', { tab: 'profile' }),
       });
       await pinIfPossible(bot, user.telegram_id, message.message_id);
       await logNotification(userId, 'vip_granted', null, message.message_id);
@@ -230,7 +230,7 @@ export function createNotificationHandler(pool, runtimeConfig) {
         approved
           ? 'Your photo was approved \u2705 It is now visible on your profile.'
           : 'Your photo was rejected \uD83D\uDE48 Please upload a clear, real photo of your face.',
-        { reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open Dategram \uD83D\uDDA4', { tab: 'profile' }) },
+        { reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open LibMatch \uD83D\uDDA4', { tab: 'profile' }) },
       );
       await logNotification(userId, approved ? 'photo_approved' : 'photo_rejected', null, message.message_id);
       return true;

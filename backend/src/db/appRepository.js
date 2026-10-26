@@ -1,4 +1,4 @@
-import { getMember } from '@dategram/shared/catalog';
+import { getMember } from '@libmatch/shared/catalog';
 
 const DEFAULT_PROFILE_PHOTO = '/images/onboarding-professional.jpg';
 export const FREE_DAILY_AI_PICKS_LIMIT = 5;
@@ -33,7 +33,7 @@ function intentionFor(value) {
 export function publicMember(member) {
   return {
     id: String(member.id),
-    name: member.name || 'Dategram member',
+    name: member.name || 'LibMatch member',
     emoji: member.emoji || '',
     age: member.age ?? null,
     city: member.city || '',

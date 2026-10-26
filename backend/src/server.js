@@ -43,7 +43,7 @@ async function start() {
   app.set('io', socketServer);
 
   httpServer.listen(config.port, '0.0.0.0', () => {
-    console.log(`🚀 Dategram API + Socket.io listening on http://0.0.0.0:${config.port}`);
+    console.log(`🚀 LibMatch API + Socket.io listening on http://0.0.0.0:${config.port}`);
     console.log(`   Environment: ${config.nodeEnv}`);
   });
 }
@@ -68,6 +68,6 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 start().catch((error) => {
-  logError('❌ Failed to start Dategram:', error);
+  logError('❌ Failed to start LibMatch:', error);
   process.exit(1);
 });

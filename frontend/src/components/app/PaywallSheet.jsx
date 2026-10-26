@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
-import { vipPlans } from '@dategram/shared/catalog';
+import { vipPlans } from '@libmatch/shared/catalog';
 import { notify } from '../../lib/telegram.js';
 import { CloseIcon } from './icons.jsx';
 
 const contextCopy = {
-  default: { title: 'Dategram VIP', note: 'Free messages and all premium perks' },
+  default: { title: 'LibMatch VIP', note: 'Free messages and all premium perks' },
   boost: { title: 'Put your profile on top', note: 'Boosts are a VIP perk — get seen first in your area' },
-  'direct-message': { title: 'Message before matching', note: 'Direct messages are a Dategram VIP feature' },
+  'direct-message': { title: 'Message before matching', note: 'Direct messages are a LibMatch VIP feature' },
   likes: { title: 'See who likes you', note: 'Reveal your admirers and skip the wait' },
 };
 
@@ -18,7 +18,7 @@ export default function PaywallSheet({ context = 'default', promo, onActivate, o
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
 
-  const promoValid = promoInput.trim().toLowerCase() === 'dategram_oct26';
+  const promoValid = promoInput.trim().toLowerCase() === 'libmatch_oct26';
   const discountPercent = promoValid ? 50 : (promo?.code && promoInput.trim() === '' ? 0 : 0);
 
   const priceLabel = useMemo(() => {
@@ -35,7 +35,7 @@ export default function PaywallSheet({ context = 'default', promo, onActivate, o
     try {
       await onActivate({
         planId,
-        promoCode: promoValid ? 'dategram_oct26' : undefined,
+        promoCode: promoValid ? 'libmatch_oct26' : undefined,
       });
       setDone(true);
       notify('success');
@@ -63,7 +63,7 @@ export default function PaywallSheet({ context = 'default', promo, onActivate, o
           </div>
         ) : (
           <>
-            <p className="paywall__brand">Dategram <span className="vip-tag">VIP</span></p>
+            <p className="paywall__brand">LibMatch <span className="vip-tag">VIP</span></p>
             <h2 id="vip-heading">{copy.title}</h2>
             <p className="paywall__note">{copy.note}</p>
 
@@ -100,7 +100,7 @@ export default function PaywallSheet({ context = 'default', promo, onActivate, o
               <input
                 type="text"
                 value={promoInput}
-                placeholder="dategram_oct26"
+                placeholder="libmatch_oct26"
                 onChange={(event) => setPromoInput(event.target.value)}
               />
             </label>

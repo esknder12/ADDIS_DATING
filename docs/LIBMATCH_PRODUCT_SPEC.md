@@ -1,6 +1,6 @@
-# Dategram — Complete UX/UI Product Specification
+# LibMatch — Complete UX/UI Product Specification
 
-> Source of truth for rebuilding the Dategram Telegram Mini App from the supplied 86-screen reference set.
+> Source of truth for rebuilding the LibMatch Telegram Mini App from the supplied 86-screen reference set.
 >
 > **Implementation status:** Phases 1 and 2 are implemented: bot/auth foundation plus the complete five-section, resumable onboarding questionnaire. Sections 4 onward define the next implementation phases.
 
@@ -27,8 +27,8 @@
 
 ## 1. Product and brand
 
-- **Name:** Dategram
-- **Bot:** `@DategramAppBot`
+- **Name:** LibMatch
+- **Bot:** `@addisdatingtest_Bot`
 - **Tagline:** “Dating with intention, right inside Telegram”
 - **Visual theme:** pure-black dark mode, white text, pink/red accent near `#FF2D55`
 - **Logo:** rounded black square with a white-to-pink heart/leaf mark
@@ -51,7 +51,7 @@ Repeated value propositions:
 Heading: **What can this bot do?**
 
 ```text
-Dategram - dating with intention, right inside Telegram.
+LibMatch - dating with intention, right inside Telegram.
 
 Nobody's here for a one-night chat. They're here for someone who shares their values.
 
@@ -68,18 +68,18 @@ Set up your profile in 2 minutes and find your person 🤍
 User sends `/start`. The bot replies:
 
 ```text
-Welcome to Dategram 🖤
+Welcome to LibMatch 🖤
 
 Answer a few questions about yourself — AI will find those who are perfect for you. ⬇️
 ```
 
-Inline Web App button: **Go to Dategram**.
+Inline Web App button: **Go to LibMatch**.
 
 ### B3 — Mini App launch
 
-- Telegram header: Dategram, menu, close
-- Centered pulsing Dategram logo
-- Footer: `@DategramAppBot`
+- Telegram header: LibMatch, menu, close
+- Centered pulsing LibMatch logo
+- Footer: `@addisdatingtest_Bot`
 
 ---
 
@@ -689,7 +689,7 @@ Heading: **Scratch to reveal your special discount**
 Interactive canvas-based scratch card:
 
 - Covered: textured gray layer, hand cursor, “Scratch it off,” dashed divider, Promo code label
-- Revealed: huge **50%**, “discount,” “on your Premium,” promo code `dategram_oct26`, green check, “Applied automatically at checkout”
+- Revealed: huge **50%**, “discount,” “on your Premium,” promo code `libmatch_oct26`, green check, “Applied automatically at checkout”
 - Reveal automatically when the cleared percentage passes an accessible threshold; include a keyboard/tap alternative
 
 After completion, enter the main app on Discover.
@@ -712,9 +712,9 @@ Verification deliberately uses Telegram’s native circular video-note capture r
 
 ### V2 — Bot instructions
 
-The CTA closes/minimizes the Mini App and returns to `@DategramAppBot`.
+The CTA closes/minimizes the Mini App and returns to `@addisdatingtest_Bot`.
 
-Pinned bot message: “You’re almost there! 🚀 Complete your registration to start meeting amazing people!” with **Return to Dategram 🖤**.
+Pinned bot message: “You’re almost there! 🚀 Complete your registration to start meeting amazing people!” with **Return to LibMatch 🖤**.
 
 Bot sends an example round video note, then:
 
@@ -731,7 +731,7 @@ I'm waiting for your video right here! 🤳
 
 ### V3 — Submission
 
-The user replies with a native Telegram round video note. The backend listens for `video_note`, associates the Telegram sender with a Dategram user, stores the Telegram file ID/review record, and moves verification to pending. A moderation or AI process later sets `is_verified`.
+The user replies with a native Telegram round video note. The backend listens for `video_note`, associates the Telegram sender with a LibMatch user, stores the Telegram file ID/review record, and moves verification to pending. A moderation or AI process later sets `is_verified`.
 
 ---
 
@@ -829,7 +829,7 @@ Header content:
 
 VIP card:
 
-- Dategram wordmark
+- LibMatch wordmark
 - Orange **VIP** tag
 - **Free messages**
 - Orange/red **Activate** pill
@@ -888,7 +888,7 @@ Then:
 
 | Feature | Mechanism | Surface |
 |---|---|---|
-| Dategram VIP | Subscription; “Free messages” and future premium limits | own profile |
+| LibMatch VIP | Subscription; “Free messages” and future premium limits | own profile |
 | Telegram Stars gifts | Ring, diamond, rose | profile detail |
 | Premium promotion | scratch card, 50% code | post-onboarding |
 | Verification | trust feature via video note; not assumed paid | modal + bot |

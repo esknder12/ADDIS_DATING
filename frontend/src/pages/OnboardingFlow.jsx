@@ -11,7 +11,7 @@ function LoadingState() {
     <main className="onboarding-state">
       <div className="mini-logo-pulse"><BrandMark size={72} /></div>
       <h1>Preparing your questions</h1>
-      <p>Personalizing the Dategram experience...</p>
+      <p>Personalizing the LibMatch experience...</p>
       <span className="state-loader" />
     </main>
   );

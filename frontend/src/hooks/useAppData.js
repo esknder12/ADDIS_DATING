@@ -300,7 +300,7 @@ export function useAppData(user, { active = true } = {}) {
         }
       } catch (error) {
         if (!cancelled) {
-          setLoadError(errorMessage(error, 'We could not load Dategram. Please try again.'));
+          setLoadError(errorMessage(error, 'We could not load LibMatch. Please try again.'));
           setLoaded(true);
         }
       }

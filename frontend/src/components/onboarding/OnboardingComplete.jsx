@@ -1,4 +1,4 @@
-import { totalQuestionCount } from '@dategram/shared/onboarding';
+import { totalQuestionCount } from '@libmatch/shared/onboarding';
 import BrandMark from '../BrandMark.jsx';
 
 export default function OnboardingComplete({ firstName, answerCount, onNext }) {

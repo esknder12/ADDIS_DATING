@@ -1,5 +1,5 @@
 /**
- * Dategram discovery catalog.
+ * LibMatch discovery catalog.
  *
  * In production this is backed by real, verified user rows. For the preview
  * experience we ship a small, owned (locally generated) set of demonstration

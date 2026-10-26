@@ -1,5 +1,5 @@
 {
-  "name": "@dategram/backend",
+  "name": "@libmatch/backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@dategram/shared": "0.1.0",
+    "@libmatch/shared": "0.1.0",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

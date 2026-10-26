@@ -25,7 +25,7 @@ const storage = cloudinaryConfigured
         callback(error, fileInfo);
       };
       const uploadStream = cloudinary.uploader.upload_stream({
-        folder: 'dategram/profile-photos',
+        folder: 'libmatch/profile-photos',
         resource_type: 'image',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
         transformation: [{ width: 1600, height: 1600, crop: 'limit', quality: 'auto:good' }],

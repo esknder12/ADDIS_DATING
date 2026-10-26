@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { onboardingQuestionByKey } from '@dategram/shared/onboarding';
-import { computeMatchResult } from '@dategram/shared/results';
+import { onboardingQuestionByKey } from '@libmatch/shared/onboarding';
+import { computeMatchResult } from '@libmatch/shared/results';
 import { loadOnboardingAnswers } from '../../lib/demoStore.js';
 import {
   closeMiniApp,
@@ -353,7 +353,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
       {!profile.isVip ? (
         <section className="vip-card">
           <div className="vip-card__copy">
-            <p className="vip-card__brand">Dategram <span className="vip-tag vip-tag--orange">VIP</span></p>
+            <p className="vip-card__brand">LibMatch <span className="vip-tag vip-tag--orange">VIP</span></p>
             <strong>Free messages</strong>
           </div>
           <button type="button" className="vip-card__activate" onClick={() => onShowPaywall('default')}>
@@ -363,7 +363,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
       ) : (
         <section className="vip-card vip-card--active">
           <div className="vip-card__copy">
-            <p className="vip-card__brand">Dategram <span className="vip-tag vip-tag--orange">VIP</span></p>
+            <p className="vip-card__brand">LibMatch <span className="vip-tag vip-tag--orange">VIP</span></p>
             <strong>VIP active — free messages unlocked ✨</strong>
             {profile.discountPercent ? <small>{profile.discountPercent}% promo applied ({profile.promoCode})</small> : null}
           </div>
@@ -563,7 +563,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
               <>
               <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Settings</h2>
-                <p className="profile-form-note">Choose which Dategram activity can send a Telegram message.</p>
+                <p className="profile-form-note">Choose which LibMatch activity can send a Telegram message.</p>
                 <label className="settings-toggle">
                   <span><strong>Chat notifications</strong><small>Get a bot message when someone writes while you’re offline.</small></span>
                   <input type="checkbox" checked={notificationsEnabled} onChange={(event) => setNotificationsEnabled(event.target.checked)} />
@@ -583,7 +583,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
               <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Contact support</h2>
                 <p>Need help with your profile, a match, or a safety concern? Message us on Telegram and we’ll get back to you.</p>
-                <a className="support-link" href={`https://t.me/${user.botUsername || 'DategramAppBot'}`} target="_blank" rel="noreferrer">Message @{user.botUsername || 'DategramAppBot'}</a>
+                <a className="support-link" href={`https://t.me/${user.botUsername || 'addisdatingtest_Bot'}`} target="_blank" rel="noreferrer">Message @{user.botUsername || 'addisdatingtest_Bot'}</a>
               </div>
               </>
             )}
@@ -593,7 +593,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
               <div ref={sheetBodyRef} className="sheet__body">
                 <h2>FAQ</h2>
                 <dl className="faq-list">
-                  <div><dt>Is Dategram free?</dt><dd>Yes. VIP adds free direct messages and visibility perks.</dd></div>
+                  <div><dt>Is LibMatch free?</dt><dd>Yes. VIP adds free direct messages and visibility perks.</dd></div>
                   <div><dt>How do matches work?</dt><dd>You match when both sides like each other. Messaging always requires a match.</dd></div>
                   <div><dt>How do I get verified?</dt><dd>Tap Get verified on your profile and follow the Telegram verification flow.</dd></div>
                   <div><dt>How do I change my photos?</dt><dd>Use the photo controls on your profile to add, remove, or reorder up to six photos.</dd></div>
@@ -606,7 +606,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
               <>
               <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Privacy policy</h2>
-                <p>Dategram runs inside Telegram. Your Telegram credentials never leave Telegram; we receive only signed profile basics. Answers you give personalize your matches and are never sold. City-level location is shown, never exact coordinates.</p>
+                <p>LibMatch runs inside Telegram. Your Telegram credentials never leave Telegram; we receive only signed profile basics. Answers you give personalize your matches and are never sold. City-level location is shown, never exact coordinates.</p>
               </div>
               </>
             )}
@@ -665,7 +665,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   </>
                 ) : (
                   <p className="profile-form-note">
-                    Your Dategram account is deleted. If you open Dategram again, you will
+                    Your LibMatch account is deleted. If you open LibMatch again, you will
                     start fresh with a new profile.
                   </p>
                 )}

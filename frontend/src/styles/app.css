@@ -1,5 +1,5 @@
-/* Dategram Phase 3 (results/conversion) + Phase 4 (main app) styles.
-   Design tokens follow docs/DATEGRAM_PRODUCT_SPEC.md section 14. */
+/* LibMatch Phase 3 (results/conversion) + Phase 4 (main app) styles.
+   Design tokens follow docs/LIBMATCH_PRODUCT_SPEC.md section 14. */
 
 :root {
   --dg-accent: #ff2d55;

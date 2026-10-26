@@ -3,7 +3,7 @@ import {
   isOnboardingComplete,
   onboardingFlow,
   validateOnboardingAnswer,
-} from '@dategram/shared/onboarding';
+} from '@libmatch/shared/onboarding';
 
 function answersFromRows(rows) {
   return Object.fromEntries(rows.map((row) => [row.question_key, row.answer_value]));

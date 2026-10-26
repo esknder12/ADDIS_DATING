@@ -27,7 +27,7 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
         return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
       }
       if (!appRepository.isAvailable) {
-        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'LibMatch persistence is not configured yet.');
       }
 
       const userId = String(req.body?.userId ?? '').trim();
@@ -47,7 +47,7 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
       }
 
       const grant = await appRepository.grantVip(userId, months, reason);
-      if (!grant) return errorResponse(res, 404, 'USER_NOT_FOUND', 'Dategram profile not found.');
+      if (!grant) return errorResponse(res, 404, 'USER_NOT_FOUND', 'LibMatch profile not found.');
 
       const notifications = req.app.get('notificationService');
       await notifications?.sendVipGrantedNotification(req.app.get('bot'), grant.id);
@@ -66,7 +66,7 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
         return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
       }
       if (!appRepository.isAvailable || typeof appRepository.listSafetyReports !== 'function') {
-        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'LibMatch persistence is not configured yet.');
       }
       const limit = Number(req.query.limit);
       const reports = await appRepository.listSafetyReports({
@@ -88,7 +88,7 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
         return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
       }
       if (!appRepository.isAvailable || typeof appRepository.updateSafetyReportStatus !== 'function') {
-        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'LibMatch persistence is not configured yet.');
       }
       const outcome = await appRepository.updateSafetyReportStatus(req.params.reportId, req.body?.status);
       if (outcome?.invalid) {
@@ -110,13 +110,13 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
         return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
       }
       if (!appRepository.isAvailable || typeof appRepository.setUserActiveStatus !== 'function') {
-        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'LibMatch persistence is not configured yet.');
       }
       const outcome = await appRepository.setUserActiveStatus(req.params.userId, isActive);
       if (outcome?.invalid) {
         return errorResponse(res, 422, 'INVALID_INPUT', 'User id is invalid.');
       }
-      if (!outcome) return errorResponse(res, 404, 'USER_NOT_FOUND', 'Dategram profile not found.');
+      if (!outcome) return errorResponse(res, 404, 'USER_NOT_FOUND', 'LibMatch profile not found.');
       return res.json({ success: true, user: outcome });
     } catch (error) {
       return next(error);
@@ -135,7 +135,7 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
         return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
       }
       if (!appRepository.isAvailable || typeof appRepository.listPhotosForReview !== 'function') {
-        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'LibMatch persistence is not configured yet.');
       }
       const limit = Number(req.query.limit);
       const photos = await appRepository.listPhotosForReview({
@@ -157,7 +157,7 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
         return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
       }
       if (!appRepository.isAvailable || typeof appRepository.updatePhotoStatus !== 'function') {
-        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'LibMatch persistence is not configured yet.');
       }
       const outcome = await appRepository.updatePhotoStatus(req.params.photoId, req.body?.status);
       if (outcome?.invalid) {

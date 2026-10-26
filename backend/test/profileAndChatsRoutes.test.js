@@ -10,7 +10,7 @@ function signedInitData() {
   const values = {
     auth_date: String(Math.floor(Date.now() / 1000)),
     query_id: 'phase-eight-nine-test',
-    user: JSON.stringify({ id: telegramId, first_name: 'Dategram' }),
+    user: JSON.stringify({ id: telegramId, first_name: 'LibMatch' }),
   };
   const check = Object.entries(values)
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))

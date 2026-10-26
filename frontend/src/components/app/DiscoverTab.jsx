@@ -80,7 +80,7 @@ export default function DiscoverTab({
         <button type="button" className="discover-top__control discover-top__control--boost" aria-label="Boost your profile" onClick={onBoost}>
           <BoltIcon />
         </button>
-        <span className="discover-top__brand">Dategram</span>
+        <span className="discover-top__brand">LibMatch</span>
         <button type="button" className="discover-top__control" aria-label="Discovery filters" onClick={() => setFilterOpen(true)}>
           <SlidersIcon />
         </button>

@@ -100,7 +100,7 @@ export function createTelegramAuthMiddleware(runtimeConfig = config) {
 
     if (!initData) {
       return res.status(401).json({
-        error: { code: 'MISSING_INIT_DATA', message: 'Open Dategram from Telegram to continue.' },
+        error: { code: 'MISSING_INIT_DATA', message: 'Open LibMatch from Telegram to continue.' },
       });
     }
 

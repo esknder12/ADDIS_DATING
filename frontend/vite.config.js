@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use((req, res, next) => {
             if (req.url === '/health') {
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ status: 'ok', service: 'dategram', timestamp: new Date().toISOString() }));
+              res.end(JSON.stringify({ status: 'ok', service: 'libmatch', timestamp: new Date().toISOString() }));
               return;
             }
             next();

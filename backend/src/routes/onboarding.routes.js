@@ -1,7 +1,7 @@
 import {
   onboardingFlow,
   validateOnboardingAnswer,
-} from '@dategram/shared/onboarding';
+} from '@libmatch/shared/onboarding';
 import { Router } from 'express';
 import { createTelegramAuthMiddleware } from '../middleware/telegramAuth.js';
 
@@ -9,7 +9,7 @@ function unavailableResponse(res) {
   return res.status(503).json({
     error: {
       code: 'DATABASE_UNAVAILABLE',
-      message: 'Dategram persistence is not configured yet.',
+      message: 'LibMatch persistence is not configured yet.',
     },
   });
 }
@@ -38,7 +38,7 @@ export function createOnboardingRouter({ onboardingRepository, runtimeConfig }) 
       const state = await onboardingRepository.getState(req.telegramUser.id);
       if (!state) {
         return res.status(404).json({
-          error: { code: 'USER_NOT_FOUND', message: 'Dategram profile not found.' },
+          error: { code: 'USER_NOT_FOUND', message: 'LibMatch profile not found.' },
         });
       }
       return res.json({ success: true, onboarding: state });
@@ -73,7 +73,7 @@ export function createOnboardingRouter({ onboardingRepository, runtimeConfig }) 
       );
       if (!result) {
         return res.status(404).json({
-          error: { code: 'USER_NOT_FOUND', message: 'Dategram profile not found.' },
+          error: { code: 'USER_NOT_FOUND', message: 'LibMatch profile not found.' },
         });
       }
       return res.json({ success: true, answer: validation.value, progress });
@@ -95,7 +95,7 @@ export function createOnboardingRouter({ onboardingRepository, runtimeConfig }) 
       const result = await onboardingRepository.saveProgress(req.telegramUser.id, progress);
       if (!result) {
         return res.status(404).json({
-          error: { code: 'USER_NOT_FOUND', message: 'Dategram profile not found.' },
+          error: { code: 'USER_NOT_FOUND', message: 'LibMatch profile not found.' },
         });
       }
       return res.json({ success: true, progress });
@@ -110,7 +110,7 @@ export function createOnboardingRouter({ onboardingRepository, runtimeConfig }) 
       const result = await onboardingRepository.complete(req.telegramUser.id);
       if (!result) {
         return res.status(404).json({
-          error: { code: 'USER_NOT_FOUND', message: 'Dategram profile not found.' },
+          error: { code: 'USER_NOT_FOUND', message: 'LibMatch profile not found.' },
         });
       }
       if (!result.completed) {

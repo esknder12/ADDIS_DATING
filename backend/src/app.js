@@ -59,7 +59,7 @@ export function createApp({
     const healthy = !runtimeConfig.isProduction || database.connected;
     res.status(healthy ? 200 : 503).json({
       status: healthy ? 'ok' : 'degraded',
-      service: 'dategram-api',
+      service: 'libmatch-api',
       database,
       botUsername: getBotUsername() || null,
       timestamp: new Date().toISOString(),

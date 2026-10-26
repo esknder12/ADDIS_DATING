@@ -1,4 +1,4 @@
-import { getSection } from '@dategram/shared/onboarding';
+import { getSection } from '@libmatch/shared/onboarding';
 
 export default function QuestionHeader({ step }) {
   const section = getSection(step.section);

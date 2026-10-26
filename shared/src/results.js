@@ -91,7 +91,7 @@ export const resultsFlow = Object.freeze([
     kind: 'discount',
     heading: 'Scratch to reveal your special discount',
     subheading: 'We want you to start your journey with a nice surprise.',
-    promoCode: 'dategram_oct26',
+    promoCode: 'libmatch_oct26',
     percent: 50,
     cta: 'CONTINUE',
   },
@@ -116,7 +116,7 @@ export function getResultsFlowForGender(gender) {
   return resultsFlow.map((step) => resolveResultsStep(step, normalized));
 }
 
-export const PROMO_CODE = 'dategram_oct26';
+export const PROMO_CODE = 'libmatch_oct26';
 export const PROMO_PERCENT = 50;
 
 function optionLabel(questionKey, answerId, fallback) {

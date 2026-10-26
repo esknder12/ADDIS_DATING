@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import { validateDisplayName } from '@dategram/shared/results';
+import { validateDisplayName } from '@libmatch/shared/results';
 import { cloudinary, cloudinaryConfigured, profilePhotoUpload } from '../config/cloudinary.js';
 import { createTelegramAuthMiddleware } from '../middleware/telegramAuth.js';
 
 const profileUnavailable = (res) => res.status(503).json({
-  error: { code: 'DATABASE_UNAVAILABLE', message: 'Dategram persistence is not configured yet.' },
+  error: { code: 'DATABASE_UNAVAILABLE', message: 'LibMatch persistence is not configured yet.' },
 });
 
 const userNotFound = (res) => res.status(404).json({
-  error: { code: 'USER_NOT_FOUND', message: 'Dategram profile not found.' },
+  error: { code: 'USER_NOT_FOUND', message: 'LibMatch profile not found.' },
 });
 
 function validPhotoId(value) {

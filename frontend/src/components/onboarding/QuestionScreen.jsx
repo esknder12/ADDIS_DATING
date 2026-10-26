@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   locationSuggestions,
   validateOnboardingAnswer,
-} from '@dategram/shared/onboarding';
+} from '@libmatch/shared/onboarding';
 import { impact } from '../../lib/telegram.js';
 import {
   ColorOption,

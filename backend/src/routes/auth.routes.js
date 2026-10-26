@@ -11,7 +11,7 @@ export function createAuthRouter({ userRepository, runtimeConfig }) {
         return res.status(503).json({
           error: {
             code: 'DATABASE_UNAVAILABLE',
-            message: 'Dategram persistence is not configured yet.',
+            message: 'LibMatch persistence is not configured yet.',
           },
         });
       }
@@ -29,7 +29,7 @@ export function createAuthRouter({ userRepository, runtimeConfig }) {
         return res.status(503).json({
           error: {
             code: 'DATABASE_UNAVAILABLE',
-            message: 'Dategram persistence is not configured yet.',
+            message: 'LibMatch persistence is not configured yet.',
           },
         });
       }
@@ -37,7 +37,7 @@ export function createAuthRouter({ userRepository, runtimeConfig }) {
       const user = await userRepository.findByTelegramId(req.telegramUser.id);
       if (!user) {
         return res.status(404).json({
-          error: { code: 'USER_NOT_FOUND', message: 'Dategram profile not found.' },
+          error: { code: 'USER_NOT_FOUND', message: 'LibMatch profile not found.' },
         });
       }
 

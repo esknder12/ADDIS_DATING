@@ -25,7 +25,7 @@ function demoUser() {
     telegramId,
     firstName: telegramUser?.first_name || 'Esknder',
     lastName: telegramUser?.last_name || 'Zinabie',
-    username: telegramUser?.username || 'dategram_preview',
+    username: telegramUser?.username || 'libmatch_preview',
     photoUrl: telegramUser?.photo_url || null,
     onboardingCompleted: appState.conversionCompleted || demoOnboardingCompleted(telegramId),
     conversionCompleted: appState.conversionCompleted,
@@ -62,7 +62,7 @@ export default function Splash({ onAuthenticated }) {
 
         if (!isTelegramMiniApp()) {
           if (!demoEnabled) {
-            throw new Error('Open Dategram from Telegram to continue.');
+            throw new Error('Open LibMatch from Telegram to continue.');
           }
           user = demoUser();
         } else {
@@ -87,9 +87,9 @@ export default function Splash({ onAuthenticated }) {
           || requestError.code === 'ERR_NETWORK';
         const message = requestError.response?.data?.error?.message
           || (noResponse
-            ? 'The Dategram server is waking up. Wait a few seconds, then tap TRY AGAIN.'
+            ? 'The LibMatch server is waking up. Wait a few seconds, then tap TRY AGAIN.'
             : requestError.message)
-          || 'We could not connect to Dategram. Please try again.';
+          || 'We could not connect to LibMatch. Please try again.';
         setError(message);
       }
     }
@@ -115,7 +115,7 @@ export default function Splash({ onAuthenticated }) {
             TRY AGAIN
           </button>
         </div>
-        <p className="bot-handle">@DategramAppBot</p>
+        <p className="bot-handle">@addisdatingtest_Bot</p>
         <p className="build-stamp">build {buildId} · api {getApiBaseUrl() || 'same-host'}</p>
       </main>
     );
@@ -128,18 +128,18 @@ export default function Splash({ onAuthenticated }) {
         <div className="logo-pulse">
           <BrandMark size={94} />
         </div>
-        <h1 className="splash-title">Dategram</h1>
+        <h1 className="splash-title">LibMatch</h1>
         <p className="splash-tagline">Dating with intention.</p>
-        <div className="loading-dots" aria-label="Loading Dategram">
+        <div className="loading-dots" aria-label="Loading LibMatch">
           <span />
           <span />
           <span />
         </div>
         {waking && (
-          <p className="splash-wake">Waking up Dategram… first open can take up to a minute.</p>
+          <p className="splash-wake">Waking up LibMatch… first open can take up to a minute.</p>
         )}
       </div>
-      <p className="bot-handle">@DategramAppBot</p>
+      <p className="bot-handle">@addisdatingtest_Bot</p>
     </main>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { validateDisplayName, validateEmail } from '@dategram/shared/results';
+import { validateDisplayName, validateEmail } from '@libmatch/shared/results';
 
 const scaleStops = ['LOW', 'AVERAGE', 'HIGH', 'VERY HIGH'];
 

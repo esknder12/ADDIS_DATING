@@ -12,7 +12,7 @@ const instructionLines = [
 export default function VerificationModal({ user, photoUrl, status, onRequest, onClose, isDemo, botUsername }) {
   const [busy, setBusy] = useState(false);
   const [requested, setRequested] = useState(status === 'pending');
-  const botHandle = botUsername || 'DategramAppBot';
+  const botHandle = botUsername || 'addisdatingtest_Bot';
 
   const handleVerify = useCallback(async () => {
     if (busy) return;
@@ -74,7 +74,7 @@ export default function VerificationModal({ user, photoUrl, status, onRequest, o
           </button>
         )}
         {requested && !isDemo && (
-          <button type="button" className="secondary-link" onClick={onClose}>Back to Dategram</button>
+          <button type="button" className="secondary-link" onClick={onClose}>Back to LibMatch</button>
         )}
       </div>
     </div>

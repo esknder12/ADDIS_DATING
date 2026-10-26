@@ -147,7 +147,7 @@ export default function MainApp({ user, appData }) {
     return (
       <main className="onboarding-state">
         <div className="mini-logo-pulse"><BrandMark size={72} /></div>
-        <h1>Opening Dategram</h1>
+        <h1>Opening LibMatch</h1>
         <p>Loading your matches...</p>
         <span className="state-loader" />
       </main>
@@ -158,7 +158,7 @@ export default function MainApp({ user, appData }) {
     return (
       <main className="onboarding-state">
         <div className="onboarding-state__error">!</div>
-        <h1>We couldn’t load Dategram</h1>
+        <h1>We couldn’t load LibMatch</h1>
         <p>{appData.loadError}</p>
         <button type="button" className="onboarding-primary" onClick={() => window.location.reload()}>TRY AGAIN</button>
       </main>

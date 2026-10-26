@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { giftCatalog } from '@dategram/shared/catalog';
+import { giftCatalog } from '@libmatch/shared/catalog';
 import { impact, notify } from '../../lib/telegram.js';
 import {
   CloseIcon,

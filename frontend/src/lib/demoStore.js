@@ -1,7 +1,7 @@
-import { getMember, memberCatalog, seededOrder } from '@dategram/shared/catalog';
+import { getMember, memberCatalog, seededOrder } from '@libmatch/shared/catalog';
 
-export const ONBOARDING_STORAGE_PREFIX = 'dategram:onboarding:v2';
-const APP_STORAGE_PREFIX = 'dategram:app:v1';
+export const ONBOARDING_STORAGE_PREFIX = 'libmatch:onboarding:v2';
+const APP_STORAGE_PREFIX = 'libmatch:app:v1';
 
 function appKey(telegramId) {
   return `${APP_STORAGE_PREFIX}:${telegramId}`;

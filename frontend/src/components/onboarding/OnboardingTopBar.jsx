@@ -46,7 +46,7 @@ export default function OnboardingTopBar({
       </div>
       <div className="onboarding-wordmark">
         <BrandMark size={25} compact />
-        <span>Dategram</span>
+        <span>LibMatch</span>
       </div>
       <div className="onboarding-topbar__side onboarding-topbar__side--right" ref={menuRef}>
         <button
@@ -60,7 +60,7 @@ export default function OnboardingTopBar({
         </button>
         {menuOpen && (
           <div className="onboarding-menu">
-            <div className="onboarding-menu__brand">Dategram</div>
+            <div className="onboarding-menu__brand">LibMatch</div>
             {demo && (
               <button
                 type="button"

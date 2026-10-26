@@ -1,6 +1,6 @@
 import { Bot, InlineKeyboard } from 'grammy';
 
-const welcomeMessage = `Welcome to Dategram 🖤
+const welcomeMessage = `Welcome to LibMatch 🖤
 
 Answer a few questions about yourself — AI will find those who are perfect for you. ⬇️`;
 
@@ -50,7 +50,7 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
       console.log(`🔗 Adopted menu webapp URL for in-chat buttons: ${url}`);
     }
   }).catch((error) => {
-    console.warn('Could not read the Dategram menu button; using WEBAPP_URL:', error.message);
+    console.warn('Could not read the LibMatch menu button; using WEBAPP_URL:', error.message);
   });
 
   // The username tells the Mini App which bot chat to deep-link into
@@ -72,11 +72,11 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
   }
   learnBotUsername();
 
-  const dategramKeyboard = () => new InlineKeyboard().webApp('Go to Dategram', liveWebappUrl);
+  const libmatchKeyboard = () => new InlineKeyboard().webApp('Go to LibMatch', liveWebappUrl);
 
   async function sendVerifyInstructions(context) {
     await context.reply(verificationNudge, {
-      reply_markup: new InlineKeyboard().webApp('Return to Dategram \uD83D\uDDA4', liveWebappUrl),
+      reply_markup: new InlineKeyboard().webApp('Return to LibMatch \uD83D\uDDA4', liveWebappUrl),
     });
     await context.reply(verificationInstructions);
   }
@@ -87,7 +87,7 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
       await sendVerifyInstructions(context);
       return;
     }
-    await context.reply(welcomeMessage, { reply_markup: dategramKeyboard() });
+    await context.reply(welcomeMessage, { reply_markup: libmatchKeyboard() });
   });
 
   // V2 — verification: the in-app modal deep-links here; the pinned-style
@@ -108,7 +108,7 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
         console.error('Failed to record verification video note:', error.message);
       }
     }
-    await context.reply(verificationReceived, { reply_markup: dategramKeyboard() });
+    await context.reply(verificationReceived, { reply_markup: libmatchKeyboard() });
   });
 
   // Photo review: the owner taps Approve/Reject on the review DM. The sender
@@ -119,7 +119,7 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
       const parsed = parsePhotoModerationCallback(context.callbackQuery?.data);
       if (!parsed) return;
       if (String(context.from?.id || '') !== adminTelegramId) {
-        await context.answerCallbackQuery({ text: 'Only the Dategram owner can review photos.' });
+        await context.answerCallbackQuery({ text: 'Only the LibMatch owner can review photos.' });
         return;
       }
       try {

@@ -34,7 +34,7 @@ export function createSocketAuthMiddleware({ pool, runtimeConfig }) {
       }
       const initData = readHandshakeInitData(socket);
       if (!initData) {
-        const error = new Error('Open Dategram from Telegram to continue.');
+        const error = new Error('Open LibMatch from Telegram to continue.');
         error.data = { code: 'MISSING_INIT_DATA' };
         return next(error);
       }
@@ -51,7 +51,7 @@ export function createSocketAuthMiddleware({ pool, runtimeConfig }) {
       );
       const user = result.rows[0];
       if (!user) {
-        const error = new Error('Complete your Dategram profile before chatting.');
+        const error = new Error('Complete your LibMatch profile before chatting.');
         error.data = { code: 'USER_NOT_FOUND' };
         return next(error);
       }

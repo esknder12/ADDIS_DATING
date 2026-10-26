@@ -1,8 +1,8 @@
 {
-  "name": "dategram",
+  "name": "libmatch",
   "version": "0.1.0",
   "private": true,
-  "description": "Dategram Telegram Mini App",
+  "description": "LibMatch Telegram Mini App",
   "workspaces": [
     "backend",
     "frontend",

@@ -43,7 +43,7 @@ describe('Telegram notification handler', () => {
       async sendPhoto(...args) { sent.push(args); return { message_id: 9 }; },
       async pinChatMessage(...args) { pinned.push(args); },
     } };
-    const service = createNotificationHandler(pool, { webappUrl: 'https://dategram.example' });
+    const service = createNotificationHandler(pool, { webappUrl: 'https://libmatch.example' });
 
     assert.equal(await service.sendLikedYouNotification(bot, '40', '41'), true);
     assert.equal(sent[0][0], 123);
@@ -70,7 +70,7 @@ describe('Telegram notification handler', () => {
       async sendPhoto(...args) { sent.push(args); return { message_id: 10 }; },
       async pinChatMessage() {},
     } };
-    const service = createNotificationHandler(pool, { webappUrl: 'https://dategram.example' });
+    const service = createNotificationHandler(pool, { webappUrl: 'https://libmatch.example' });
 
     assert.equal(await service.sendLikedYouNotification(bot, '40', '41'), true);
     assert.equal(sent[0][2].has_spoiler, false);
@@ -83,7 +83,7 @@ describe('Telegram notification handler', () => {
     const bot = { api: {
       async sendMessage(...args) { sent.push(args); return { message_id: sent.length }; },
     } };
-    const service = createNotificationHandler(pool, { webappUrl: 'https://dategram.example' });
+    const service = createNotificationHandler(pool, { webappUrl: 'https://libmatch.example' });
 
     assert.equal(await service.sendMatchNotification(bot, '40', '41', '99'), true);
     assert.equal(sent.length, 1);
@@ -101,7 +101,7 @@ describe('Telegram notification handler', () => {
     const bot = { api: {
       async sendMessage(...args) { sent.push(args); return { message_id: 27 }; },
     } };
-    const service = createNotificationHandler(pool, { webappUrl: 'https://dategram.example' });
+    const service = createNotificationHandler(pool, { webappUrl: 'https://libmatch.example' });
 
     assert.equal(await service.sendMessageNotification(bot, '20', '21', '99', 'Hello there'), true);
     assert.equal(sent[0][0], 123);
@@ -124,7 +124,7 @@ describe('Telegram notification handler', () => {
         throw new Error(`Unexpected notification SQL: ${sql}`);
       },
     };
-    const service = createNotificationHandler(pool, { webappUrl: 'https://dategram.example' });
+    const service = createNotificationHandler(pool, { webappUrl: 'https://libmatch.example' });
     const bot = { api: { async sendMessage() { sent = true; return { message_id: 1 }; } } };
     assert.equal(await service.sendMessageNotification(bot, '20', '21', '99', 'Hello'), false);
     assert.equal(sent, false);

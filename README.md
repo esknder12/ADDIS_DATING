@@ -1,14 +1,14 @@
-# Dategram
+# LibMatch
 
 **Dating with intention, right inside Telegram.**
 
-Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led dating. The repository contains the **Phase 1 foundation through Phase 9**: Telegram authentication, PostgreSQL persistence, onboarding/results, discovery, daily AI Picks, mutual matches, real-time chat, profile editing, photo management, settings, VIP, and verification. Browser-only previews continue to use the owned local demo catalog.
+LibMatch is a dark, mobile-first Telegram Mini App for verified, intention-led dating. The repository contains the **Phase 1 foundation through Phase 9**: Telegram authentication, PostgreSQL persistence, onboarding/results, discovery, daily AI Picks, mutual matches, real-time chat, profile editing, photo management, settings, VIP, and verification. Browser-only previews continue to use the owned local demo catalog.
 
 ## Implementation status
 
 ### Phase 1 — Foundation
 
-- ✅ `/start` bot command with a **Go to Dategram** Web App button
+- ✅ `/start` bot command with a **Go to LibMatch** Web App button
 - ✅ Telegram Mini App initialization and full-height mobile shell
 - ✅ Server-side validation of Telegram `initData`
 - ✅ Constant-time signature comparison and stale-payload rejection
@@ -35,7 +35,7 @@ Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led d
 - ✅ Match Potential result card (type, dating style, match pool, response rate) with the score **recomputed server-side** from onboarding answers
 - ✅ Optional email and required name capture with shared validators
 - ✅ Personalized four-week Match Plan chart (SVG, illustrative disclaimer included)
-- ✅ Accessible scratch-card discount (canvas + tap alternative, auto-reveal threshold) applying promo `dategram_oct26` (50%)
+- ✅ Accessible scratch-card discount (canvas + tap alternative, auto-reveal threshold) applying promo `libmatch_oct26` (50%)
 - ✅ Routing from completed onboarding into results, then into the main app
 
 ### Phase 4 — Main app
@@ -77,7 +77,7 @@ Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led d
 - ✅ Server-side VIP expiry checks; one free incoming like is visible and the rest are privacy-redacted/blurred until VIP
 - ✅ Profile boosts persist for 30 minutes and boosted users sort first in discovery
 - ✅ Like notifications use Telegram photo spoilers for non-VIP recipients; new matches notify both participants
-- ✅ Bot configures the persistent Open Dategram menu button and logs sent notifications
+- ✅ Bot configures the persistent Open LibMatch menu button and logs sent notifications
 - ✅ Admin VIP gifts extend expiry, record a reason, and send/pin the VIP campaign message; endpoint requires `ADMIN_API_KEY`
 - ✅ Likes tab includes a VIP upgrade path and a persistent profile-boost banner
 
@@ -97,7 +97,7 @@ Dategram is a dark, mobile-first Telegram Mini App for verified, intention-led d
 - ✅ VIP and verification controls remain integrated; Edit Profile uses Telegram MainButton and BackButton
 - ✅ Missing Cloudinary settings and invalid uploads return clear API errors
 
-The complete UX target is documented in [`docs/DATEGRAM_PRODUCT_SPEC.md`](docs/DATEGRAM_PRODUCT_SPEC.md).
+The complete UX target is documented in [`docs/LIBMATCH_PRODUCT_SPEC.md`](docs/LIBMATCH_PRODUCT_SPEC.md).
 
 ## Repository layout
 
@@ -165,7 +165,7 @@ Set at least:
 ```env
 BOT_TOKEN=123456789:your_token_from_botfather
 WEBAPP_URL=https://your-public-mini-app-url.example
-DATABASE_URL=postgresql://dategram:dategram@localhost:5432/dategram
+DATABASE_URL=postgresql://libmatch:libmatch@localhost:5432/libmatch
 ```
 
 Set `ADMIN_API_KEY` to a long random secret to enable admin VIP grants; the endpoint is disabled if it is unset. `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` are optional locally but required for profile photo uploads. Never commit secrets such as the bot token, Cloudinary API secret, or admin key. `.env` files are ignored by Git.
@@ -200,9 +200,9 @@ When opened in a normal browser during development, the frontend uses a clearly 
 ## BotFather setup
 
 1. Send `/newbot` to `@BotFather` and save the token.
-2. Send `/newapp`, select the bot, and create the Dategram Mini App.
+2. Send `/newapp`, select the bot, and create the LibMatch Mini App.
 3. Set the Mini App URL to your HTTPS frontend URL.
-4. Use `/setmenubutton` to add **Open Dategram** with the same URL.
+4. Use `/setmenubutton` to add **Open LibMatch** with the same URL.
 5. Put the URL in `WEBAPP_URL` and restart the backend.
 
 For a local Telegram test, expose port `3000` with an HTTPS tunnel and update both BotFather and `WEBAPP_URL` to that public URL. The browser-facing frontend uses relative `/api` URLs; configure your public reverse proxy to send `/api` to the backend.

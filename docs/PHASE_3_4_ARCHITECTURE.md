@@ -30,7 +30,7 @@ API routes (all `tma`-authenticated, `backend/src/routes/app.routes.js`):
 |---|---|
 | `GET /api/app/results` | 409 `ONBOARDING_INCOMPLETE` until onboarding closes |
 | `POST /api/app/conversion` | validates name + optional email, stores recomputed results |
-| `POST /api/app/discount` | promo whitelist (`dategram_oct26` → 50%) |
+| `POST /api/app/discount` | promo whitelist (`libmatch_oct26` → 50%) |
 
 ## Phase 4 — main app (`shared/src/catalog.js` + `backend/src/db/appRepository.js`)
 

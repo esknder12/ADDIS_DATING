@@ -208,7 +208,7 @@ describe('app routes (phase 3 conversion)', () => {
   it('applies the scratch-card discount code', async () => {
     const response = await request('/api/app/discount', {
       method: 'POST',
-      body: JSON.stringify({ promoCode: 'dategram_oct26' }),
+      body: JSON.stringify({ promoCode: 'libmatch_oct26' }),
     });
     assert.equal(response.status, 200);
     const body = await response.json();
@@ -318,7 +318,7 @@ describe('app routes (phase 4 discovery, matching, chat)', () => {
 
     const ok = await request('/api/app/premium/activate', {
       method: 'POST',
-      body: JSON.stringify({ planId: 'monthly', promoCode: 'dategram_oct26' }),
+      body: JSON.stringify({ planId: 'monthly', promoCode: 'libmatch_oct26' }),
     });
     assert.equal(ok.status, 200);
     const call = calls.find((entry) => entry[0] === 'activatePremium');

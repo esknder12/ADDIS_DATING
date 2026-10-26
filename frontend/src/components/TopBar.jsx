@@ -15,7 +15,7 @@ export default function TopBar({ demo = false }) {
     <header className="top-bar">
       <div className="top-bar__brand">
         <BrandMark size={28} compact />
-        <span>Dategram</span>
+        <span>LibMatch</span>
       </div>
       <div className="top-bar__actions">
         {demo && <span className="demo-badge">PREVIEW</span>}
