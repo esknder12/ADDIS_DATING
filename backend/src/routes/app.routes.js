@@ -276,17 +276,75 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
         return invalid(res, 'Gift or transaction reference is invalid.');
       }
 
-      // Production note (implementation rule 14): grant fulfillment only after
-      // the Telegram Stars invoice is confirmed server-side. The preview
-      // records the transaction idempotently without charging anything.
+      const recipient = typeof appRepository.findGiftRecipient === 'function'
+        ? await appRepository.findGiftRecipient(req.telegramUser.id, String(req.body?.profileId ?? ''))
+        : null;
+      if (recipient?.invalid) {
+        return invalid(res, 'You cannot send a gift to yourself or an invalid profile.');
+      }
+      if (!recipient) {
+        return res.status(404).json({
+          error: { code: 'PROFILE_NOT_FOUND', message: 'LibMatch profile not found.' },
+        });
+      }
+
+      // DEVELOPER FEE (future): confirm the Telegram Stars invoice
+      // server-side here, then split gift.stars (developer cut vs gift
+      // value) before recording. Until then gifts are free; stars are
+      // recorded as the gift's price for later settlement.
       const transaction = await appRepository.sendGift(
         req.telegramUser.id,
-        String(req.body?.profileId ?? ''),
+        String(recipient.userId),
         gift,
         clientRef,
       );
       if (!transaction) return userNotFound(res);
-      return res.status(201).json({ success: true, transaction });
+
+      // Delivery: matched couples get the gift IN their chat (live socket,
+      // offline Telegram DM via dispatch). Strangers get a gift DM with a
+      // way back into the app. Delivery never fails the 201 — the
+      // transaction is already recorded.
+      let delivered = 'recorded';
+      try {
+        let matchId = null;
+        if (typeof appRepository.findMatchIdBetween === 'function') {
+          matchId = await appRepository.findMatchIdBetween(recipient.senderUserId, recipient.userId);
+        }
+        if (matchId && typeof appRepository.createMessageForTelegramId === 'function') {
+          const created = await appRepository.createMessageForTelegramId(
+            req.telegramUser.id, matchId, `\uD83C\uDF81 ${gift.icon} ${gift.label}`,
+          );
+          if (created?.message) {
+            delivered = 'chat';
+            try {
+              await dispatchChatMessage({
+                io: req.app.get('io'),
+                appRepository,
+                bot: req.app.get('bot'),
+                notificationService: req.app.get('notificationService'),
+              }, created);
+            } catch {
+              // Live push is best-effort; the chat message is persisted.
+            }
+          }
+        }
+      } catch {
+        // Fall through to the DM path.
+      }
+      if (delivered !== 'chat') {
+        const bot = req.app.get('bot');
+        const notifications = req.app.get('notificationService');
+        if (bot && notifications?.sendGiftNotification) {
+          const ok = await notifications.sendGiftNotification(bot, {
+            userId: recipient.userId,
+            telegramId: recipient.telegramId,
+            senderName: recipient.senderName,
+            gift,
+          }).catch(() => false);
+          if (ok) delivered = 'dm';
+        }
+      }
+      return res.status(201).json({ success: true, transaction, delivered });
     } catch (error) {
       return next(error);
     }

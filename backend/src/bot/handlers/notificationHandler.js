@@ -302,6 +302,21 @@ export function createNotificationHandler(pool, runtimeConfig) {
     }
   }
 
+  async function sendGiftNotification(bot, { userId, telegramId, senderName, gift }) {
+    try {
+      const message = await bot.api.sendMessage(
+        String(telegramId),
+        `\uD83C\uDF81 ${senderName} sent you a ${gift.icon} ${gift.label}! Match back to say thanks. \uD83D\uDC9C`,
+        { reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open LibMatch \uD83D\uDDA4', { tab: 'likes' }) },
+      );
+      await logNotification(userId, 'gift_received', null, message.message_id);
+      return true;
+    } catch (error) {
+      console.error('Failed to send gift notification:', error.message);
+      return false;
+    }
+  }
+
   return {
     sendLikedYouNotification,
     sendMatchNotification,
@@ -312,5 +327,6 @@ export function createNotificationHandler(pool, runtimeConfig) {
     sendVerificationInstructions,
     sendVerificationReviewRequest,
     sendVerificationDecisionNotification,
+    sendGiftNotification,
   };
 }

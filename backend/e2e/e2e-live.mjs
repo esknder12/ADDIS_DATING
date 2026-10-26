@@ -345,6 +345,18 @@ try {
   const vChat = await api('POST', '/api/app/verification/start-chat', initA);
   assert(vChat.status === 200 && vChat.json?.success === true, `${vChat.status} ${vChat.text}`);
 
+  step = 'gifts are real: chat delivery, validation, graceful DM';
+  const giftOk = await api('POST', '/api/app/gifts', initA, { profileId: bId, giftId: 'rose', clientRef: `e2e-gift-${Date.now()}` });
+  assert(giftOk.status === 201 && giftOk.json?.delivered === 'chat', `${giftOk.status} ${giftOk.text}`);
+  const giftMsg = await pool.query('SELECT body FROM messages WHERE match_id = $1::bigint ORDER BY id DESC LIMIT 1', [matchId]);
+  assert(giftMsg.rows[0]?.body === '\uD83C\uDF81 \uD83C\uDF39 Rose', `${JSON.stringify(giftMsg.rows[0])}`);
+  const giftSelf = await api('POST', '/api/app/gifts', initA, { profileId: aId, giftId: 'rose', clientRef: 'e2e-gift-self' });
+  assert(giftSelf.status === 422, `${giftSelf.status}`);
+  const giftGhost = await api('POST', '/api/app/gifts', initA, { profileId: '999999999', giftId: 'rose', clientRef: 'e2e-gift-ghost' });
+  assert(giftGhost.status === 404, `${giftGhost.status}`);
+  const giftStranger = await api('POST', '/api/app/gifts', initC, { profileId: aId, giftId: 'diamond', clientRef: 'e2e-gift-stranger' });
+  assert(giftStranger.status === 201 && giftStranger.json?.delivered === 'recorded', `${giftStranger.status} ${giftStranger.text}`);
+
   step = 'deletion requires the DELETE confirmation';
   const del0 = await api('DELETE', '/api/account', initC, { confirmation: 'nope' });
   assert(del0.status === 422 && del0.json?.error?.code === 'INVALID_INPUT', `${del0.status} ${del0.text}`);

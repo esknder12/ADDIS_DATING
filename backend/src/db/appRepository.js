@@ -1628,6 +1628,40 @@ export function createAppRepository(pool) {
     return { isReady: true, score: Number.isInteger(value) && value >= 0 && value <= 100 ? value : null };
   }
 
+  async function findGiftRecipient(senderTelegramId, profileIdText) {
+    const profileId = String(profileIdText ?? '').trim();
+    const sender = await pool.query(
+      'SELECT id, COALESCE(name, first_name) AS name FROM users WHERE telegram_id = $1 AND is_active = TRUE LIMIT 1',
+      [senderTelegramId],
+    );
+    const senderRow = sender.rows[0];
+    if (!senderRow) return null;
+    if (!/^[1-9]\d{0,18}$/.test(profileId)) return { invalid: true };
+    const target = await pool.query(
+      'SELECT id, telegram_id::text AS "telegramId" FROM users WHERE id::text = $1 AND is_active = TRUE LIMIT 1',
+      [profileId],
+    );
+    const targetRow = target.rows[0];
+    if (!targetRow) return null;
+    if (String(targetRow.id) === String(senderRow.id)) return { invalid: true };
+    return {
+      userId: targetRow.id,
+      telegramId: targetRow.telegramId,
+      senderUserId: senderRow.id,
+      senderName: senderRow.name || 'Someone',
+    };
+  }
+
+  async function findMatchIdBetween(userIdA, userIdB) {
+    const result = await pool.query(
+      `SELECT id::text AS id FROM matches
+       WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)
+       LIMIT 1`,
+      [userIdA, userIdB],
+    );
+    return result.rows[0]?.id ?? null;
+  }
+
   async function sendGift(telegramId, profileId, gift, clientRef) {
     // Idempotent on (user_id, client_ref): optimistic retries/network replays
     // can never double-charge (implementation rule 14). Production fulfillment
@@ -1934,6 +1968,8 @@ export function createAppRepository(pool) {
     reorderProfilePhotos,
     getProfileScore,
     requestProfileScore,
+    findGiftRecipient,
+    findMatchIdBetween,
     sendGift,
     activatePremium,
     activateBoost,

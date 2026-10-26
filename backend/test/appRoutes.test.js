@@ -126,6 +126,19 @@ const appRepository = {
     calls.push(['sendGift', ...args]);
     return { id: '3', giftId: 'rose', stars: 31 };
   },
+  async findGiftRecipient(telegramId, profileId) {
+    if (profileId === 'self') return { invalid: true };
+    if (profileId === 'ghost') return null;
+    return { userId: 34, telegramId: '700000034', senderUserId: 33, senderName: 'Phase Four' };
+  },
+  async findMatchIdBetween() {
+    return giftMatchId;
+  },
+  async createMessageForTelegramId(telegramId, matchId, body) {
+    if (String(matchId) !== '7') return null;
+    calls.push(['giftMessage', telegramId, matchId, body]);
+    return { message: { id: '43', body }, matchId, senderUserId: 33, recipientUserId: 34, content: body };
+  },
   async activatePremium(...args) {
     calls.push(['activatePremium', ...args]);
     return { activated: true };
@@ -135,6 +148,8 @@ const appRepository = {
     return { status: 'pending' };
   },
 };
+
+let giftMatchId = '7';
 
 const userRepository = { isAvailable: true };
 let server;
@@ -301,12 +316,34 @@ describe('app routes (phase 4 discovery, matching, chat)', () => {
       body: JSON.stringify({ profileId: 'rodas', giftId: 'rose', clientRef: 'gift-001' }),
     });
     assert.equal(ok.status, 201);
+    assert.equal((await ok.json()).delivered, 'chat');
 
     const bad = await request('/api/app/gifts', {
       method: 'POST',
       body: JSON.stringify({ profileId: 'rodas', giftId: 'castle', clientRef: 'gift-002' }),
     });
     assert.equal(bad.status, 422);
+  });
+
+  it('rejects gifts to self and ghosts, degrades gracefully without a match', async () => {
+    const self = await request('/api/app/gifts', {
+      method: 'POST',
+      body: JSON.stringify({ profileId: 'self', giftId: 'rose', clientRef: 'gift-self' }),
+    });
+    assert.equal(self.status, 422);
+    const ghost = await request('/api/app/gifts', {
+      method: 'POST',
+      body: JSON.stringify({ profileId: 'ghost', giftId: 'rose', clientRef: 'gift-ghost' }),
+    });
+    assert.equal(ghost.status, 404);
+    giftMatchId = null;
+    const stranger = await request('/api/app/gifts', {
+      method: 'POST',
+      body: JSON.stringify({ profileId: 'rodas', giftId: 'diamond', clientRef: 'gift-stranger' }),
+    });
+    assert.equal(stranger.status, 201);
+    assert.equal((await stranger.json()).delivered, 'recorded');
+    giftMatchId = '7';
   });
 
   it('activates VIP only with a valid plan and promo', async () => {
