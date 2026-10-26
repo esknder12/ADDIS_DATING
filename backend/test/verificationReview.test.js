@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { parseVerificationCallback } from '../src/bot/bot.js';
+import {
+  parseVerificationCallback,
+  VERIFICATION_VIDEO_MAX_SECONDS,
+  verificationVideoTooLong,
+} from '../src/bot/bot.js';
 import { createNotificationHandler } from '../src/bot/handlers/notificationHandler.js';
 import { createAppRepository } from '../src/db/appRepository.js';
 
@@ -89,6 +93,14 @@ describe('verification review', () => {
     assert.deepEqual(await repository.updateVerificationStatus('7', 'pending'), { invalid: true });
     assert.deepEqual(await repository.updateVerificationStatus('abc', 'approved'), { invalid: true });
     assert.equal(calls.length, 0);
+  });
+
+  it('verification videos are capped at 10 seconds', () => {
+    assert.equal(VERIFICATION_VIDEO_MAX_SECONDS, 10);
+    assert.equal(verificationVideoTooLong(10), false);
+    assert.equal(verificationVideoTooLong(11), true);
+    assert.equal(verificationVideoTooLong(60), true);
+    assert.equal(verificationVideoTooLong(undefined), false);
   });
 
   it('review callback parser only accepts well-formed owner taps', () => {

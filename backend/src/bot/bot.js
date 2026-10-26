@@ -9,7 +9,7 @@ export const verificationNudge = `You’re almost there! 🚀 Complete your regi
 export const verificationInstructions = `One step away from the checkmark ✅
 
 1️⃣ Press and hold the camera button in the bottom right corner.
-2️⃣ Smile at the camera and slowly turn your head to the side.
+2️⃣ Smile at the camera and slowly turn your head to the side — 10 seconds max.
 
 💡 If you see a microphone icon, tap it once to switch to the camera.
 
@@ -23,6 +23,12 @@ let liveBotUsername = '';
 
 export function getBotUsername() {
   return liveBotUsername;
+}
+
+export const VERIFICATION_VIDEO_MAX_SECONDS = 10;
+
+export function verificationVideoTooLong(duration) {
+  return Number.isFinite(Number(duration)) && Number(duration) > VERIFICATION_VIDEO_MAX_SECONDS;
 }
 
 export function parseVerificationCallback(data) {
@@ -109,6 +115,14 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
   bot.on('message:video_note', async (context) => {
     const senderId = context.from?.id;
     const fileId = context.message?.video_note?.file_id;
+    const duration = context.message?.video_note?.duration;
+    if (senderId && fileId && verificationVideoTooLong(duration)) {
+      await context.reply(
+        `That video is ${duration} seconds — please keep it to ${VERIFICATION_VIDEO_MAX_SECONDS} seconds or less. Hold the button, smile, turn your head, release. \uD83C\uDFAC`,
+        { reply_markup: libmatchKeyboard() },
+      );
+      return;
+    }
     if (senderId && fileId && appRepository?.isAvailable) {
       try {
         const recorded = await appRepository.submitVerificationVideo(senderId, fileId);

@@ -4,7 +4,7 @@ import { CloseIcon, VerifiedBadge } from './icons.jsx';
 
 const instructionLines = [
   'Press and hold the camera button in the bottom right corner.',
-  'Smile at the camera and slowly turn your head to the side.',
+  'Smile at the camera and slowly turn your head to the side — 10 seconds max.',
   'If you see a microphone icon, tap it once to switch to the camera.',
 ];
 

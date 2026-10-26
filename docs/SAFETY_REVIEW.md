@@ -62,7 +62,8 @@ Every video note DMs you automatically: the video itself, then the user's
 profile photo (compare the faces ☝️), then a card with ✅ Verify / ❌ Reject
 buttons. Verify grants the badge instantly; Reject
 resets the user to unverified (they can retry) and tells them why. The user
-is notified of your decision either way.
+is notified of your decision either way. Videos over 10 seconds are
+declined automatically with re-record guidance — they never reach you.
 
 Curl fallback (same shapes as photos):
 
