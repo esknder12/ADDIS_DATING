@@ -15,6 +15,9 @@ if (cloudinaryConfigured) {
   });
 }
 
+const mediaFolderPrefix = (process.env.CLOUDINARY_FOLDER_PREFIX?.trim() || 'libmatch')
+  .replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32) || 'libmatch';
+
 const storage = cloudinaryConfigured
   ? {
     _handleFile(_request, file, callback) {
@@ -25,7 +28,7 @@ const storage = cloudinaryConfigured
         callback(error, fileInfo);
       };
       const uploadStream = cloudinary.uploader.upload_stream({
-        folder: 'libmatch/profile-photos',
+        folder: `${mediaFolderPrefix}/profile-photos`,
         resource_type: 'image',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
         transformation: [{ width: 1600, height: 1600, crop: 'limit', quality: 'auto:good' }],

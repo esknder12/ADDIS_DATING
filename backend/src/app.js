@@ -62,6 +62,7 @@ export function createApp({
       service: 'libmatch-api',
       database,
       botUsername: getBotUsername() || null,
+      commit: runtimeConfig.deployCommit ? runtimeConfig.deployCommit.slice(0, 7) : null,
       timestamp: new Date().toISOString(),
     });
   });
