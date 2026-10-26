@@ -3,7 +3,9 @@ import { onboardingQuestionByKey } from '@dategram/shared/onboarding';
 import { computeMatchResult } from '@dategram/shared/results';
 import { loadOnboardingAnswers } from '../../lib/demoStore.js';
 import {
+  closeMiniApp,
   impact,
+  notify,
   setTelegramMainButtonEnabled,
   setTelegramMainButtonLoading,
   showTelegramBackButton,
@@ -55,7 +57,7 @@ function botLinkCopy(botLink) {
 export default function ProfileTab({ user, appData, photoUrl, onShowVerification, onShowPaywall }) {
   const { profile } = appData;
   const botLink = useBotStatus();
-  const [sheet, setSheet] = useState(null); // edit | info | score | looking | settings | blocked | support | faq | privacy
+  const [sheet, setSheet] = useState(null); // edit | info | score | looking | settings | blocked | support | faq | privacy | delete
   const [draftName, setDraftName] = useState(profile.name || user.firstName || '');
   const [draftBio, setDraftBio] = useState(profile.bio || user.bio || '');
   const [draftCity, setDraftCity] = useState(profile.city || user.city || '');
@@ -91,6 +93,24 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
   }, [answers]);
 
   const [unblockBusy, setUnblockBusy] = useState(null);
+  const [deleteDraft, setDeleteDraft] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [accountDeleted, setAccountDeleted] = useState(false);
+
+  const confirmDeleteAccount = async () => {
+    if (deleteDraft.trim() !== 'DELETE' || deleteBusy) return;
+    setDeleteBusy(true);
+    setActionError('');
+    try {
+      await appData.deleteAccount();
+      notify('success');
+      setAccountDeleted(true);
+    } catch (error) {
+      setActionError(fieldError(error, 'Could not delete your account. Please try again.'));
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
 
   const unblock = async (profileId) => {
     setUnblockBusy(String(profileId));
@@ -405,6 +425,12 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
         <SettingRow icon="➤" label="Contact support" onClick={() => setSheet('support')} />
         <SettingRow icon="❓" label="FAQ" onClick={() => setSheet('faq')} />
         <SettingRow icon="📄" label="Privacy policy" onClick={() => setSheet('privacy')} />
+        <SettingRow icon="🗑️" label="Delete my account" tone="danger" onClick={() => {
+          setDeleteDraft('');
+          setAccountDeleted(false);
+          setActionError('');
+          setSheet('delete');
+        }} />
       </section>
 
       {sheet && (
@@ -604,6 +630,59 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
                   </div>
                 ))}
                 {actionError && <p className="field-error" role="alert">{actionError}</p>}
+              </div>
+              </>
+            )}
+
+            {sheet === 'delete' && (
+              <>
+              <div ref={sheetBodyRef} className="sheet__body">
+                <h2>Delete my account</h2>
+                {!accountDeleted ? (
+                  <>
+                    <p className="profile-form-note">
+                      This permanently deletes your profile, photos, swipes, matches, messages,
+                      and settings. This cannot be undone.
+                    </p>
+                    <label className="promo-field">
+                      <span>Type DELETE to confirm</span>
+                      <input
+                        type="text"
+                        value={deleteDraft}
+                        maxLength={16}
+                        autoComplete="off"
+                        placeholder="DELETE"
+                        onChange={(event) => setDeleteDraft(event.target.value)}
+                      />
+                    </label>
+                    {actionError && <p className="field-error" role="alert">{actionError}</p>}
+                  </>
+                ) : (
+                  <p className="profile-form-note">
+                    Your Dategram account is deleted. If you open Dategram again, you will
+                    start fresh with a new profile.
+                  </p>
+                )}
+              </div>
+              <div className="sheet__actions">
+                {!accountDeleted ? (
+                  <button
+                    type="button"
+                    className="onboarding-primary safety-danger"
+                    disabled={deleteBusy || deleteDraft.trim() !== 'DELETE'}
+                    onClick={confirmDeleteAccount}
+                  >
+                    {deleteBusy ? 'DELETING…' : 'DELETE MY ACCOUNT'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="onboarding-primary"
+                    onClick={() => { if (user.isDemo) window.location.reload(); else closeMiniApp(); }}
+                  >
+                    CLOSE
+                  </button>
+                )}
               </div>
               </>
             )}

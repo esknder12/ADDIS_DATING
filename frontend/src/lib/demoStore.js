@@ -330,6 +330,11 @@ export function createDemoStore(telegramId) {
       return { success: true, blocked: Boolean(block) };
     },
 
+    deleteAccount() {
+      resetAppState(telegramId);
+      return { success: true, deleted: true };
+    },
+
     listMatches() {
       const state = read();
       return [...state.matches].sort((a, b) => b.at.localeCompare(a.at)).map(publicMatch);

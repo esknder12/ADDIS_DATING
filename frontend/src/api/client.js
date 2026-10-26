@@ -222,4 +222,9 @@ export async function reportProfile(profileId, { reason, details = '', block = t
   return response.data;
 }
 
+export async function deleteAccount() {
+  const response = await apiClient.delete('/api/account', { data: { confirmation: 'DELETE' } });
+  return response.data;
+}
+
 export default apiClient;

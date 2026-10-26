@@ -3,6 +3,7 @@ import {
   activateBoost as apiActivateBoost,
   activatePremium,
   blockProfile as apiBlockProfile,
+  deleteAccount as apiDeleteAccount,
   getBlockedUsers as apiGetBlockedUsers,
   applyDiscount as apiApplyDiscount,
   getAiPicks as apiGetAiPicks,
@@ -227,6 +228,11 @@ export function useAppData(user, { active = true } = {}) {
     }
     return outcome;
   }, [isDemo, rememberBlocked, removeProfileEverywhere]);
+
+  const deleteAccount = useCallback(async () => {
+    if (isDemo) return demoRef.current.deleteAccount();
+    return apiDeleteAccount();
+  }, [isDemo]);
 
   const refreshChats = useCallback(async () => {
     if (isDemo) return null;
@@ -600,6 +606,7 @@ export function useAppData(user, { active = true } = {}) {
     unblockProfile,
     reportProfile,
     refreshBlocked,
+    deleteAccount,
     sendChatMessage,
     loadChatMessages,
     saveProfile,
