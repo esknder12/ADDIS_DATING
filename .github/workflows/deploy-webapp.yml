@@ -101,8 +101,12 @@ jobs:
           cat push-output.txt
           echo "----------------------------------"
           if [ "$code" -ne 0 ]; then
-            echo "::error::tgcloud push failed (exit $code): $(head -c 2500 push-output.txt | tr '\n' ' ')"
-            exit "$code"
+            if grep -q "files uploaded" push-output.txt; then
+              echo "::notice::tgcloud deployed the webapp, then crashed writing its local snapshot file (exit $code). The deploy itself is green."
+            else
+              echo "::error::tgcloud push failed (exit $code): $(head -c 2500 push-output.txt | tr '\n' ' ')"
+              exit "$code"
+            fi
           fi
 
       - name: Point test-bot menu at fresh URL

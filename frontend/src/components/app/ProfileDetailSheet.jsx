@@ -60,8 +60,20 @@ export default function ProfileDetailSheet({
         await onConfirmGift({ clientRef: order.clientRef, status: 'failed' }).catch(() => null);
         setGiftError('Payment failed — no stars were charged. Try again.');
       }
-    } catch {
-      setGiftError('Could not start the payment. Try again.');
+    } catch (error) {
+      // Surface the server's real reason: a missing profile, a rejected
+      // gift, and a Telegram outage need different words (and fixes).
+      const failure = error?.response?.data?.error;
+      const code = failure?.code;
+      if (code === 'PROFILE_NOT_FOUND' || code === 'USER_NOT_FOUND') {
+        setGiftError('This profile is no longer available.');
+      } else if (code === 'INVOICE_FAILED') {
+        setGiftError('Telegram refused to start the Stars payment. Try again in a bit.');
+      } else if (code === 'INVALID_INPUT' || code === 'INVALID_GIFT' || code === 'INVALID_RECIPIENT') {
+        setGiftError(failure?.message || 'This gift cannot be sent right now.');
+      } else {
+        setGiftError('Could not start the payment. Try again.');
+      }
     }
     setGiftBusy(false);
   };
