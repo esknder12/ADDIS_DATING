@@ -7,9 +7,10 @@ Out of scope: promo economics, AI-picks quality, any non-Telegram distribution.
 
 ## Verdict
 
-**TEST-READY ✅ · PUBLIC-PROD ⛔ (2 P1s left: #5 face-gate server-side, #7 menu-cache
-discipline).** No P0 found. Closed since v2: #1 report/block, #2 deletion, #3 sleep
-UX, #4 migrations, #6 monitoring.
+**TEST-READY ✅ · PUBLIC-PROD ⛔ (1 standing rule: #7 menu-cache discipline; #5
+needs a server check pre-public).** No P0 found. Closed since v2: #1
+report/block, #2 deletion, #3 sleep UX, #4 migrations, #6 monitoring; #5
+accepted for test with runbook.
 
 ## Test evidence
 
@@ -63,8 +64,10 @@ the tap-script passes once, escalate to P0 with Render logs.
    (apply + 17-table verify, `--check` for verify-only); server boot already
    auto-applies the same idempotent file so Render self-heals; E2E dogfoods the
    script; rules in `docs/DB_MIGRATIONS.md`.
-5. **Face gate is client-side only.** Direct `POST /api/profile/photos` skips face
-   detection. Server-side check (Cloudinary `adv_face`) or explicit risk acceptance.
+5. **Face gate is client-side only.** ⚠️ ACCEPTED FOR TEST (owner decision
+   2026-10-26) — invited users only; backstop = in-app reports + the
+   `docs/SAFETY_REVIEW.md` runbook (queue + manual actions). Server-side check
+   (`adv_face`) or human photo approval required before public.
 6. **No uptime monitoring.** ✅ DONE — UptimeRobot URL monitor on
    `https://addis-dating-test.onrender.com/health`, every 5 min, email alerts on.
 7. **Menu-button cache lag.** Telegram clients can show yesterday's menu for hours.
