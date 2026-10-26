@@ -197,4 +197,29 @@ export async function requestVerification() {
   return response.data;
 }
 
+/* Safety: block / report */
+
+export async function getBlockedUsers() {
+  const response = await apiClient.get('/api/blocks');
+  return response.data;
+}
+
+export async function blockProfile(profileId) {
+  const response = await apiClient.post(`/api/users/${encodeURIComponent(profileId)}/block`);
+  return response.data;
+}
+
+export async function unblockProfile(profileId) {
+  const response = await apiClient.delete(`/api/users/${encodeURIComponent(profileId)}/block`);
+  return response.data;
+}
+
+export async function reportProfile(profileId, { reason, details = '', block = true } = {}) {
+  const response = await apiClient.post(
+    `/api/users/${encodeURIComponent(profileId)}/report`,
+    { reason, details, block },
+  );
+  return response.data;
+}
+
 export default apiClient;

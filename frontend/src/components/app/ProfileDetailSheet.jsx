@@ -17,11 +17,11 @@ export default function ProfileDetailSheet({
   onSendGift,
   onDirectMessage,
   onOpenChat,
+  onSafety,
 }) {
   const [selectedGift, setSelectedGift] = useState('rose');
   const [giftBusy, setGiftBusy] = useState(false);
   const [giftSent, setGiftSent] = useState(null);
-  const [reported, setReported] = useState(false);
 
   const gift = useMemo(() => giftCatalog.find((entry) => entry.id === selectedGift), [selectedGift]);
 
@@ -100,14 +100,22 @@ export default function ProfileDetailSheet({
               </button>
             </section>
 
-            <button
-              type="button"
-              className="report-button"
-              disabled={reported}
-              onClick={() => { setReported(true); notify('warning'); }}
-            >
-              {reported ? 'Report received — our team will review' : 'Report'}
-            </button>
+            <div className="safety-row">
+              <button
+                type="button"
+                className="report-button"
+                onClick={() => onSafety?.(member)}
+              >
+                Block
+              </button>
+              <button
+                type="button"
+                className="report-button"
+                onClick={() => onSafety?.(member, 'report')}
+              >
+                Report
+              </button>
+            </div>
           </div>
         </div>
 

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   activateBoost as apiActivateBoost,
   activatePremium,
+  blockProfile as apiBlockProfile,
+  getBlockedUsers as apiGetBlockedUsers,
   applyDiscount as apiApplyDiscount,
   getAiPicks as apiGetAiPicks,
   getBoostStatus as apiGetBoostStatus,
@@ -18,7 +20,9 @@ import {
   reorderProfilePhotos as apiReorderProfilePhotos,
   requestProfileScore as apiRequestProfileScore,
   postSwipe,
+  reportProfile as apiReportProfile,
   requestVerification as apiRequestVerification,
+  unblockProfile as apiUnblockProfile,
   rewindLastSwipe,
   saveConversion as apiSaveConversion,
   sendGift as apiSendGift,
@@ -95,6 +99,7 @@ export function useAppData(user, { active = true } = {}) {
   const [loadingMoreDiscover, setLoadingMoreDiscover] = useState(false);
   const [likedYou, setLikedYou] = useState([]);
   const [matches, setMatches] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
   const [boost, setBoost] = useState({ isActive: false, boost: null });
   const [boostBusy, setBoostBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -165,6 +170,63 @@ export function useAppData(user, { active = true } = {}) {
       refreshingLikesRef.current = false;
     }
   }, [isDemo]);
+
+  const removeProfileEverywhere = useCallback((profileId) => {
+    const key = String(profileId);
+    setDiscoverProfiles(discoverRef.current.filter((member) => String(member.id) !== key));
+    setLikedYou((current) => (current || []).filter((entry) => (
+      String(entry.id) !== key && String(entry.profile?.id ?? '') !== key
+    )));
+    setMatches((current) => (current || []).filter((match) => (
+      String(match.profile?.id ?? match.profileId ?? '') !== key
+    )));
+  }, [setDiscoverProfiles]);
+
+  const refreshBlocked = useCallback(async () => {
+    const data = isDemo ? { blocked: demoRef.current.listBlocked() } : await apiGetBlockedUsers();
+    const blocked = Array.isArray(data.blocked) ? data.blocked : [];
+    setBlockedUsers(blocked);
+    return blocked;
+  }, [isDemo]);
+
+  const rememberBlocked = useCallback((profileId) => {
+    setBlockedUsers((current) => (current.some((entry) => String(entry.id) === String(profileId))
+      ? current
+      : [...current, {
+        id: String(profileId),
+        name: 'Blocked profile',
+        photo: null,
+        blockedAt: new Date().toISOString(),
+      }]));
+  }, []);
+
+  const blockProfile = useCallback(async (profileId) => {
+    const outcome = isDemo
+      ? demoRef.current.blockProfile(profileId)
+      : await apiBlockProfile(profileId);
+    removeProfileEverywhere(profileId);
+    rememberBlocked(profileId);
+    return outcome;
+  }, [isDemo, rememberBlocked, removeProfileEverywhere]);
+
+  const unblockProfile = useCallback(async (profileId) => {
+    const outcome = isDemo
+      ? demoRef.current.unblockProfile(profileId)
+      : await apiUnblockProfile(profileId);
+    setBlockedUsers((current) => current.filter((entry) => String(entry.id) !== String(profileId)));
+    return outcome;
+  }, [isDemo]);
+
+  const reportProfile = useCallback(async (profileId, { reason, details = '', block = true } = {}) => {
+    const outcome = isDemo
+      ? demoRef.current.reportProfile(profileId, { reason, details, block })
+      : await apiReportProfile(profileId, { reason, details, block });
+    if (outcome?.blocked) {
+      removeProfileEverywhere(profileId);
+      rememberBlocked(profileId);
+    }
+    return outcome;
+  }, [isDemo, rememberBlocked, removeProfileEverywhere]);
 
   const refreshChats = useCallback(async () => {
     if (isDemo) return null;
@@ -253,9 +315,23 @@ export function useAppData(user, { active = true } = {}) {
   }, [active, isDemo, loaded, loadError, refreshLikes]);
 
   const swipe = useCallback(async (profileId, action) => {
-    const outcome = isDemo
-      ? demoRef.current.saveSwipe(profileId, action)
-      : await postSwipe(profileId, action);
+    let outcome;
+    try {
+      outcome = isDemo
+        ? demoRef.current.saveSwipe(profileId, action)
+        : await postSwipe(profileId, action);
+    } catch (error) {
+      // Either side blocked the other after the card loaded: drop it quietly.
+      if (error?.response?.data?.error?.code === 'USER_BLOCKED') {
+        removeProfileEverywhere(profileId);
+        return { blocked: true };
+      }
+      throw error;
+    }
+    if (outcome?.error === 'USER_BLOCKED') {
+      removeProfileEverywhere(profileId);
+      return { blocked: true };
+    }
     if (outcome?.error) return outcome;
 
     const remaining = discoverRef.current.filter(
@@ -278,7 +354,7 @@ export function useAppData(user, { active = true } = {}) {
       }
     }
     return outcome;
-  }, [isDemo, loadMoreDiscover, refreshLikes, setDiscoverProfiles]);
+  }, [isDemo, loadMoreDiscover, refreshLikes, removeProfileEverywhere]);
 
   const rewind = useCallback(async () => {
     const outcome = isDemo
@@ -508,6 +584,7 @@ export function useAppData(user, { active = true } = {}) {
     loadingMoreDiscover,
     likedYou,
     matches,
+    blockedUsers,
     refreshDiscover,
     loadMoreDiscover,
     loadAiPicks,
@@ -519,6 +596,10 @@ export function useAppData(user, { active = true } = {}) {
     activateProfileBoost,
     swipe,
     rewind,
+    blockProfile,
+    unblockProfile,
+    reportProfile,
+    refreshBlocked,
     sendChatMessage,
     loadChatMessages,
     saveProfile,

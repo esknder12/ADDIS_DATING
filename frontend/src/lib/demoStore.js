@@ -36,6 +36,8 @@ function blankState() {
     boost: null,
     giftRefs: [],
     lastReplyIndex: {},
+    blocked: [], // [{ profileId, at }]
+    reports: [], // [{ profileId, reason, details, at }]
   };
 }
 
@@ -128,8 +130,9 @@ export function createDemoStore(telegramId) {
     listDiscover({ limit = memberCatalog.length, offset = 0 } = {}) {
       const state = read();
       const swiped = new Set(state.swipes.map((swipe) => swipe.profileId));
+      const blockedIds = new Set((state.blocked || []).map((entry) => String(entry.profileId)));
       const available = seededOrder(memberCatalog, `${telegramId}:discover`)
-        .filter((member) => !swiped.has(member.id))
+        .filter((member) => !swiped.has(member.id) && !blockedIds.has(String(member.id)))
         .map(toPublic);
       const safeOffset = Math.max(0, Number.isSafeInteger(offset) ? offset : 0);
       const safeLimit = Math.max(1, Number.isSafeInteger(limit) ? limit : memberCatalog.length);
@@ -149,8 +152,9 @@ export function createDemoStore(telegramId) {
       const createItems = (limit, existingItems = []) => {
         const existingIds = new Set(existingItems.map((item) => item.profileId));
         const swipedIds = new Set(state.swipes.map((swipe) => swipe.profileId));
+        const blockedIds = new Set((state.blocked || []).map((entry) => String(entry.profileId)));
         const ordered = seededOrder(memberCatalog, `${telegramId}:${today}:ai-picks:${existingItems.length}`)
-          .filter((member) => !existingIds.has(member.id) && !swipedIds.has(member.id));
+          .filter((member) => !existingIds.has(member.id) && !swipedIds.has(member.id) && !blockedIds.has(String(member.id)));
         const preferred = ordered.filter((member) => member.verified && member.city === 'Addis Ababa');
         const preferredIds = new Set(preferred.map((member) => member.id));
         const candidates = [
@@ -179,8 +183,9 @@ export function createDemoStore(telegramId) {
       }
 
       const swipedIds = new Set(state.swipes.map((swipe) => swipe.profileId));
+      const blockedIds = new Set((state.blocked || []).map((entry) => String(entry.profileId)));
       const picks = session.items
-        .filter((item) => !swipedIds.has(item.profileId))
+        .filter((item) => !swipedIds.has(item.profileId) && !blockedIds.has(String(item.profileId)))
         .map((item) => {
           const member = getMember(item.profileId);
           return member ? {
@@ -210,6 +215,9 @@ export function createDemoStore(telegramId) {
       const state = read();
       const member = getMember(profileId);
       if (!member) return { error: 'UNKNOWN_PROFILE' };
+      if ((state.blocked || []).some((entry) => String(entry.profileId) === String(profileId))) {
+        return { error: 'USER_BLOCKED' };
+      }
 
       state.swipes = [...state.swipes.filter((swipe) => swipe.profileId !== profileId), {
         profileId,
@@ -255,9 +263,10 @@ export function createDemoStore(telegramId) {
       const state = read();
       const swiped = new Set(state.swipes.map((swipe) => swipe.profileId));
       const matchedIds = new Set(state.matches.map((match) => match.profileId));
+      const blockedIds = new Set((state.blocked || []).map((entry) => String(entry.profileId)));
       const isVip = Boolean(state.isVip);
       const likedProfiles = memberCatalog
-        .filter((member) => member.likesYou && !swiped.has(member.id) && !matchedIds.has(member.id));
+        .filter((member) => member.likesYou && !swiped.has(member.id) && !matchedIds.has(member.id) && !blockedIds.has(String(member.id)));
       return {
         likedYou: likedProfiles.map((member, index) => {
           if (isVip || index === 0) return { ...toPublic(member), isLocked: false };
@@ -270,9 +279,55 @@ export function createDemoStore(telegramId) {
             blurredPhotoUrl: '/images/locked-admirer.svg',
           };
         }),
-        matches: [...state.matches].sort((a, b) => b.at.localeCompare(a.at)).map(publicMatch),
+        matches: [...state.matches].filter((match) => !blockedIds.has(String(match.profileId))).sort((a, b) => b.at.localeCompare(a.at)).map(publicMatch),
         isVip,
       };
+    },
+
+    blockProfile(profileId) {
+      const state = read();
+      state.blocked ||= [];
+      if (!state.blocked.some((entry) => String(entry.profileId) === String(profileId))) {
+        state.blocked.push({ profileId, at: new Date().toISOString() });
+      }
+      state.matches = state.matches.filter((match) => String(match.profileId) !== String(profileId));
+      write(state);
+      return { success: true, blocked: true };
+    },
+
+    unblockProfile(profileId) {
+      const state = read();
+      const before = (state.blocked || []).length;
+      state.blocked = (state.blocked || []).filter((entry) => String(entry.profileId) !== String(profileId));
+      write(state);
+      return { success: true, unblocked: state.blocked.length < before };
+    },
+
+    listBlocked() {
+      const state = read();
+      return (state.blocked || []).map((entry) => {
+        const member = getMember(entry.profileId);
+        return {
+          id: String(entry.profileId),
+          name: member?.name || 'Unknown',
+          photo: member?.photo || null,
+          blockedAt: entry.at,
+        };
+      });
+    },
+
+    reportProfile(profileId, { reason, details, block = true } = {}) {
+      const state = read();
+      state.reports ||= [];
+      state.reports.push({
+        profileId: String(profileId),
+        reason: reason || null,
+        details: details || null,
+        at: new Date().toISOString(),
+      });
+      write(state);
+      if (block) this.blockProfile(profileId);
+      return { success: true, blocked: Boolean(block) };
     },
 
     listMatches() {

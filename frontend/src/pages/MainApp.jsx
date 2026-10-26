@@ -8,6 +8,7 @@ import LikesTab from '../components/app/LikesTab.jsx';
 import MatchOverlay from '../components/app/MatchOverlay.jsx';
 import PaywallSheet from '../components/app/PaywallSheet.jsx';
 import ProfileDetailSheet from '../components/app/ProfileDetailSheet.jsx';
+import SafetyModal from '../components/app/SafetyModal.jsx';
 import ProfileTab from '../components/app/ProfileTab.jsx';
 import VerificationModal from '../components/app/VerificationModal.jsx';
 import BrandMark from '../components/BrandMark.jsx';
@@ -28,6 +29,7 @@ export default function MainApp({ user, appData }) {
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [paywall, setPaywall] = useState(null); // { context }
   const [matchProfile, setMatchProfile] = useState(null);
+  const [safetyTarget, setSafetyTarget] = useState(null); // { profile, view }
   const [swipedProfileIds, setSwipedProfileIds] = useState(() => new Set());
   const seenMatchIds = useRef(new Set());
   const hasInitialMatchSnapshot = useRef(false);
@@ -114,6 +116,30 @@ export default function MainApp({ user, appData }) {
     setDetailMember(null);
     openChatForProfile(profile.id);
   }, [openChatForProfile]);
+
+  const handleBlockProfile = useCallback(async (profile) => {
+    const outcome = await appData.blockProfile(profile.id);
+    const key = String(profile.id);
+    setDetailMember((current) => (current && String(current.id) === key ? null : current));
+    setChatMatch((current) => (current && String(current.profile?.id) === key ? null : current));
+    setMatchProfile((current) => (current && String(current.id) === key ? null : current));
+    appData.refreshLikes().catch((error) => console.warn('Could not refresh matches after block:', error));
+    if (!user.isDemo) appData.refreshChats().catch((error) => console.warn('Could not refresh chats after block:', error));
+    return outcome;
+  }, [appData.blockProfile, appData.refreshChats, appData.refreshLikes, user.isDemo]);
+
+  const handleReportProfile = useCallback(async (profile, payload) => {
+    const outcome = await appData.reportProfile(profile.id, payload);
+    if (outcome?.blocked) {
+      const key = String(profile.id);
+      setDetailMember((current) => (current && String(current.id) === key ? null : current));
+      setChatMatch((current) => (current && String(current.profile?.id) === key ? null : current));
+      setMatchProfile((current) => (current && String(current.id) === key ? null : current));
+      appData.refreshLikes().catch((error) => console.warn('Could not refresh matches after report:', error));
+      if (!user.isDemo) appData.refreshChats().catch((error) => console.warn('Could not refresh chats after report:', error));
+    }
+    return outcome;
+  }, [appData.refreshChats, appData.refreshLikes, appData.reportProfile, user.isDemo]);
 
   const handleSaveProfile = useCallback(async (patch) => appData.saveProfile(patch), [appData.saveProfile]);
 
@@ -208,6 +234,7 @@ export default function MainApp({ user, appData }) {
           onSendGift={appData.sendGiftTo}
           onDirectMessage={() => setPaywall({ context: 'direct-message' })}
           onOpenChat={(profileId) => { setDetailMember(null); openChatForProfile(profileId); }}
+          onSafety={(profile, view) => setSafetyTarget({ profile, view: view || 'menu' })}
         />
       )}
 
@@ -220,6 +247,7 @@ export default function MainApp({ user, appData }) {
           isConnected={isConnected}
           onSend={appData.sendChatMessage}
           onLoadMessages={appData.loadChatMessages}
+          onSafety={(profile, view) => setSafetyTarget({ profile, view: view || 'menu' })}
           onBack={async () => {
             setChatMatch(null);
             await Promise.allSettled([appData.refreshLikes(), appData.refreshChats()]);
@@ -244,6 +272,16 @@ export default function MainApp({ user, appData }) {
           isDemo={Boolean(user.isDemo)}
           onRequest={appData.requestVerificationBadge}
           onClose={() => setVerificationOpen(false)}
+        />
+      )}
+
+      {safetyTarget && (
+        <SafetyModal
+          profile={safetyTarget.profile}
+          initialView={safetyTarget.view}
+          onBlock={handleBlockProfile}
+          onReport={handleReportProfile}
+          onClose={() => setSafetyTarget(null)}
         />
       )}
 

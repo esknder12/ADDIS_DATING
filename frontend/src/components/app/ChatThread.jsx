@@ -45,6 +45,7 @@ export default function ChatThread({
   onSend,
   onLoadMessages,
   onBack,
+  onSafety,
 }) {
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
@@ -53,6 +54,7 @@ export default function ChatThread({
   const [partnerTyping, setPartnerTyping] = useState(false);
   const [partnerOnline, setPartnerOnline] = useState(Boolean(match.profile.isOnline));
   const [partnerLastSeen, setPartnerLastSeen] = useState(match.profile.lastSeenAt || null);
+  const [safetyOpen, setSafetyOpen] = useState(false);
   const scrollRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -208,6 +210,7 @@ export default function ChatThread({
             {partnerStatus}{!isDemo && !isConnected ? ' · reconnecting…' : ''}
           </small>
         </div>
+        <button type="button" className="icon-button" aria-label="Safety options" onClick={() => { impact('light'); setSafetyOpen(true); }}>⋮</button>
       </header>
 
       <div className="chat-thread__scroll" ref={scrollRef}>
@@ -256,6 +259,26 @@ export default function ChatThread({
           <SendIcon />
         </button>
       </footer>
+
+      {safetyOpen && (
+        <div className="sheet-backdrop" role="presentation" onClick={() => setSafetyOpen(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label={`Safety options for ${match.profile.name}`} onClick={(event) => event.stopPropagation()}>
+            <div className="sheet__grabber" aria-hidden="true" />
+            <div className="sheet__body">
+              <h2>{match.profile.name}</h2>
+              <p className="profile-form-note">Blocked people can&apos;t see you or message you.</p>
+            </div>
+            <div className="sheet__actions">
+              <button type="button" className="onboarding-primary safety-danger" onClick={() => { setSafetyOpen(false); onSafety?.(match.profile); }}>
+                BLOCK
+              </button>
+              <button type="button" className="onboarding-primary" onClick={() => { setSafetyOpen(false); onSafety?.(match.profile, 'report'); }}>
+                REPORT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

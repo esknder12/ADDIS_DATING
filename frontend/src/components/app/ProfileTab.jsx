@@ -55,7 +55,7 @@ function botLinkCopy(botLink) {
 export default function ProfileTab({ user, appData, photoUrl, onShowVerification, onShowPaywall }) {
   const { profile } = appData;
   const botLink = useBotStatus();
-  const [sheet, setSheet] = useState(null); // edit | info | score | looking | settings | support | faq | privacy
+  const [sheet, setSheet] = useState(null); // edit | info | score | looking | settings | blocked | support | faq | privacy
   const [draftName, setDraftName] = useState(profile.name || user.firstName || '');
   const [draftBio, setDraftBio] = useState(profile.bio || user.bio || '');
   const [draftCity, setDraftCity] = useState(profile.city || user.city || '');
@@ -89,6 +89,20 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
       availability: labels(answers.meeting_availability, 'meeting_availability').join(', ') || '—',
     };
   }, [answers]);
+
+  const [unblockBusy, setUnblockBusy] = useState(null);
+
+  const unblock = async (profileId) => {
+    setUnblockBusy(String(profileId));
+    setActionError('');
+    try {
+      await appData.unblockProfile(profileId);
+    } catch (error) {
+      setActionError(fieldError(error, 'Could not unblock this profile. Please try again.'));
+    } finally {
+      setUnblockBusy(null);
+    }
+  };
 
   const saveEdit = useCallback(async () => {
     const name = draftName.trim();
@@ -377,6 +391,13 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
           setActionError('');
           setSheet('settings');
         }} />
+        <SettingRow icon="🚫" label="Blocked users" onClick={() => {
+          setActionError('');
+          setSheet('blocked');
+          appData.refreshBlocked().catch((error) => {
+            setActionError(fieldError(error, 'Could not load blocked users. Please try again.'));
+          });
+        }} />
       </section>
 
       <section className="settings-group" aria-label="Support">
@@ -554,6 +575,35 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
               <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Privacy policy</h2>
                 <p>Dategram runs inside Telegram. Your Telegram credentials never leave Telegram; we receive only signed profile basics. Answers you give personalize your matches and are never sold. City-level location is shown, never exact coordinates.</p>
+              </div>
+              </>
+            )}
+
+            {sheet === 'blocked' && (
+              <>
+              <div ref={sheetBodyRef} className="sheet__body">
+                <h2>Blocked users</h2>
+                <p className="profile-form-note">Blocked people can&apos;t see you, match you, or message you.</p>
+                {(appData.blockedUsers || []).length === 0 && (
+                  <p className="profile-form-note">Nobody blocked. If someone bothers you, open their profile and tap Block.</p>
+                )}
+                {(appData.blockedUsers || []).map((entry) => (
+                  <div key={entry.id} className="blocked-row">
+                    {entry.photo
+                      ? <img src={entry.photo} alt="" className="blocked-row__avatar" />
+                      : <span className="blocked-row__avatar blocked-row__avatar--fallback" aria-hidden="true">{String(entry.name || '?').charAt(0).toUpperCase()}</span>}
+                    <span className="blocked-row__name">{entry.name}</span>
+                    <button
+                      type="button"
+                      className="blocked-row__unblock"
+                      disabled={unblockBusy === String(entry.id)}
+                      onClick={() => unblock(entry.id)}
+                    >
+                      {unblockBusy === String(entry.id) ? '…' : 'Unblock'}
+                    </button>
+                  </div>
+                ))}
+                {actionError && <p className="field-error" role="alert">{actionError}</p>}
               </div>
               </>
             )}
