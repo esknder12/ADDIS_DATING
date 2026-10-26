@@ -17,6 +17,14 @@ I'm waiting for your video right here! 🤳`;
 
 const verificationReceived = `Got your video! ✅ Our team will review it shortly — you’ll see the badge on your profile as soon as you’re verified.`;
 
+// The live bot username (test vs prod). Module state on purpose: runtimeConfig
+// is Object.freeze()d, so the bot cannot write it back there.
+let liveBotUsername = '';
+
+export function getBotUsername() {
+  return liveBotUsername;
+}
+
 export function parsePhotoModerationCallback(data) {
   const match = /^photo:(approve|reject):([1-9]\d{0,18})$/.exec(String(data ?? ''));
   if (!match) return null;
@@ -53,7 +61,7 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
       try {
         const me = await bot.api.getMe();
         if (me?.username) {
-          runtimeConfig.botUsername = me.username;
+          liveBotUsername = me.username;
           return;
         }
       } catch {

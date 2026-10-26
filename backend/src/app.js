@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import { getBotUsername } from './bot/bot.js';
 import { logError } from './lib/logError.js';
 import { checkDatabase } from './db/index.js';
 import { createAdminRouter } from './routes/admin.routes.js';
@@ -60,7 +61,7 @@ export function createApp({
       status: healthy ? 'ok' : 'degraded',
       service: 'dategram-api',
       database,
-      botUsername: runtimeConfig.botUsername || null,
+      botUsername: getBotUsername() || null,
       timestamp: new Date().toISOString(),
     });
   });
