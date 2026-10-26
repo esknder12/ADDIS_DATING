@@ -198,6 +198,28 @@ try {
   const admReports = Array.isArray(admJson?.reports) ? admJson.reports : [];
   assert(admRes.status === 200 && admReports.some((r) => r.reason === 'spam' && r.reported_id === cId), `${admRes.status} n=${admReports.length}`);
 
+  step = 'deletion requires the DELETE confirmation';
+  const del0 = await api('DELETE', '/api/account', initC, { confirmation: 'nope' });
+  assert(del0.status === 422 && del0.json?.error?.code === 'INVALID_INPUT', `${del0.status} ${del0.text}`);
+
+  step = 'C deletes their account';
+  const del1 = await api('DELETE', '/api/account', initC, { confirmation: 'DELETE' });
+  assert(del1.status === 200 && del1.json?.deleted === true, `${del1.status} ${del1.text}`);
+
+  step = 'deleted account reads as not-found';
+  const meC = await api('GET', '/api/auth/me', initC);
+  assert(meC.status === 404 && meC.json?.error?.code === 'USER_NOT_FOUND', `${meC.status} ${meC.text}`);
+
+  step = 'deleted profile vanishes from A blocks list';
+  const bl2 = await api('GET', '/api/blocks', initA);
+  const blocked2 = listOf(bl2.json, 'blocked', 'data') || [];
+  assert(bl2.status === 200 && !blocked2.some((x) => String(x.id) === cId), `${bl2.status} ${bl2.text}`);
+
+  step = 'A match with B survives C deletion';
+  const g6 = await api('GET', '/api/matches', initA);
+  const matches3 = listOf(g6.json, 'matches', 'data') || [];
+  assert(g6.status === 200 && matches3.some((m) => String(m.id) === matchId), `${g6.status} ${g6.text}`);
+
   console.log('E2E PASS: swipe -> match -> message -> persistence, all steps green');
 } finally {
   await pool.end();

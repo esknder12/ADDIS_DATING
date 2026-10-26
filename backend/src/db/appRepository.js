@@ -235,6 +235,39 @@ export function createAppRepository(pool) {
     }
   }
 
+  async function deleteAccount(telegramId) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const userId = await userIdFor(client, telegramId);
+      if (!userId) { await client.query('ROLLBACK'); return null; }
+      // Cloudinary files live outside Postgres: collect their ids now, destroy after COMMIT.
+      const photoRows = await client.query(
+        `SELECT cloudinary_public_id AS public_id FROM photos
+         WHERE user_id = $1 AND cloudinary_public_id IS NOT NULL`,
+        [userId],
+      );
+      // Dangling string refs owned by OTHER users (no FK covers these): their
+      // legacy match rows and swipe history pointing at this profile.
+      await client.query('DELETE FROM matches WHERE profile_id = $1', [String(userId)]);
+      await client.query('DELETE FROM swipes WHERE profile_id = $1', [String(userId)]);
+      // Everything else rides ON DELETE CASCADE off users: photos, onboarding,
+      // matches (incl. shared pairs -> messages), gifts, premium, verification,
+      // ai picks, notifications, boosts, presence, blocks, reports.
+      await client.query('DELETE FROM users WHERE id = $1', [userId]);
+      await client.query('COMMIT');
+      return {
+        deleted: true,
+        cloudinaryPublicIds: photoRows.rows.map((row) => row.public_id).filter(Boolean),
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async function listSafetyReports({ status = 'all', limit = 50 } = {}) {
     const cleanLimit = Number.isSafeInteger(Number(limit))
       ? Math.max(1, Math.min(100, Number(limit)))
@@ -1748,6 +1781,7 @@ export function createAppRepository(pool) {
     unblockUser,
     listBlockedUsers,
     reportUser,
+    deleteAccount,
     listSafetyReports,
   };
 }
