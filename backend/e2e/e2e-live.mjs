@@ -296,6 +296,55 @@ try {
   });
   assert(apMissing.status === 404, `${apMissing.status}`);
 
+  step = 'verification review: queue, approve, reject';
+  const v1 = await pool.query(
+    `INSERT INTO verification_requests (user_id, telegram_file_id, status)
+     VALUES ($1::bigint, 'e2e-verify-file-1', 'pending') RETURNING id::text AS id`,
+    [bId],
+  );
+  const v2 = await pool.query(
+    `INSERT INTO verification_requests (user_id, telegram_file_id, status)
+     VALUES ($1::bigint, 'e2e-verify-file-2', 'pending') RETURNING id::text AS id`,
+    [bId],
+  );
+  const vqRes = await fetch(`${API}/api/admin/verifications?status=pending`, { headers: { 'x-admin-key': 'e2e-admin' } });
+  const vqJson = await vqRes.json();
+  const vqueued = Array.isArray(vqJson?.verifications) ? vqJson.verifications : [];
+  assert(vqRes.status === 200 && vqueued.some((r) => String(r.id) === v1.rows[0].id), `${vqRes.status} n=${vqueued.length}`);
+  const vApprove = await fetch(`${API}/api/admin/verifications/${v1.rows[0].id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'approved' }),
+  });
+  const vApproveJson = await vApprove.json();
+  assert(vApprove.status === 200 && vApproveJson?.verification?.status === 'verified', `${vApprove.status} ${JSON.stringify(vApproveJson).slice(0, 160)}`);
+  const bStatus1 = await pool.query('SELECT verification_status FROM users WHERE telegram_id = $1', [B.telegram_id]);
+  assert(bStatus1.rows[0].verification_status === 'verified', `B status=${bStatus1.rows[0].verification_status}`);
+  const vReject = await fetch(`${API}/api/admin/verifications/${v2.rows[0].id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'rejected' }),
+  });
+  assert(vReject.status === 200, `${vReject.status}`);
+  const bStatus2 = await pool.query('SELECT verification_status FROM users WHERE telegram_id = $1', [B.telegram_id]);
+  assert(bStatus2.rows[0].verification_status === 'none', `B status=${bStatus2.rows[0].verification_status}`);
+  const vBad = await fetch(`${API}/api/admin/verifications/${v1.rows[0].id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'pending' }),
+  });
+  assert(vBad.status === 422, `${vBad.status}`);
+  const vMissing = await fetch(`${API}/api/admin/verifications/999999999`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'approved' }),
+  });
+  assert(vMissing.status === 404, `${vMissing.status}`);
+
+  step = 'verification chat handoff answers';
+  const vChat = await api('POST', '/api/app/verification/start-chat', initA);
+  assert(vChat.status === 200 && vChat.json?.success === true, `${vChat.status} ${vChat.text}`);
+
   step = 'deletion requires the DELETE confirmation';
   const del0 = await api('DELETE', '/api/account', initC, { confirmation: 'nope' });
   assert(del0.status === 422 && del0.json?.error?.code === 'INVALID_INPUT', `${del0.status} ${del0.text}`);

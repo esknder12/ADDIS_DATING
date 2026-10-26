@@ -272,6 +272,7 @@ export default function MainApp({ user, appData }) {
           botUsername={user.botUsername}
           isDemo={Boolean(user.isDemo)}
           onRequest={appData.requestVerificationBadge}
+          onStartChat={appData.startVerificationInChat}
           onClose={() => setVerificationOpen(false)}
         />
       )}

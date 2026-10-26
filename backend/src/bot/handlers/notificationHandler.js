@@ -1,3 +1,5 @@
+import { verificationInstructions, verificationNudge } from '../bot.js';
+
 const VIP_CAMPAIGN_MESSAGE = `🎁 Congratulations! Your VIP access is activated!
 We're giving you VIP in LibMatch! Now you have access to:
 👀 See who liked you
@@ -240,6 +242,61 @@ export function createNotificationHandler(pool, runtimeConfig) {
     }
   }
 
+  async function sendVerificationInstructions(bot, telegramId) {
+    try {
+      await bot.api.sendMessage(String(telegramId), verificationNudge, {
+        reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Return to LibMatch \uD83D\uDDA4'),
+      });
+      await bot.api.sendMessage(String(telegramId), verificationInstructions);
+      return true;
+    } catch (error) {
+      console.error('Failed to send verification instructions:', error.message);
+      return false;
+    }
+  }
+
+  async function sendVerificationReviewRequest(bot, adminTelegramId, request) {
+    try {
+      if (request.telegramFileId) {
+        await bot.api.sendVideoNote(String(adminTelegramId), request.telegramFileId);
+      }
+      const message = await bot.api.sendMessage(
+        String(adminTelegramId),
+        `\uD83C\uDFAC Verification — ${request.userName || 'Someone'} (user ${request.userId})\nRequest #${request.id}`,
+        {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '\u2705 Verify', callback_data: `verify:approve:${request.id}` },
+              { text: '\u274C Reject', callback_data: `verify:reject:${request.id}` },
+            ]],
+          },
+        },
+      );
+      await logNotification(Number(request.userId), 'verification_review', null, message.message_id);
+      return true;
+    } catch (error) {
+      console.error('Failed to send verification review request:', error.message);
+      return false;
+    }
+  }
+
+  async function sendVerificationDecisionNotification(bot, userId, telegramId, verified) {
+    try {
+      const message = await bot.api.sendMessage(
+        String(telegramId),
+        verified
+          ? 'You are verified \u2705 The badge is now on your profile.'
+          : 'Verification did not pass this time \uD83D\uDE48 Please retry with a clear video of your face.',
+        { reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open LibMatch \uD83D\uDDA4', { tab: 'profile' }) },
+      );
+      await logNotification(userId, verified ? 'verification_approved' : 'verification_rejected', null, message.message_id);
+      return true;
+    } catch (error) {
+      console.error('Failed to send verification decision:', error.message);
+      return false;
+    }
+  }
+
   return {
     sendLikedYouNotification,
     sendMatchNotification,
@@ -247,5 +304,8 @@ export function createNotificationHandler(pool, runtimeConfig) {
     sendVipGrantedNotification,
     sendPhotoReviewRequest,
     sendPhotoDecisionNotification,
+    sendVerificationInstructions,
+    sendVerificationReviewRequest,
+    sendVerificationDecisionNotification,
   };
 }

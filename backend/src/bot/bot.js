@@ -4,9 +4,9 @@ const welcomeMessage = `Welcome to LibMatch 🖤
 
 Answer a few questions about yourself — AI will find those who are perfect for you. ⬇️`;
 
-const verificationNudge = `You’re almost there! 🚀 Complete your registration to start meeting amazing people!`;
+export const verificationNudge = `You’re almost there! 🚀 Complete your registration to start meeting amazing people!`;
 
-const verificationInstructions = `One step away from the checkmark ✅
+export const verificationInstructions = `One step away from the checkmark ✅
 
 1️⃣ Press and hold the camera button in the bottom right corner.
 2️⃣ Smile at the camera and slowly turn your head to the side.
@@ -23,6 +23,12 @@ let liveBotUsername = '';
 
 export function getBotUsername() {
   return liveBotUsername;
+}
+
+export function parseVerificationCallback(data) {
+  const match = /^verify:(approve|reject):([1-9]\d{0,18})$/.exec(String(data ?? ''));
+  if (!match) return null;
+  return { requestId: match[2], decision: match[1] === 'approve' ? 'verified' : 'rejected' };
 }
 
 export function parsePhotoModerationCallback(data) {
@@ -74,6 +80,8 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
 
   const libmatchKeyboard = () => new InlineKeyboard().webApp('Go to LibMatch', liveWebappUrl);
 
+  const adminTelegramId = String(runtimeConfig.adminTelegramId || '');
+
   async function sendVerifyInstructions(context) {
     await context.reply(verificationNudge, {
       reply_markup: new InlineKeyboard().webApp('Return to LibMatch \uD83D\uDDA4', liveWebappUrl),
@@ -103,7 +111,15 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
     const fileId = context.message?.video_note?.file_id;
     if (senderId && fileId && appRepository?.isAvailable) {
       try {
-        await appRepository.submitVerificationVideo(senderId, fileId);
+        const recorded = await appRepository.submitVerificationVideo(senderId, fileId);
+        if (recorded?.requestId && adminTelegramId
+            && notificationService?.sendVerificationReviewRequest
+            && typeof appRepository.getVerificationRequest === 'function') {
+          const full = await appRepository.getVerificationRequest(recorded.requestId).catch(() => null);
+          if (full) {
+            await notificationService.sendVerificationReviewRequest(bot, adminTelegramId, full).catch(() => false);
+          }
+        }
       } catch (error) {
         console.error('Failed to record verification video note:', error.message);
       }
@@ -113,7 +129,6 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
 
   // Photo review: the owner taps Approve/Reject on the review DM. The sender
   // check is the authorization — callback buttons alone prove nothing.
-  const adminTelegramId = String(runtimeConfig.adminTelegramId || '');
   if (adminTelegramId && appRepository?.isAvailable && typeof appRepository.updatePhotoStatus === 'function') {
     bot.on('callback_query:data', async (context) => {
       const parsed = parsePhotoModerationCallback(context.callbackQuery?.data);
@@ -144,6 +159,43 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
         }
       } catch (error) {
         console.error('Photo review callback failed:', error.message);
+        await context.answerCallbackQuery({ text: 'Something went wrong — try again.' }).catch(() => {});
+      }
+    });
+  }
+
+  // Verification review: same owner-only shape as photos. The DM is a text
+  // message (video notes carry no caption), so we edit its text on decision.
+  if (adminTelegramId && appRepository?.isAvailable && typeof appRepository.updateVerificationStatus === 'function') {
+    bot.on('callback_query:data', async (context) => {
+      const parsed = parseVerificationCallback(context.callbackQuery?.data);
+      if (!parsed) return;
+      if (String(context.from?.id || '') !== adminTelegramId) {
+        await context.answerCallbackQuery({ text: 'Only the LibMatch owner can verify people.' });
+        return;
+      }
+      try {
+        const outcome = await appRepository.updateVerificationStatus(parsed.requestId, parsed.decision);
+        if (!outcome || outcome.invalid) {
+          await context.answerCallbackQuery({ text: 'Already handled.' });
+          return;
+        }
+        const verified = outcome.status === 'verified';
+        await context.answerCallbackQuery({ text: verified ? 'Verified \u2705' : 'Rejected \u274C' });
+        const original = context.callbackQuery.message?.text || '';
+        await context.editMessageText(`${original}\n\n${verified ? '\u2705 Verified' : '\u274C Rejected'}`).catch(() => {});
+        await context.editMessageReplyMarkup().catch(() => {});
+        if (notificationService?.sendVerificationDecisionNotification
+            && typeof appRepository.getVerificationRequest === 'function') {
+          const full = await appRepository.getVerificationRequest(parsed.requestId).catch(() => null);
+          if (full?.telegramId) {
+            await notificationService.sendVerificationDecisionNotification(
+              { api: context.api }, Number(full.userId), full.telegramId, verified,
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Verification callback failed:', error.message);
         await context.answerCallbackQuery({ text: 'Something went wrong — try again.' }).catch(() => {});
       }
     });

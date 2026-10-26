@@ -330,5 +330,19 @@ export function createAppRouter({ appRepository, onboardingRepository, runtimeCo
     }
   });
 
+  router.post('/verification/start-chat', async (req, res, next) => {
+    try {
+      const bot = req.app.get('bot');
+      const notifications = req.app.get('notificationService');
+      if (!bot || !notifications || typeof notifications.sendVerificationInstructions !== 'function') {
+        return res.json({ success: true, sent: false });
+      }
+      const sent = await notifications.sendVerificationInstructions(bot, req.telegramUser.id);
+      return res.json({ success: true, sent });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   return router;
 }

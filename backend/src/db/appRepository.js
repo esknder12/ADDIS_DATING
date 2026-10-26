@@ -1785,6 +1785,76 @@ export function createAppRepository(pool) {
     } : null;
   }
 
+  async function getVerificationRequest(requestIdText) {
+    const requestId = String(requestIdText ?? '').trim();
+    if (!/^[1-9]\d{0,18}$/.test(requestId)) return null;
+    const result = await pool.query(
+      `SELECT r.id::text AS id, r.status, r.telegram_file_id AS "telegramFileId",
+              r.created_at, r.user_id::text AS "userId",
+              COALESCE(u.name, u.first_name) AS "userName",
+              u.telegram_id::text AS "telegramId"
+       FROM verification_requests r JOIN users u ON u.id = r.user_id
+       WHERE r.id::text = $1`,
+      [requestId],
+    );
+    return result.rows[0] || null;
+  }
+
+  async function listVerificationRequests({ status = 'pending', limit = 50 } = {}) {
+    const statuses = new Set(['pending', 'verified', 'rejected']);
+    const filter = statuses.has(String(status)) ? String(status) : 'pending';
+    const cleanLimit = Number.isSafeInteger(Number(limit))
+      ? Math.max(1, Math.min(100, Number(limit)))
+      : 50;
+    const result = await pool.query(
+      `SELECT r.id::text AS id, r.status, r.created_at,
+              r.user_id::text AS "userId",
+              COALESCE(u.name, u.first_name) AS "userName"
+       FROM verification_requests r
+       JOIN users u ON u.id = r.user_id
+       WHERE r.status = $1
+       ORDER BY r.created_at ASC, r.id ASC
+       LIMIT $2`,
+      [filter, cleanLimit],
+    );
+    return result.rows;
+  }
+
+  async function updateVerificationStatus(requestIdText, status) {
+    const requestId = String(requestIdText ?? '').trim();
+    const cleanStatus = String(status ?? '').trim().toLowerCase();
+    const decisions = new Map([['verified', 'verified'], ['approved', 'verified'], ['rejected', 'rejected']]);
+    if (!/^[1-9]\d{0,18}$/.test(requestId) || !decisions.has(cleanStatus)) {
+      return { invalid: true };
+    }
+    const finalStatus = decisions.get(cleanStatus);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const updated = await client.query(
+        `UPDATE verification_requests SET status = $2 WHERE id::text = $1
+         RETURNING id::text AS id, status, user_id`,
+        [requestId, finalStatus],
+      );
+      const row = updated.rows[0];
+      if (!row) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+      await client.query(
+        'UPDATE users SET verification_status = $2 WHERE id = $1',
+        [row.user_id, finalStatus === 'verified' ? 'verified' : 'none'],
+      );
+      await client.query('COMMIT');
+      return { id: row.id, status: row.status };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async function requestVerification(telegramId) {
     const result = await pool.query(
       `UPDATE users SET verification_status = 'pending'
@@ -1804,19 +1874,29 @@ export function createAppRepository(pool) {
         await client.query('ROLLBACK');
         return null;
       }
-      await client.query(
+      const inserted = await client.query(
         `INSERT INTO verification_requests (user_id, telegram_file_id, status)
          VALUES ($1, $2, 'pending')
-         ON CONFLICT (user_id, telegram_file_id) DO NOTHING`,
+         ON CONFLICT (user_id, telegram_file_id) DO NOTHING
+         RETURNING id::text AS id`,
         [userId, telegramFileId],
       );
+      let requestId = inserted.rows[0]?.id ?? null;
+      if (!requestId) {
+        const existing = await client.query(
+          `SELECT id::text AS id FROM verification_requests
+           WHERE user_id = $1 AND telegram_file_id = $2 LIMIT 1`,
+          [userId, telegramFileId],
+        );
+        requestId = existing.rows[0]?.id ?? null;
+      }
       await client.query(
         `UPDATE users SET verification_status = 'pending'
          WHERE id = $1 AND verification_status != 'verified'`,
         [userId],
       );
       await client.query('COMMIT');
-      return { recorded: true };
+      return { recorded: true, requestId };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -1859,6 +1939,9 @@ export function createAppRepository(pool) {
     grantVip,
     requestVerification,
     submitVerificationVideo,
+    getVerificationRequest,
+    listVerificationRequests,
+    updateVerificationStatus,
     blockUser,
     unblockUser,
     listBlockedUsers,

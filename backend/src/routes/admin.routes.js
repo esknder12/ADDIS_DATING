@@ -170,5 +170,49 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
     }
   });
 
+  router.get('/verifications', async (req, res, next) => {
+    try {
+      if (!runtimeConfig.adminApiKey) {
+        return errorResponse(res, 503, 'ADMIN_AUTH_NOT_CONFIGURED', 'Verification review is not configured.');
+      }
+      if (!secretMatches(runtimeConfig.adminApiKey, req.get('x-admin-key'))) {
+        return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
+      }
+      if (!appRepository.isAvailable || typeof appRepository.listVerificationRequests !== 'function') {
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'LibMatch persistence is not configured yet.');
+      }
+      const limit = Number(req.query.limit);
+      const requests = await appRepository.listVerificationRequests({
+        status: req.query.status,
+        limit: Number.isSafeInteger(limit) ? limit : 50,
+      });
+      return res.json({ success: true, verifications: requests });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.patch('/verifications/:requestId', async (req, res, next) => {
+    try {
+      if (!runtimeConfig.adminApiKey) {
+        return errorResponse(res, 503, 'ADMIN_AUTH_NOT_CONFIGURED', 'Verification review is not configured.');
+      }
+      if (!secretMatches(runtimeConfig.adminApiKey, req.get('x-admin-key'))) {
+        return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
+      }
+      if (!appRepository.isAvailable || typeof appRepository.updateVerificationStatus !== 'function') {
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'LibMatch persistence is not configured yet.');
+      }
+      const outcome = await appRepository.updateVerificationStatus(req.params.requestId, req.body?.status);
+      if (outcome?.invalid) {
+        return errorResponse(res, 422, 'INVALID_INPUT', 'Request id or status is invalid.');
+      }
+      if (!outcome) return errorResponse(res, 404, 'VERIFICATION_NOT_FOUND', 'Verification request not found.');
+      return res.json({ success: true, verification: outcome });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   return router;
 }

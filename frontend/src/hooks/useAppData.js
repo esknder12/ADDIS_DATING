@@ -23,6 +23,7 @@ import {
   postSwipe,
   reportProfile as apiReportProfile,
   requestVerification as apiRequestVerification,
+  startVerificationChat as apiStartVerificationChat,
   unblockProfile as apiUnblockProfile,
   rewindLastSwipe,
   saveConversion as apiSaveConversion,
@@ -551,6 +552,11 @@ export function useAppData(user, { active = true } = {}) {
     return outcome;
   }, [isDemo]);
 
+  const startVerificationInChat = useCallback(async () => {
+    if (isDemo) return { sent: false, demo: true };
+    return apiStartVerificationChat();
+  }, [isDemo]);
+
   const saveConversionLead = useCallback(async ({ name, email, results }) => {
     if (isDemo) {
       const store = createDemoStore(user.telegramId);
@@ -619,6 +625,7 @@ export function useAppData(user, { active = true } = {}) {
     sendGiftTo,
     becomeVip,
     requestVerificationBadge,
+    startVerificationInChat,
     saveConversionLead,
     applyPromo,
     markConversionCompleted,

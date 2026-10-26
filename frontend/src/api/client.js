@@ -204,6 +204,11 @@ export async function requestVerification() {
   return response.data;
 }
 
+export async function startVerificationChat() {
+  const response = await apiClient.post('/api/app/verification/start-chat');
+  return response.data;
+}
+
 /* Safety: block / report */
 
 export async function getBlockedUsers() {

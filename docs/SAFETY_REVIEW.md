@@ -56,6 +56,23 @@ to get your numeric id, then add `ADMIN_TELEGRAM_ID=<your id>` to the
 backend's Render env vars and redeploy. Without it, uploads still work —
 review falls back to the curl commands above.
 
+## Verification review
+
+Every video note DMs you automatically: the video itself, then a card with
+✅ Verify / ❌ Reject buttons. Verify grants the badge instantly; Reject
+resets the user to unverified (they can retry) and tells them why. The user
+is notified of your decision either way.
+
+Curl fallback (same shapes as photos):
+
+```bash
+curl -s -H "x-admin-key: $KEY" "$API/api/admin/verifications?status=pending"
+curl -s -X PATCH -H "x-admin-key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"status":"approved"}' "$API/api/admin/verifications/7"
+```
+
+(`approved` → badge granted; `rejected` → back to unverified.)
+
 ## Acting on a report
 
 No console SQL needed — the admin API covers the loop:
@@ -88,4 +105,4 @@ is down: the same changes are one `UPDATE` each in the Neon console
 - [x] Bot DM approve/reject buttons + automatic user decision DMs
 - [x] Owner "pending review" / "rejected" badges in-app
 - [ ] Optional later: Cloudinary `adv_face` as an automatic pre-filter
-- [ ] Verification-video review: videos land in `verification_requests`, but no admin approve path exists yet
+- [x] Verification-video review — owner DM with video + ✅/❌ buttons, user decision DMs, REST fallback, E2E-covered
