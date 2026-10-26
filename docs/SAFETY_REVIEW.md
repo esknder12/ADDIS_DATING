@@ -11,9 +11,11 @@ accepted because:
   `fake_profile`) → it lands in the review queue below within seconds.
 - Reports default to also blocking, so the reporter is protected immediately.
 
-**Before public launch** this must be replaced by a server-side check
-(Cloudinary `adv_face` on upload) or human photo approval. Do not go public on
-the client-side gate alone.
+**Update (human approval queue shipped):** every new upload now starts
+`pending` — invisible to everyone except its owner — until approved below.
+The client face check stays as the first line; the queue is the enforcement.
+Before public launch, keep the queue (human eyes beat paid detection at this
+scale) or add Cloudinary `adv_face` as a pre-filter.
 
 ## Review queue (5-minute flow, from your PC)
 
@@ -30,6 +32,22 @@ curl -s -H "x-admin-key: $KEY" "$API/api/admin/reports?status=open&limit=50"
 
 Each row has `id`, `reason`, `details`, `status`, `created_at`,
 `reporter_id`/`reporter_name`, `reported_id`/`reported_name`.
+
+## Photo review queue
+
+```bash
+# Oldest pending photo first (status: pending|approved|rejected):
+curl -s -H "x-admin-key: $KEY" "$API/api/admin/photos?status=pending&limit=20"
+
+# Approve / reject (final — rejected owners must upload a fresh photo):
+curl -s -X PATCH -H "x-admin-key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"status":"approved"}' "$API/api/admin/photos/31"
+```
+
+Rules: approve real, clearly-you photos. Reject cartoons, celebrities,
+group-only shots you can't verify, and anything explicit (ban repeat
+offenders). Rejected photos vanish for others instantly; the owner sees the
+rejection and can replace the photo.
 
 ## Acting on a report
 
@@ -59,4 +77,7 @@ is down: the same changes are one `UPDATE` each in the Neon console
 
 - [x] `PATCH /api/admin/reports/:id` — shipped + E2E-covered
 - [x] `POST /api/admin/users/:id/ban|unban` — shipped + E2E-covered (reversible `is_active` flip)
-- [ ] Server-side face check or human photo approval (closes the P1 #5 gap)
+- [x] Human photo approval — pending-by-default + admin queue shipped + E2E-covered
+- [ ] Bot DM approve/reject buttons (approve from Telegram, no PC curl)
+- [ ] Owner "pending review" badges in-app
+- [ ] Optional later: Cloudinary `adv_face` as an automatic pre-filter

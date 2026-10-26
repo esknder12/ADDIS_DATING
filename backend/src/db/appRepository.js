@@ -181,7 +181,7 @@ export function createAppRepository(pool) {
               COALESCE(photo.url, u.photo_url) AS photo, b.created_at AS blocked_at
        FROM blocks b
        JOIN users u ON u.id = b.blocked_user_id
-       LEFT JOIN photos photo ON photo.user_id = u.id AND photo.is_primary = TRUE
+       LEFT JOIN photos photo ON photo.user_id = u.id AND photo.is_primary = TRUE AND photo.moderation_status = 'approved'
        WHERE b.blocker_user_id = $1
        ORDER BY b.created_at DESC, b.id DESC
        LIMIT 200`,
@@ -296,6 +296,43 @@ export function createAppRepository(pool) {
     return row ? { id: row.id, isActive: row.isActive } : null;
   }
 
+  async function listPhotosForReview({ status = 'pending', limit = 50 } = {}) {
+    const statuses = new Set(['pending', 'approved', 'rejected']);
+    const filter = statuses.has(String(status)) ? String(status) : 'pending';
+    const cleanLimit = Number.isSafeInteger(Number(limit))
+      ? Math.max(1, Math.min(100, Number(limit)))
+      : 50;
+    const result = await pool.query(
+      `SELECT p.id::text AS id, p.url, p.is_primary AS "isPrimary",
+              p.moderation_status AS status, p.created_at,
+              p.user_id::text AS user_id,
+              COALESCE(u.name, u.first_name) AS user_name
+       FROM photos p
+       JOIN users u ON u.id = p.user_id
+       WHERE p.moderation_status = $1
+       ORDER BY p.created_at ASC, p.id ASC
+       LIMIT $2`,
+      [filter, cleanLimit],
+    );
+    return result.rows;
+  }
+
+  async function updatePhotoStatus(photoIdText, status) {
+    const photoId = String(photoIdText ?? '').trim();
+    const cleanStatus = String(status ?? '').trim().toLowerCase();
+    const statuses = new Set(['approved', 'rejected']);
+    if (!/^[1-9]\d{0,18}$/.test(photoId) || !statuses.has(cleanStatus)) {
+      return { invalid: true };
+    }
+    const result = await pool.query(
+      `UPDATE photos SET moderation_status = $2 WHERE id::text = $1
+       RETURNING id::text AS id, moderation_status AS status`,
+      [photoId, cleanStatus],
+    );
+    const row = result.rows[0];
+    return row ? { id: row.id, status: row.status } : null;
+  }
+
   async function listSafetyReports({ status = 'all', limit = 50 } = {}) {
     const cleanLimit = Number.isSafeInteger(Number(limit))
       ? Math.max(1, Math.min(100, Number(limit)))
@@ -401,7 +438,7 @@ export function createAppRepository(pool) {
               COALESCE(p.url, u.photo_url) AS profile_photo_url,
               looking_for.answer_value AS looking_for
        FROM users u
-       LEFT JOIN photos p ON p.user_id = u.id AND p.is_primary = TRUE
+       LEFT JOIN photos p ON p.user_id = u.id AND p.is_primary = TRUE AND p.moderation_status = 'approved'
        LEFT JOIN onboarding_answers looking_for
          ON looking_for.user_id = u.id AND looking_for.question_key = 'looking_for'
        WHERE u.id <> $1
@@ -585,7 +622,7 @@ export function createAppRepository(pool) {
                 item.compatibility_score, item.order_index
          FROM ai_pick_items item
          JOIN users u ON u.id = item.picked_user_id
-         LEFT JOIN photos photo ON photo.user_id = u.id AND photo.is_primary = TRUE
+         LEFT JOIN photos photo ON photo.user_id = u.id AND photo.is_primary = TRUE AND photo.moderation_status = 'approved'
          LEFT JOIN onboarding_answers intention
            ON intention.user_id = u.id AND intention.question_key = 'looking_for'
          WHERE item.session_id = $1
@@ -653,7 +690,7 @@ export function createAppRepository(pool) {
               COALESCE(p.url, u.photo_url) AS profile_photo_url,
               looking_for.answer_value AS looking_for
        FROM users u
-       LEFT JOIN photos p ON p.user_id = u.id AND p.is_primary = TRUE
+       LEFT JOIN photos p ON p.user_id = u.id AND p.is_primary = TRUE AND p.moderation_status = 'approved'
        LEFT JOIN onboarding_answers looking_for
          ON looking_for.user_id = u.id AND looking_for.question_key = 'looking_for'
        WHERE u.id::text = $1 ${activeClause}
@@ -919,7 +956,7 @@ export function createAppRepository(pool) {
            WHEN m.user2_id = $1 THEN m.user1_id
            ELSE NULL
          END
-       LEFT JOIN photos photo ON photo.user_id = other.id AND photo.is_primary = TRUE
+       LEFT JOIN photos photo ON photo.user_id = other.id AND photo.is_primary = TRUE AND photo.moderation_status = 'approved'
        LEFT JOIN user_presence presence ON presence.user_id = other.id
        LEFT JOIN onboarding_answers intention
          ON intention.user_id = other.id AND intention.question_key = 'looking_for'
@@ -1009,7 +1046,7 @@ export function createAppRepository(pool) {
                   intention.answer_value AS looking_for
            FROM swipes s
            JOIN users u ON u.id = s.user_id
-           LEFT JOIN photos photo ON photo.user_id = u.id AND photo.is_primary = TRUE
+           LEFT JOIN photos photo ON photo.user_id = u.id AND photo.is_primary = TRUE AND photo.moderation_status = 'approved'
            LEFT JOIN onboarding_answers intention
              ON intention.user_id = u.id AND intention.question_key = 'looking_for'
            WHERE s.profile_id = $1::text
@@ -1316,6 +1353,7 @@ export function createAppRepository(pool) {
       url: photo.url,
       orderIndex: Number(photo.order_index),
       isPrimary: Boolean(photo.is_primary),
+      moderationStatus: photo.moderation_status || 'approved',
       createdAt: photo.created_at,
     }));
     const primaryPhoto = photos.find((photo) => photo.isPrimary) || photos[0] || null;
@@ -1374,7 +1412,7 @@ export function createAppRepository(pool) {
     const user = userResult.rows[0];
     if (!user) return null;
     const photoResult = await pool.query(
-      `SELECT id, url, order_index, is_primary, created_at
+      `SELECT id, url, order_index, is_primary, moderation_status, created_at
        FROM photos WHERE user_id = $1
        ORDER BY order_index ASC, created_at ASC, id ASC`,
       [user.id],
@@ -1426,9 +1464,9 @@ export function createAppRepository(pool) {
         return { error: 'PHOTO_LIMIT' };
       }
       const inserted = await client.query(
-        `INSERT INTO photos (user_id, url, cloudinary_public_id, order_index, is_primary)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, url, cloudinary_public_id, order_index, is_primary, created_at`,
+        `INSERT INTO photos (user_id, url, cloudinary_public_id, order_index, is_primary, moderation_status)
+         VALUES ($1, $2, $3, $4, $5, 'pending')
+         RETURNING id, url, cloudinary_public_id, order_index, is_primary, moderation_status, created_at`,
         [userId, url, publicId || null, photoCount, photoCount === 0],
       );
       await client.query('COMMIT');
@@ -1440,6 +1478,7 @@ export function createAppRepository(pool) {
           publicId: photo.cloudinary_public_id,
           orderIndex: Number(photo.order_index),
           isPrimary: Boolean(photo.is_primary),
+          moderationStatus: photo.moderation_status || 'pending',
           createdAt: photo.created_at,
         },
       };
@@ -1813,5 +1852,7 @@ export function createAppRepository(pool) {
     listSafetyReports,
     updateSafetyReportStatus,
     setUserActiveStatus,
+    listPhotosForReview,
+    updatePhotoStatus,
   };
 }

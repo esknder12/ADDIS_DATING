@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS photos (
 
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS cloudinary_public_id TEXT;
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS order_index INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS moderation_status VARCHAR(16) NOT NULL DEFAULT 'approved'
+  CHECK (moderation_status IN ('pending', 'approved', 'rejected'));
 CREATE INDEX IF NOT EXISTS photos_user_idx ON photos (user_id, created_at);
 CREATE INDEX IF NOT EXISTS photos_user_order_idx ON photos (user_id, order_index, created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS photos_one_primary_per_user_idx

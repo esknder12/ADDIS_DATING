@@ -250,6 +250,52 @@ try {
   const meCBack = await api('GET', '/api/auth/me', initC);
   assert(meCBack.status === 200, `${meCBack.status} ${meCBack.text}`);
 
+  step = 'B photo pending: hidden from A matches, owner sees pending';
+  const photoIns = await pool.query(
+    `INSERT INTO photos (user_id, url, order_index, is_primary, moderation_status)
+     VALUES ($1::bigint, 'https://e2e.test/b-photo.jpg', 0, TRUE, 'pending') RETURNING id::text AS id`,
+    [bId],
+  );
+  const photoId = photoIns.rows[0].id;
+  const g7 = await api('GET', '/api/matches', initA);
+  const matchB = (listOf(g7.json, 'matches', 'data') || []).find((m) => String(m.id) === matchId);
+  assert(g7.status === 200 && matchB && matchB.profile.photo == null, `${g7.status} ${g7.text}`);
+  const profB = await api('GET', '/api/profile', initB);
+  const ownPhotos = profB.json?.profile?.photos || [];
+  assert(profB.status === 200 && ownPhotos.some((p) => String(p.id) === photoId && p.moderationStatus === 'pending'), `${profB.status} ${profB.text}`);
+
+  step = 'admin photo queue shows the pending photo';
+  const qRes = await fetch(`${API}/api/admin/photos?status=pending`, { headers: { 'x-admin-key': 'e2e-admin' } });
+  const qJson = await qRes.json();
+  const queued = Array.isArray(qJson?.photos) ? qJson.photos : [];
+  assert(qRes.status === 200 && queued.some((p) => String(p.id) === photoId), `${qRes.status} n=${queued.length}`);
+
+  step = 'admin approves: photo visible to A';
+  const apRes = await fetch(`${API}/api/admin/photos/${photoId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'approved' }),
+  });
+  const apJson = await apRes.json();
+  assert(apRes.status === 200 && apJson?.photo?.status === 'approved', `${apRes.status} ${JSON.stringify(apJson).slice(0, 200)}`);
+  const g8 = await api('GET', '/api/matches', initA);
+  const matchB2 = (listOf(g8.json, 'matches', 'data') || []).find((m) => String(m.id) === matchId);
+  assert(g8.status === 200 && matchB2?.profile?.photo === 'https://e2e.test/b-photo.jpg', `${g8.status} ${g8.text}`);
+
+  step = 'admin rejects bad photo input';
+  const apBad = await fetch(`${API}/api/admin/photos/${photoId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'pending' }),
+  });
+  assert(apBad.status === 422, `${apBad.status}`);
+  const apMissing = await fetch(`${API}/api/admin/photos/999999999`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': 'e2e-admin' },
+    body: JSON.stringify({ status: 'approved' }),
+  });
+  assert(apMissing.status === 404, `${apMissing.status}`);
+
   step = 'deletion requires the DELETE confirmation';
   const del0 = await api('DELETE', '/api/account', initC, { confirmation: 'nope' });
   assert(del0.status === 422 && del0.json?.error?.code === 'INVALID_INPUT', `${del0.status} ${del0.text}`);

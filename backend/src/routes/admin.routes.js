@@ -126,5 +126,49 @@ export function createAdminRouter({ appRepository, runtimeConfig }) {
   router.post('/users/:userId/ban', (req, res, next) => setActive(req, res, next, false));
   router.post('/users/:userId/unban', (req, res, next) => setActive(req, res, next, true));
 
+  router.get('/photos', async (req, res, next) => {
+    try {
+      if (!runtimeConfig.adminApiKey) {
+        return errorResponse(res, 503, 'ADMIN_AUTH_NOT_CONFIGURED', 'Photo review is not configured.');
+      }
+      if (!secretMatches(runtimeConfig.adminApiKey, req.get('x-admin-key'))) {
+        return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
+      }
+      if (!appRepository.isAvailable || typeof appRepository.listPhotosForReview !== 'function') {
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+      }
+      const limit = Number(req.query.limit);
+      const photos = await appRepository.listPhotosForReview({
+        status: req.query.status,
+        limit: Number.isSafeInteger(limit) ? limit : 50,
+      });
+      return res.json({ success: true, photos });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.patch('/photos/:photoId', async (req, res, next) => {
+    try {
+      if (!runtimeConfig.adminApiKey) {
+        return errorResponse(res, 503, 'ADMIN_AUTH_NOT_CONFIGURED', 'Photo review is not configured.');
+      }
+      if (!secretMatches(runtimeConfig.adminApiKey, req.get('x-admin-key'))) {
+        return errorResponse(res, 401, 'ADMIN_UNAUTHORIZED', 'Admin authorization is required.');
+      }
+      if (!appRepository.isAvailable || typeof appRepository.updatePhotoStatus !== 'function') {
+        return errorResponse(res, 503, 'DATABASE_UNAVAILABLE', 'Dategram persistence is not configured yet.');
+      }
+      const outcome = await appRepository.updatePhotoStatus(req.params.photoId, req.body?.status);
+      if (outcome?.invalid) {
+        return errorResponse(res, 422, 'INVALID_INPUT', 'Photo id or status is invalid.');
+      }
+      if (!outcome) return errorResponse(res, 404, 'PHOTO_NOT_FOUND', 'Photo not found.');
+      return res.json({ success: true, photo: outcome });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   return router;
 }
