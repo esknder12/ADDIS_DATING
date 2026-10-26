@@ -186,6 +186,21 @@ export function createProfileRouter({ appRepository, runtimeConfig }) {
       if (publicId) await cloudinary.uploader.destroy(publicId).catch(() => {});
       return userNotFound(res);
     }
+
+    // Human review queue: DM the owner the new photo. Best-effort — the
+    // upload already succeeded, so a review failure must never 500 here.
+    if (result?.photo?.id && runtimeConfig.adminTelegramId) {
+      try {
+        const reviewBot = req.app.get('bot');
+        const notifications = req.app.get('notificationService');
+        if (reviewBot && notifications && appRepository.isAvailable) {
+          const full = await appRepository.getPhotoForModeration(result.photo.id);
+          if (full) await notifications.sendPhotoReviewRequest(reviewBot, runtimeConfig.adminTelegramId, full);
+        }
+      } catch (error) {
+        console.warn('Photo review DM failed (upload kept):', error.message);
+      }
+    }
     try {
       const profile = await appRepository.getOwnProfile(req.telegramUser.id);
       return res.status(201).json({ success: true, photo: result.photo, profile });

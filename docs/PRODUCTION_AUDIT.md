@@ -67,7 +67,8 @@ the tap-script passes once, escalate to P0 with Render logs.
 5. **Face gate is client-side only.** ✅ HUMAN-APPROVAL QUEUE SHIPPED (owner
    option A, 2026-10-26) — uploads start `pending`, hidden from others until
    approved via `GET|PATCH /api/admin/photos`; E2E proves hide→approve→visible.
-   Remaining: bot DM approve buttons + owner badges (Phase 2).
+   Phase 2 shipped: bot DM approve buttons + owner badges + user decision DMs
+   (needs `ADMIN_TELEGRAM_ID` on Render for the DM path).
 6. **No uptime monitoring.** ✅ DONE — UptimeRobot URL monitor on
    `https://addis-dating-test.onrender.com/health`, every 5 min, email alerts on.
 7. **Menu-button cache lag.** Telegram clients can show yesterday's menu for hours.

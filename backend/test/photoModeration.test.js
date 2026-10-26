@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createAppRepository } from '../src/db/appRepository.js';
+import { parsePhotoModerationCallback } from '../src/bot/bot.js';
 
 const ME = 700000001;
 const MY_ID = 11;
@@ -87,6 +88,32 @@ describe('photo moderation (approval queue)', () => {
     assert.deepEqual(await repository.listPhotosForReview({}), [{ id: '9', status: 'pending' }]);
     const select = calls.find((call) => call.sql.includes('FROM photos p'));
     assert.deepEqual(select.values, ['pending', 50]);
+  });
+
+  it('getPhotoForModeration returns the photo with its owner', async () => {
+    const { calls, pool } = mockPool({
+      onQuery: (sql) => (sql.includes('FROM photos p JOIN users u')
+        ? userRowQuery([{
+          id: '42', url: 'https://x/y.jpg', status: 'pending',
+          userId: '11', userName: 'Abebe', telegramId: '700000002',
+        }])
+        : userRowQuery([])),
+    });
+    const repository = createAppRepository(pool);
+    const photo = await repository.getPhotoForModeration('42');
+    assert.equal(photo.userName, 'Abebe');
+    assert.equal(photo.telegramId, '700000002');
+    assert.deepEqual(calls[0].values, ['42']);
+    assert.equal(await repository.getPhotoForModeration('nope'), null);
+  });
+
+  it('review callback parser only accepts well-formed owner taps', () => {
+    assert.deepEqual(parsePhotoModerationCallback('photo:approve:31'), { photoId: '31', decision: 'approved' });
+    assert.deepEqual(parsePhotoModerationCallback('photo:reject:31'), { photoId: '31', decision: 'rejected' });
+    assert.equal(parsePhotoModerationCallback('photo:approve:0'), null);
+    assert.equal(parsePhotoModerationCallback('photo:delete:31'), null);
+    assert.equal(parsePhotoModerationCallback('approve:31'), null);
+    assert.equal(parsePhotoModerationCallback(null), null);
   });
 
   it('discovery SQL only shows approved photos to others', async () => {

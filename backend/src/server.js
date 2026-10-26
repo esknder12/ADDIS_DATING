@@ -23,7 +23,7 @@ async function start() {
   const onboardingRepository = createOnboardingRepository(pool);
   const appRepository = createAppRepository(pool);
   const notificationService = createNotificationHandler(pool, config);
-  bot = initBot(config, { appRepository });
+  bot = initBot(config, { appRepository, notificationService });
   const app = createApp({
     runtimeConfig: config,
     userRepository,

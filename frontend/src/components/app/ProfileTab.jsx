@@ -319,6 +319,12 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
               <figure className={`profile-photo${photo.isPrimary ? ' profile-photo--primary' : ''}`} key={photo.id}>
                 <img src={photo.url} alt={`Profile photo ${index + 1}`} />
                 {photo.isPrimary && <figcaption>Primary</figcaption>}
+                {photo.moderationStatus === 'pending' && (
+                  <span className="profile-photo__badge profile-photo__badge--pending">Pending review</span>
+                )}
+                {photo.moderationStatus === 'rejected' && (
+                  <span className="profile-photo__badge profile-photo__badge--rejected">Rejected — replace me</span>
+                )}
                 <div className="profile-photo__controls">
                   <button type="button" aria-label={`Move photo ${index + 1} earlier`} disabled={photoBusy || index === 0} onClick={() => movePhoto(index, -1)}>‹</button>
                   <button type="button" aria-label={`Move photo ${index + 1} later`} disabled={photoBusy || index === photos.length - 1} onClick={() => movePhoto(index, 1)}>›</button>

@@ -1451,3 +1451,20 @@
 .blocked-row__unblock:disabled { opacity: 0.6; cursor: default; }
 .setting-row--danger { color: #fb7185; }
 .splash-wake { margin-top: 14px; font-size: 13px; line-height: 1.5; color: #9ca3af; }
+
+/* Photo moderation badges (owner view). */
+.profile-photo { position: relative; }
+.profile-photo__badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fff;
+  pointer-events: none;
+}
+.profile-photo__badge--pending { background: rgba(180, 120, 10, 0.92); }
+.profile-photo__badge--rejected { background: rgba(200, 40, 40, 0.92); }

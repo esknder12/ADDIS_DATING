@@ -49,6 +49,7 @@ export function useAppData(user, { active = true } = {}) {
       const seededPhotos = onboardingPhotos
         .map((photo, index) => ({
           id: `onboarding-${index}`,
+          moderationStatus: 'approved',
           url: typeof photo === 'string' ? photo : photo?.url,
           orderIndex: index,
           isPrimary: index === 0,
@@ -431,6 +432,7 @@ export function useAppData(user, { active = true } = {}) {
       if ((profile.photos || []).length >= 6) throw new Error('You can add up to six profile photos.');
       const photo = {
         id: `demo-${Date.now()}`,
+        moderationStatus: 'approved',
         url: window.URL.createObjectURL(file),
         orderIndex: profile.photos?.length || 0,
         isPrimary: !profile.photos?.length,

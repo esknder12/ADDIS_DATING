@@ -204,10 +204,48 @@ export function createNotificationHandler(pool, runtimeConfig) {
     }
   }
 
+  async function sendPhotoReviewRequest(bot, adminTelegramId, photo) {
+    try {
+      const message = await bot.api.sendPhoto(String(adminTelegramId), photo.url, {
+        caption: `\uD83D\uDCF8 Photo review — ${photo.userName || 'Someone'} (user ${photo.userId})`,
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '\u2705 Approve', callback_data: `photo:approve:${photo.id}` },
+            { text: '\u274C Reject', callback_data: `photo:reject:${photo.id}` },
+          ]],
+        },
+      });
+      await logNotification(Number(photo.userId), 'photo_review', null, message.message_id);
+      return true;
+    } catch (error) {
+      console.error('Failed to send photo review request:', error.message);
+      return false;
+    }
+  }
+
+  async function sendPhotoDecisionNotification(bot, userId, telegramId, approved) {
+    try {
+      const message = await bot.api.sendMessage(
+        String(telegramId),
+        approved
+          ? 'Your photo was approved \u2705 It is now visible on your profile.'
+          : 'Your photo was rejected \uD83D\uDE48 Please upload a clear, real photo of your face.',
+        { reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open Dategram \uD83D\uDDA4', { tab: 'profile' }) },
+      );
+      await logNotification(userId, approved ? 'photo_approved' : 'photo_rejected', null, message.message_id);
+      return true;
+    } catch (error) {
+      console.error('Failed to send photo decision:', error.message);
+      return false;
+    }
+  }
+
   return {
     sendLikedYouNotification,
     sendMatchNotification,
     sendMessageNotification,
     sendVipGrantedNotification,
+    sendPhotoReviewRequest,
+    sendPhotoDecisionNotification,
   };
 }

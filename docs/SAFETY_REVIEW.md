@@ -49,6 +49,13 @@ group-only shots you can't verify, and anything explicit (ban repeat
 offenders). Rejected photos vanish for others instantly; the owner sees the
 rejection and can replace the photo.
 
+**Fast path — Telegram buttons (recommended):** every upload DMs you the
+photo with ✅ Approve / ❌ Reject buttons; the user is notified of your
+decision automatically. One-time setup: message `@userinfobot` on Telegram
+to get your numeric id, then add `ADMIN_TELEGRAM_ID=<your id>` to the
+backend's Render env vars and redeploy. Without it, uploads still work —
+review falls back to the curl commands above.
+
 ## Acting on a report
 
 No console SQL needed — the admin API covers the loop:
@@ -78,6 +85,6 @@ is down: the same changes are one `UPDATE` each in the Neon console
 - [x] `PATCH /api/admin/reports/:id` — shipped + E2E-covered
 - [x] `POST /api/admin/users/:id/ban|unban` — shipped + E2E-covered (reversible `is_active` flip)
 - [x] Human photo approval — pending-by-default + admin queue shipped + E2E-covered
-- [ ] Bot DM approve/reject buttons (approve from Telegram, no PC curl)
-- [ ] Owner "pending review" badges in-app
+- [x] Bot DM approve/reject buttons + automatic user decision DMs
+- [x] Owner "pending review" / "rejected" badges in-app
 - [ ] Optional later: Cloudinary `adv_face` as an automatic pre-filter

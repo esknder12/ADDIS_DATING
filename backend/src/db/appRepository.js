@@ -296,6 +296,21 @@ export function createAppRepository(pool) {
     return row ? { id: row.id, isActive: row.isActive } : null;
   }
 
+  async function getPhotoForModeration(photoIdText) {
+    const photoId = String(photoIdText ?? '').trim();
+    if (!/^[1-9]\d{0,18}$/.test(photoId)) return null;
+    const result = await pool.query(
+      `SELECT p.id::text AS id, p.url, p.moderation_status AS status,
+              p.user_id::text AS "userId",
+              COALESCE(u.name, u.first_name) AS "userName",
+              u.telegram_id::text AS "telegramId"
+       FROM photos p JOIN users u ON u.id = p.user_id
+       WHERE p.id::text = $1`,
+      [photoId],
+    );
+    return result.rows[0] || null;
+  }
+
   async function listPhotosForReview({ status = 'pending', limit = 50 } = {}) {
     const statuses = new Set(['pending', 'approved', 'rejected']);
     const filter = statuses.has(String(status)) ? String(status) : 'pending';
@@ -1852,6 +1867,7 @@ export function createAppRepository(pool) {
     listSafetyReports,
     updateSafetyReportStatus,
     setUserActiveStatus,
+    getPhotoForModeration,
     listPhotosForReview,
     updatePhotoStatus,
   };

@@ -17,7 +17,13 @@ I'm waiting for your video right here! 🤳`;
 
 const verificationReceived = `Got your video! ✅ Our team will review it shortly — you’ll see the badge on your profile as soon as you’re verified.`;
 
-export function initBot(runtimeConfig, { appRepository } = {}) {
+export function parsePhotoModerationCallback(data) {
+  const match = /^photo:(approve|reject):([1-9]\d{0,18})$/.exec(String(data ?? ''));
+  if (!match) return null;
+  return { photoId: match[2], decision: match[1] === 'approve' ? 'approved' : 'rejected' };
+}
+
+export function initBot(runtimeConfig, { appRepository, notificationService } = {}) {
   if (!runtimeConfig.botToken || !runtimeConfig.webappUrl) {
     console.warn('⚠️  BOT_TOKEN or WEBAPP_URL is missing; Telegram bot polling is disabled.');
     return null;
@@ -68,6 +74,44 @@ export function initBot(runtimeConfig, { appRepository } = {}) {
     }
     await context.reply(verificationReceived, { reply_markup: dategramKeyboard() });
   });
+
+  // Photo review: the owner taps Approve/Reject on the review DM. The sender
+  // check is the authorization — callback buttons alone prove nothing.
+  const adminTelegramId = String(runtimeConfig.adminTelegramId || '');
+  if (adminTelegramId && appRepository?.isAvailable && typeof appRepository.updatePhotoStatus === 'function') {
+    bot.on('callback_query:data', async (context) => {
+      const parsed = parsePhotoModerationCallback(context.callbackQuery?.data);
+      if (!parsed) return;
+      if (String(context.from?.id || '') !== adminTelegramId) {
+        await context.answerCallbackQuery({ text: 'Only the Dategram owner can review photos.' });
+        return;
+      }
+      try {
+        const outcome = await appRepository.updatePhotoStatus(parsed.photoId, parsed.decision);
+        if (!outcome || outcome.invalid) {
+          await context.answerCallbackQuery({ text: 'Already handled.' });
+          return;
+        }
+        const approved = outcome.status === 'approved';
+        await context.answerCallbackQuery({ text: approved ? 'Approved \u2705' : 'Rejected \u274C' });
+        const original = context.callbackQuery.message?.caption || context.callbackQuery.message?.text || '';
+        await context.editMessageCaption(`${original}\n\n${approved ? '\u2705 Approved' : '\u274C Rejected'}`).catch(() => {});
+        await context.editMessageReplyMarkup().catch(() => {});
+        if (notificationService?.sendPhotoDecisionNotification
+            && typeof appRepository.getPhotoForModeration === 'function') {
+          const full = await appRepository.getPhotoForModeration(parsed.photoId).catch(() => null);
+          if (full?.telegramId) {
+            await notificationService.sendPhotoDecisionNotification(
+              { api: context.api }, Number(full.userId), full.telegramId, approved,
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Photo review callback failed:', error.message);
+        await context.answerCallbackQuery({ text: 'Something went wrong — try again.' }).catch(() => {});
+      }
+    });
+  }
 
   bot.catch((error) => {
     console.error('Telegram bot error:', error.error?.message || error.message);
