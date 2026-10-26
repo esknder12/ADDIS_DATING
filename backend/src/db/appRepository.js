@@ -951,7 +951,9 @@ export function createAppRepository(pool) {
               presence.is_online AS profile_is_online,
               presence.last_seen_at AS profile_last_seen_at,
               other.photo_url AS profile_photo_url_fallback,
-              COALESCE(photo.url, other.photo_url) AS profile_photo_url,
+              CASE WHEN pending_photo.id IS NOT NULL THEN NULL
+                   ELSE COALESCE(photo.url, other.photo_url) END AS profile_photo_url,
+              pending_photo.id AS pending_photo_id,
               intention.answer_value AS profile_looking_for,
               m.created_at,
               last_message.body AS last_message,
@@ -975,6 +977,7 @@ export function createAppRepository(pool) {
            ELSE NULL
          END
        LEFT JOIN photos photo ON photo.user_id = other.id AND photo.is_primary = TRUE AND photo.moderation_status = 'approved'
+       LEFT JOIN photos pending_photo ON pending_photo.user_id = other.id AND pending_photo.is_primary = TRUE AND pending_photo.moderation_status = 'pending'
        LEFT JOIN user_presence presence ON presence.user_id = other.id
        LEFT JOIN onboarding_answers intention
          ON intention.user_id = other.id AND intention.question_key = 'looking_for'
@@ -1003,7 +1006,7 @@ export function createAppRepository(pool) {
         country: row.profile_country,
         bio: row.profile_bio,
         is_verified: row.profile_is_verified,
-        photo_url: row.profile_photo_url_fallback,
+        photo_url: row.pending_photo_id ? null : row.profile_photo_url_fallback,
         profile_photo_url: row.profile_photo_url,
         looking_for: row.profile_looking_for,
       });
@@ -1018,6 +1021,9 @@ export function createAppRepository(pool) {
       isOnline: Boolean(row.profile_is_online),
       lastSeenAt: row.profile_last_seen_at || null,
     };
+    // A primary photo under review hides the profile photo entirely — even
+    // the default placeholder — until an admin approves or rejects it.
+    if (row.pending_photo_id) profile.photo = null;
 
     return {
       id: String(row.match_id),
