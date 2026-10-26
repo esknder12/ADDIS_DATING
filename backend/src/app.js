@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import { logError } from './lib/logError.js';
 import { checkDatabase } from './db/index.js';
 import { createAdminRouter } from './routes/admin.routes.js';
 import { createAiPicksRouter } from './routes/aiPicks.routes.js';
@@ -143,7 +144,7 @@ export function createApp({
 
   // eslint-disable-next-line no-unused-vars
   app.use((error, _req, res, _next) => {
-    console.error(error);
+    logError('Unhandled API error:', error);
     const isCorsError = error.message === 'Origin is not allowed by CORS';
     res.status(isCorsError ? 403 : 500).json({
       error: {

@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { logError } from './lib/logError.js';
 import { createApp } from './app.js';
 import { initSocketServer, stopSocketServer } from './socket/socketServer.js';
 import { initBot, stopBot } from './bot/bot.js';
@@ -67,6 +68,6 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 start().catch((error) => {
-  console.error('❌ Failed to start Dategram:', error);
+  logError('❌ Failed to start Dategram:', error);
   process.exit(1);
 });

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { config } from '../config/env.js';
+import { logError } from '../lib/logError.js';
 
 const { Pool } = pg;
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -29,7 +30,7 @@ export async function initDatabase(runtimeConfig = config) {
     });
 
     pool.on('error', (error) => {
-      console.error('Unexpected PostgreSQL pool error:', error);
+      logError('Unexpected PostgreSQL pool error:', error);
     });
 
     const schema = await fs.readFile(path.join(dirname, 'schema.sql'), 'utf8');
