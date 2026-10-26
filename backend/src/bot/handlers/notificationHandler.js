@@ -291,7 +291,7 @@ export function createNotificationHandler(pool, runtimeConfig) {
         String(telegramId),
         verified
           ? 'You are verified \u2705 The badge is now on your profile.'
-          : 'Verification did not pass this time \uD83D\uDE48 Please retry with a clear video of your face.',
+          : 'Verification did not pass this time \uD83D\uDE48 Your video and profile photo must show the same face clearly. Please retry.',
         { reply_markup: appKeyboard(runtimeConfig.webappUrl, 'Open LibMatch \uD83D\uDDA4', { tab: 'profile' }) },
       );
       await logNotification(userId, verified ? 'verification_approved' : 'verification_rejected', null, message.message_id);
