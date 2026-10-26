@@ -27,6 +27,7 @@ export const config = Object.freeze({
   port: toPositiveInteger(process.env.PORT, 4000),
   adminApiKey: process.env.ADMIN_API_KEY?.trim() || '',
   adminTelegramId: process.env.ADMIN_TELEGRAM_ID?.trim() || '',
+  botUsername: '',
   botToken: process.env.BOT_TOKEN?.trim() || '',
   webappUrl: process.env.WEBAPP_URL?.trim() || '',
   telegramAuthMaxAgeSeconds: toPositiveInteger(

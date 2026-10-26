@@ -68,10 +68,10 @@ export default function Splash({ onAuthenticated }) {
         } else {
           // Free-tier Render sleeps when idle; the wake ping absorbs the
           // 30-60s cold start so auth below never sees a false timeout.
-          await wakeServer();
+          const health = await wakeServer();
           const result = await authenticateUser();
           if (!result.success || !result.user) throw new Error('Authentication failed.');
-          user = { ...result.user, isDemo: false };
+          user = { ...result.user, isDemo: false, botUsername: health?.botUsername || null };
         }
 
         const remaining = Math.max(0, minimumSplashTime - (Date.now() - startedAt));

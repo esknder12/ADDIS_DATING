@@ -88,3 +88,4 @@ is down: the same changes are one `UPDATE` each in the Neon console
 - [x] Bot DM approve/reject buttons + automatic user decision DMs
 - [x] Owner "pending review" / "rejected" badges in-app
 - [ ] Optional later: Cloudinary `adv_face` as an automatic pre-filter
+- [ ] Verification-video review: videos land in `verification_requests`, but no admin approve path exists yet

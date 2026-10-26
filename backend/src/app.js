@@ -60,6 +60,7 @@ export function createApp({
       status: healthy ? 'ok' : 'degraded',
       service: 'dategram-api',
       database,
+      botUsername: runtimeConfig.botUsername || null,
       timestamp: new Date().toISOString(),
     });
   });

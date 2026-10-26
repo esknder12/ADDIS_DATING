@@ -45,19 +45,34 @@ export function initBot(runtimeConfig, { appRepository, notificationService } = 
     console.warn('Could not read the Dategram menu button; using WEBAPP_URL:', error.message);
   });
 
+  // The username tells the Mini App which bot chat to deep-link into
+  // (test bot vs production bot); the modal reads it via /health.
+  bot.api.getMe().then((me) => {
+    if (me?.username) runtimeConfig.botUsername = me.username;
+  }).catch(() => {});
+
   const dategramKeyboard = () => new InlineKeyboard().webApp('Go to Dategram', liveWebappUrl);
 
+  async function sendVerifyInstructions(context) {
+    await context.reply(verificationNudge, {
+      reply_markup: new InlineKeyboard().webApp('Return to Dategram \uD83D\uDDA4', liveWebappUrl),
+    });
+    await context.reply(verificationInstructions);
+  }
+
   bot.command('start', async (context) => {
+    // Deep link from the verification modal: land WITH instructions sent.
+    if (String(context.match || '').trim().toLowerCase() === 'verify') {
+      await sendVerifyInstructions(context);
+      return;
+    }
     await context.reply(welcomeMessage, { reply_markup: dategramKeyboard() });
   });
 
   // V2 — verification: the in-app modal deep-links here; the pinned-style
   // nudge plus instructions are sent on demand.
   bot.command('verify', async (context) => {
-    await context.reply(verificationNudge, {
-      reply_markup: new InlineKeyboard().webApp('Return to Dategram 🖤', liveWebappUrl),
-    });
-    await context.reply(verificationInstructions);
+    await sendVerifyInstructions(context);
   });
 
   // V3 — user replies with a native circular Telegram video note. We store the

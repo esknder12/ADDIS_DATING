@@ -583,7 +583,7 @@ export default function ProfileTab({ user, appData, photoUrl, onShowVerification
               <div ref={sheetBodyRef} className="sheet__body">
                 <h2>Contact support</h2>
                 <p>Need help with your profile, a match, or a safety concern? Message us on Telegram and we’ll get back to you.</p>
-                <a className="support-link" href="https://t.me/DategramAppBot" target="_blank" rel="noreferrer">Message @DategramAppBot</a>
+                <a className="support-link" href={`https://t.me/${user.botUsername || 'DategramAppBot'}`} target="_blank" rel="noreferrer">Message @{user.botUsername || 'DategramAppBot'}</a>
               </div>
               </>
             )}

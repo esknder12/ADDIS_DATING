@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { closeMiniApp, notify } from '../../lib/telegram.js';
+import { notify, openTelegramLink } from '../../lib/telegram.js';
 import { CloseIcon, VerifiedBadge } from './icons.jsx';
 
 const instructionLines = [
@@ -9,9 +9,10 @@ const instructionLines = [
 ];
 
 /** V1 — in-app verification modal (spec section 5). */
-export default function VerificationModal({ user, photoUrl, status, onRequest, onClose, isDemo }) {
+export default function VerificationModal({ user, photoUrl, status, onRequest, onClose, isDemo, botUsername }) {
   const [busy, setBusy] = useState(false);
   const [requested, setRequested] = useState(status === 'pending');
+  const botHandle = botUsername || 'DategramAppBot';
 
   const handleVerify = useCallback(async () => {
     if (busy) return;
@@ -20,10 +21,6 @@ export default function VerificationModal({ user, photoUrl, status, onRequest, o
       await onRequest();
       setRequested(true);
       notify('success');
-      if (!isDemo) {
-        // V2: the flow continues in @DategramAppBot with a video note.
-        window.setTimeout(() => closeMiniApp(), 900);
-      }
     } finally {
       setBusy(false);
     }
@@ -59,8 +56,17 @@ export default function VerificationModal({ user, photoUrl, status, onRequest, o
             <p className="verification-modal__waiting">
               {isDemo
                 ? 'Preview mode: your badge is pending until a moderator approves the video note in Telegram.'
-                : 'I’m waiting for your video right here! 🤳 Send it to @DategramAppBot.'}
+                : `Tap below to open @${botHandle}, then send your video note right there — it takes 10 seconds.`}
             </p>
+            {!isDemo && (
+              <button
+                type="button"
+                className="onboarding-primary verification-modal__cta"
+                onClick={() => openTelegramLink(`https://t.me/${botHandle}?start=verify`)}
+              >
+                {`Open @${botHandle}`}
+              </button>
+            )}
           </div>
         ) : (
           <button type="button" className="onboarding-primary verification-modal__cta" disabled={busy} onClick={handleVerify}>

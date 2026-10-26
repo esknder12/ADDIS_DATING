@@ -269,6 +269,7 @@ export default function MainApp({ user, appData }) {
           user={user}
           photoUrl={user.photoUrl}
           status={appData.profile.verificationStatus}
+          botUsername={user.botUsername}
           isDemo={Boolean(user.isDemo)}
           onRequest={appData.requestVerificationBadge}
           onClose={() => setVerificationOpen(false)}

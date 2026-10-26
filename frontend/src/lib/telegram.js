@@ -84,4 +84,8 @@ export function showTelegramBackButton(onClick) {
   });
 }
 
+export function openTelegramLink(url) {
+  safely(() => WebApp.openTelegramLink(url));
+}
+
 export default WebApp;
