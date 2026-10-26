@@ -76,7 +76,7 @@ the tap-script passes once, escalate to P0 with Render logs.
 
 ## P2 — harden soon
 
-- Full-object `console.error` (15 sites) can land PII/DB detail in Render logs — scrub.
+- Full-object `console.error` ✅ DONE — `logError` helper (message+stack only, pg detail/query/config never logged), test-guarded; 12 other sites were already message-only.
 - Stranger message auth mismatch: GET→404 `MATCH_NOT_FOUND`, POST→403
   `MATCH_REQUIRED` — pick one (cosmetic).
 - Upload type check is mimetype-only (client-declared, no magic-byte sniff);
