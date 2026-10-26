@@ -29,9 +29,9 @@ on:
   workflow_dispatch:
 
 env:
-  VITE_API_URL: https://addis-dating.onrender.com
+  VITE_API_URL: https://addis-dating-test.onrender.com
   WEBAPP_BASE_URL: https://app8948725364.tgcloud.ai/
-  RENDER_SERVICE_ID: srv-db91fgfav73c2elg
+  RENDER_SERVICE_ID: srv-dbfio10473hc73dbiev0
 
 jobs:
   deploy:
